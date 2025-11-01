@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import logoPromoJour from "@/assets/logo-promojour.png";
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -45,8 +46,7 @@ export function AppSidebar() {
       <SidebarContent>
         <div className="p-4 border-b">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gradient-hero"></div>
-            <span className="text-lg font-bold text-sidebar-foreground">PromoJour</span>
+            <img src={logoPromoJour} alt="PromoJour" className="h-8" />
           </div>
         </div>
 

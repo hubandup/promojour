@@ -10,61 +10,61 @@ All colors MUST be HSL.
   :root {
     /* PromoJour Design System - Modern SaaS B2B */
     --background: 0 0% 99%;
-    --foreground: 210 29% 24%;
+    --foreground: 280 30% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 210 29% 24%;
+    --card-foreground: 280 30% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 29% 24%;
+    --popover-foreground: 280 30% 20%;
 
-    /* Primary: Orange corail vibrant - Promotions */
-    --primary: 14 100% 61%;
+    /* Primary: Magenta vibrant - Brand PromoJour */
+    --primary: 320 85% 60%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 14 100% 55%;
-    --primary-glow: 14 100% 70%;
+    --primary-hover: 320 85% 55%;
+    --primary-glow: 320 85% 70%;
 
-    /* Secondary: Bleu profond - Confiance B2B */
-    --secondary: 210 29% 24%;
+    /* Secondary: Violet profond - Confiance B2B */
+    --secondary: 280 70% 55%;
     --secondary-foreground: 0 0% 100%;
 
-    /* Accent: Or/Jaune - Highlights */
-    --accent: 45 93% 58%;
-    --accent-foreground: 210 29% 24%;
+    /* Accent: Magenta clair - Highlights */
+    --accent: 310 90% 65%;
+    --accent-foreground: 0 0% 100%;
 
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 280 15% 96%;
+    --muted-foreground: 280 10% 47%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 14 100% 61%;
+    --border: 280 20% 91%;
+    --input: 280 20% 91%;
+    --ring: 320 85% 60%;
 
     --radius: 0.75rem;
 
     /* Sidebar */
-    --sidebar-background: 210 29% 24%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 14 100% 61%;
+    --sidebar-background: 280 30% 20%;
+    --sidebar-foreground: 280 15% 90%;
+    --sidebar-primary: 320 85% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 25% 30%;
+    --sidebar-accent: 280 25% 30%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 210 25% 30%;
-    --sidebar-ring: 14 100% 61%;
+    --sidebar-border: 280 25% 30%;
+    --sidebar-ring: 320 85% 60%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(14, 100%, 61%), hsl(14, 100%, 70%));
-    --gradient-secondary: linear-gradient(135deg, hsl(210, 29%, 24%), hsl(210, 50%, 40%));
-    --gradient-hero: linear-gradient(135deg, hsl(14, 100%, 61%) 0%, hsl(45, 93%, 58%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(320, 85%, 60%), hsl(310, 90%, 65%));
+    --gradient-secondary: linear-gradient(135deg, hsl(280, 70%, 55%), hsl(280, 60%, 65%));
+    --gradient-hero: linear-gradient(135deg, hsl(320, 85%, 60%) 0%, hsl(280, 70%, 55%) 100%);
 
     /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(210 29% 24% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(210 29% 24% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(210 29% 24% / 0.1);
-    --shadow-xl: 0 20px 25px -5px hsl(210 29% 24% / 0.1);
-    --shadow-glow: 0 0 40px hsl(14 100% 61% / 0.3);
+    --shadow-sm: 0 1px 2px 0 hsl(280 30% 20% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(280 30% 20% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(280 30% 20% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(280 30% 20% / 0.1);
+    --shadow-glow: 0 0 40px hsl(320 85% 60% / 0.3);
 
     /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

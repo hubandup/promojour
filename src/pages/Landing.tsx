@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { Store, Users, TrendingUp, Zap, Instagram, Mail, QrCode, BarChart3 } from "lucide-react";
+import logoPromoJour from "@/assets/logo-promojour.png";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -70,8 +71,7 @@ const Landing = () => {
       <nav className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gradient-hero"></div>
-            <span className="text-xl font-bold">PromoJour</span>
+            <img src={logoPromoJour} alt="PromoJour" className="h-10" />
           </div>
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={() => navigate("/auth")}>
