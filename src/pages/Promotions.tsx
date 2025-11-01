@@ -4,9 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Plus, Search, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { CreatePromotionDialog } from "@/components/CreatePromotionDialog";
 
 const Promotions = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const promotions = [
     {
@@ -62,7 +64,10 @@ const Promotions = () => {
           <h1 className="text-3xl font-bold">Promotions</h1>
           <p className="text-muted-foreground">Gérez toutes vos promotions</p>
         </div>
-        <Button className="gradient-primary text-white shadow-glow">
+        <Button 
+          className="gradient-primary text-white shadow-glow"
+          onClick={() => setCreateDialogOpen(true)}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Nouvelle promotion
         </Button>
@@ -134,6 +139,11 @@ const Promotions = () => {
           </Card>
         ))}
       </div>
+
+      <CreatePromotionDialog 
+        open={createDialogOpen} 
+        onOpenChange={setCreateDialogOpen} 
+      />
     </div>
   );
 };
