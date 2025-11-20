@@ -3,47 +3,49 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CreatePromotionDialog } from "@/components/CreatePromotionDialog";
+import { usePromotions } from "@/hooks/use-promotions";
+import { useUserData } from "@/hooks/use-user-data";
+import { useStores } from "@/hooks/use-stores";
+import { useCampaigns } from "@/hooks/use-campaigns";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 const Promotions = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [storeFilter, setStoreFilter] = useState<string>("all");
+  const [campaignFilter, setCampaignFilter] = useState<string>("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  const promotions = [
-    {
-      id: 1,
-      title: "Réduction 30% sur les chaussures",
-      category: "Mode",
-      status: "active",
-      startDate: "01/01/2025",
-      endDate: "15/01/2025",
-      views: 523,
-      image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff"
-    },
-    {
-      id: 2,
-      title: "2 pour 1 sur les T-shirts",
-      category: "Mode",
-      status: "active",
-      startDate: "05/01/2025",
-      endDate: "20/01/2025",
-      views: 412,
-      image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab"
-    },
-    {
-      id: 3,
-      title: "Offre spéciale weekend",
-      category: "Générale",
-      status: "scheduled",
-      startDate: "25/01/2025",
-      endDate: "27/01/2025",
-      views: 0,
-      image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da"
-    },
-  ];
+  const { promotions, loading: promotionsLoading, refetch } = usePromotions();
+  const { organization, isFree, loading: userLoading } = useUserData();
+  const { stores, loading: storesLoading } = useStores();
+  const { campaigns, loading: campaignsLoading } = useCampaigns();
+
+  const loading = promotionsLoading || userLoading || storesLoading || campaignsLoading;
+
+  // Filtrer les promotions
+  const filteredPromotions = promotions.filter((promo) => {
+    const matchesSearch = promo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         promo.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || promo.status === statusFilter;
+    const matchesStore = storeFilter === "all" || promo.store_id === storeFilter;
+    const matchesCampaign = campaignFilter === "all" || promo.campaign_id === campaignFilter;
+    
+    return matchesSearch && matchesStatus && matchesStore && matchesCampaign;
+  });
+
+  // Vérifier les limites d'abonnement
+  const maxPromotions = organization?.max_promotions;
+  const canCreatePromo = maxPromotions === null || promotions.length < maxPromotions;
+  const isNearLimit = maxPromotions && promotions.length >= maxPromotions * 0.8;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -64,93 +66,195 @@ const Promotions = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Promotions</h1>
-          <p className="text-muted-foreground">Gérez toutes vos promotions</p>
+          <p className="text-muted-foreground">
+            {loading ? "Chargement..." : `${filteredPromotions.length} promotion${filteredPromotions.length > 1 ? 's' : ''}`}
+          </p>
         </div>
         <Button 
           className="gradient-primary text-white shadow-glow"
           onClick={() => setCreateDialogOpen(true)}
+          disabled={!canCreatePromo || loading}
         >
           <Plus className="w-4 h-4 mr-2" />
           Nouvelle promotion
         </Button>
       </div>
 
+      {/* Alerts */}
+      {isNearLimit && (
+        <Alert className="glass-card border-border/50">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Attention : Vous approchez de la limite de votre abonnement ({promotions.length}/{maxPromotions} promotions).
+            {isFree && " Passez à un abonnement supérieur pour créer plus de promotions."}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {!canCreatePromo && (
+        <Alert variant="destructive" className="glass-card">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Limite atteinte : Vous avez atteint le maximum de {maxPromotions} promotions pour votre abonnement.
+            Veuillez passer à un abonnement supérieur ou supprimer des promotions existantes.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Filters */}
       <Card className="glass-card border-border/50">
         <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
-                placeholder="Rechercher une promotion..."
+                placeholder="Rechercher..."
                 className="pl-11 rounded-xl border-border/50 bg-background/50 focus:shadow-md transition-smooth"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button variant="outline" className="rounded-xl border-border/50 hover:shadow-md transition-smooth">
-              <Filter className="w-4 h-4 mr-2" />
-              Filtres
-            </Button>
+            
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="rounded-xl border-border/50 bg-background/50">
+                <SelectValue placeholder="Statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les statuts</SelectItem>
+                <SelectItem value="active">Actif</SelectItem>
+                <SelectItem value="scheduled">Programmé</SelectItem>
+                <SelectItem value="draft">Brouillon</SelectItem>
+                <SelectItem value="expired">Expiré</SelectItem>
+                <SelectItem value="archived">Archivé</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {stores.length > 1 && (
+              <Select value={storeFilter} onValueChange={setStoreFilter}>
+                <SelectTrigger className="rounded-xl border-border/50 bg-background/50">
+                  <SelectValue placeholder="Magasin" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les magasins</SelectItem>
+                  {stores.map((store) => (
+                    <SelectItem key={store.id} value={store.id}>
+                      {store.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {campaigns.length > 0 && (
+              <Select value={campaignFilter} onValueChange={setCampaignFilter}>
+                <SelectTrigger className="rounded-xl border-border/50 bg-background/50">
+                  <SelectValue placeholder="Campagne" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les campagnes</SelectItem>
+                  {campaigns.map((campaign) => (
+                    <SelectItem key={campaign.id} value={campaign.id}>
+                      {campaign.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </CardContent>
       </Card>
 
       {/* Promotions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {promotions.map((promo) => (
-          <Card key={promo.id} className="glass-card border-border/50 hover:shadow-glass hover:border-primary/20 transition-smooth overflow-hidden group">
-            <div className="h-48 overflow-hidden relative">
-              <img
-                src={promo.image}
-                alt={promo.title}
-                className="w-full h-full object-cover group-hover:scale-110 transition-smooth duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-smooth"></div>
-            </div>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <CardTitle className="text-lg">{promo.title}</CardTitle>
-                {getStatusBadge(promo.status)}
-              </div>
-              <CardDescription>{promo.category}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between p-2 rounded-lg bg-muted/30">
-                  <span className="text-muted-foreground">Début:</span>
-                  <span className="font-semibold">{promo.startDate}</span>
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="glass-card border-border/50">
+              <Skeleton className="h-48 w-full" />
+              <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-20 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : filteredPromotions.length === 0 ? (
+        <Card className="glass-card border-border/50 p-12 text-center">
+          <p className="text-muted-foreground">Aucune promotion trouvée</p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredPromotions.map((promo) => (
+            <Card key={promo.id} className="glass-card border-border/50 hover:shadow-glass hover:border-primary/20 transition-smooth overflow-hidden group">
+              {promo.image_url && (
+                <div className="h-48 overflow-hidden relative">
+                  <img
+                    src={promo.image_url}
+                    alt={promo.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-smooth duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-smooth"></div>
                 </div>
-                <div className="flex justify-between p-2 rounded-lg bg-muted/30">
-                  <span className="text-muted-foreground">Fin:</span>
-                  <span className="font-semibold">{promo.endDate}</span>
+              )}
+              <CardHeader>
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-lg line-clamp-2">{promo.title}</CardTitle>
+                  {getStatusBadge(promo.status)}
                 </div>
-                <div className="flex justify-between p-2 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5">
-                  <span className="text-muted-foreground">Vues:</span>
-                  <span className="font-bold text-primary">{promo.views}</span>
+                {promo.description && (
+                  <CardDescription className="line-clamp-2">{promo.description}</CardDescription>
+                )}
+                {promo.category && (
+                  <Badge variant="outline" className="w-fit">{promo.category}</Badge>
+                )}
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between p-2 rounded-lg bg-muted/30">
+                    <span className="text-muted-foreground">Début:</span>
+                    <span className="font-semibold">
+                      {format(new Date(promo.start_date), "dd/MM/yyyy", { locale: fr })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between p-2 rounded-lg bg-muted/30">
+                    <span className="text-muted-foreground">Fin:</span>
+                    <span className="font-semibold">
+                      {format(new Date(promo.end_date), "dd/MM/yyyy", { locale: fr })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between p-2 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5">
+                    <span className="text-muted-foreground">Vues:</span>
+                    <span className="font-bold text-primary">{promo.views_count}</span>
+                  </div>
+                  <div className="flex justify-between p-2 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5">
+                    <span className="text-muted-foreground">Clics:</span>
+                    <span className="font-bold text-primary">{promo.clicks_count}</span>
+                  </div>
                 </div>
-              </div>
-              <div className="flex gap-2 mt-6">
-                <Button variant="outline" size="sm" className="flex-1 rounded-xl hover:shadow-md transition-smooth">
-                  Modifier
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex-1 rounded-xl hover:shadow-md transition-smooth"
-                  onClick={() => navigate(`/promotions/${promo.id}`)}
-                >
-                  Détails
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <div className="flex gap-2 mt-6">
+                  <Button variant="outline" size="sm" className="flex-1 rounded-xl hover:shadow-md transition-smooth">
+                    Modifier
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                    onClick={() => navigate(`/promotions/${promo.id}`)}
+                  >
+                    Détails
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <CreatePromotionDialog 
         open={createDialogOpen} 
-        onOpenChange={setCreateDialogOpen} 
+        onOpenChange={setCreateDialogOpen}
       />
     </div>
   );
