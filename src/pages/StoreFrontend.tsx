@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Store } from "@/hooks/use-stores";
 import { Helmet } from "react-helmet";
-import { MapPin, Phone, Clock, ArrowLeft } from "lucide-react";
+import { MapPin, Phone, Clock, ArrowLeft, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function StoreFrontend() {
@@ -156,11 +156,18 @@ export default function StoreFrontend() {
                 className="w-20 h-20 rounded-lg object-cover border border-border"
               />
             )}
-            <div>
+            <div className="flex-1">
               <h1 className="text-3xl font-bold text-foreground mb-2">{store.name}</h1>
               {store.description && (
-                <p className="text-muted-foreground">{store.description}</p>
+                <p className="text-muted-foreground mb-4">{store.description}</p>
               )}
+              <Button
+                onClick={handleBackToReels}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Voir nos promotions
+              </Button>
             </div>
           </div>
 
