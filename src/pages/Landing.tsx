@@ -3,9 +3,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { Store, Users, TrendingUp, Zap, Instagram, Mail, QrCode, BarChart3 } from "lucide-react";
 import logoPromoJour from "@/assets/logo-promojour.png";
+import { useUserData } from "@/hooks/use-user-data";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { profile, loading } = useUserData();
 
   const features = [
     {
@@ -74,12 +77,34 @@ const Landing = () => {
             <img src={logoPromoJour} alt="PromoJour" className="h-11" />
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={() => navigate("/auth")} className="font-medium">
-              Connexion
-            </Button>
-            <Button className="gradient-primary text-white shadow-glow hover:shadow-xl transition-smooth font-medium" onClick={() => navigate("/auth")}>
-              Essai gratuit
-            </Button>
+            {!loading && profile ? (
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate("/dashboard")} 
+                className="font-medium flex items-center gap-2"
+              >
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={profile.avatar_url || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    {profile.first_name?.[0] || profile.last_name?.[0] || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <span>
+                  {profile.first_name && profile.last_name 
+                    ? `${profile.first_name} ${profile.last_name}`
+                    : profile.first_name || profile.last_name || "Mon compte"}
+                </span>
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => navigate("/auth")} className="font-medium">
+                  Connexion
+                </Button>
+                <Button className="gradient-primary text-white shadow-glow hover:shadow-xl transition-smooth font-medium" onClick={() => navigate("/auth")}>
+                  Essai gratuit
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </nav>
