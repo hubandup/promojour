@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useStores } from "@/hooks/use-stores";
-import { MapPin, Phone, Mail, Clock, Edit, Plus, Search, Store as StoreIcon, Eye } from "lucide-react";
+import { MapPin, Phone, Mail, Clock, Edit, Plus, Search, Store as StoreIcon, Eye, Grid3x3, List, CheckCircle2, XCircle, Instagram, Facebook } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -27,6 +28,7 @@ interface StoreFormData {
 const Stores = () => {
   const navigate = useNavigate();
   const { stores, loading, refetch } = useStores();
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<StoreFormData | null>(null);
@@ -135,10 +137,30 @@ const Stores = () => {
             Gérez votre réseau de {stores.length} magasin{stores.length > 1 ? "s" : ""}
           </p>
         </div>
-        <Button onClick={handleNew} className="gradient-primary text-white shadow-glow rounded-xl">
-          <Plus className="w-4 h-4 mr-2" />
-          Nouveau magasin
-        </Button>
+        <div className="flex gap-2">
+          <div className="flex rounded-xl border border-border/50 p-1">
+            <Button
+              variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('table')}
+              className="rounded-lg"
+            >
+              <List className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className="rounded-lg"
+            >
+              <Grid3x3 className="w-4 h-4" />
+            </Button>
+          </div>
+          <Button onClick={handleNew} className="gradient-primary text-white shadow-glow rounded-xl">
+            <Plus className="w-4 h-4 mr-2" />
+            Nouveau magasin
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
@@ -156,7 +178,8 @@ const Stores = () => {
         </CardContent>
       </Card>
 
-      {/* Stores Grid */}
+
+      {/* Stores View */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
@@ -179,6 +202,98 @@ const Stores = () => {
               {searchQuery ? "Aucun magasin trouvé" : "Aucun magasin pour le moment"}
             </p>
           </CardContent>
+        </Card>
+      ) : viewMode === 'table' ? (
+        <Card className="glass-card border-border/50">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Magasin</TableHead>
+                <TableHead>Ville</TableHead>
+                <TableHead className="text-center">
+                  <Instagram className="w-4 h-4 inline-block" />
+                </TableHead>
+                <TableHead className="text-center">
+                  <Facebook className="w-4 h-4 inline-block" />
+                </TableHead>
+                <TableHead className="text-center">GMB</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredStores.map((store) => {
+                // Mock data for social connections - à remplacer par vraies données
+                const hasInstagram = Math.random() > 0.5;
+                const hasFacebook = Math.random() > 0.5;
+                const hasGMB = Math.random() > 0.5;
+
+                return (
+                  <TableRow key={store.id} className="hover:bg-muted/50">
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                          <StoreIcon className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{store.name}</p>
+                          {store.phone && (
+                            <p className="text-xs text-muted-foreground">{store.phone}</p>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-muted-foreground" />
+                        <span>{store.city || "—"}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {hasInstagram ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-500 mx-auto" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-muted-foreground/30 mx-auto" />
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {hasFacebook ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-500 mx-auto" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-muted-foreground/30 mx-auto" />
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {hasGMB ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-500 mx-auto" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-muted-foreground/30 mx-auto" />
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          onClick={() => navigate(`/stores/${store.id}`)}
+                          variant="outline"
+                          size="icon"
+                          className="rounded-xl hover:shadow-md transition-smooth h-8 w-8"
+                        >
+                          <Eye className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          onClick={() => handleEdit(store)}
+                          variant="outline"
+                          size="icon"
+                          className="rounded-xl hover:shadow-md transition-smooth h-8 w-8"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
