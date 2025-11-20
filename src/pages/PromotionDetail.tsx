@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,10 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Eye, MousePointer, Share2, Calendar, TrendingUp, MapPin } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
+import { EditPromotionDialog } from "@/components/EditPromotionDialog";
 
 const PromotionDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // Mock data - to be replaced with real data
   const promotion = {
@@ -96,7 +99,10 @@ const PromotionDetail = () => {
             <Share2 className="w-4 h-4 mr-2" />
             Partager
           </Button>
-          <Button className="gradient-primary text-white shadow-glow">
+          <Button 
+            className="gradient-primary text-white shadow-glow"
+            onClick={() => setEditDialogOpen(true)}
+          >
             Modifier
           </Button>
         </div>
@@ -277,6 +283,16 @@ const PromotionDetail = () => {
           </Card>
         </div>
       </div>
+
+      <EditPromotionDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        promotionId={id || ""}
+        onSuccess={() => {
+          // Refresh promotion data
+          window.location.reload();
+        }}
+      />
     </div>
   );
 };
