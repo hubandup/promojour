@@ -1,20 +1,107 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Tag, Eye, Users, Plus, Instagram, Facebook } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { TrendingUp, Tag, Eye, Users, Plus, Instagram, Facebook, AlertTriangle, Store as StoreIcon, MousePointerClick, CheckCircle2, XCircle } from "lucide-react";
+import { CreatePromotionDialog } from "@/components/CreatePromotionDialog";
+import { useUserData } from "@/hooks/use-user-data";
+import { usePromotions } from "@/hooks/use-promotions";
+import { useStores } from "@/hooks/use-stores";
+import { useSocialConnections } from "@/hooks/use-social-connections";
 
 const Dashboard = () => {
-  const stats = [
-    { title: "Promotions actives", value: "12", change: "+3", icon: Tag, color: "text-primary" },
-    { title: "Vues totales", value: "2,847", change: "+12%", icon: Eye, color: "text-accent" },
-    { title: "Taux d'engagement", value: "8.3%", change: "+2.1%", icon: TrendingUp, color: "text-green-500" },
-    { title: "Followers totaux", value: "1,234", change: "+45", icon: Users, color: "text-blue-500" },
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const { organization, isCentral, loading: userLoading } = useUserData();
+  const { promotions, activePromotions, scheduledPromotions, topPromotions, loading: promosLoading } = usePromotions();
+  const { stores, loading: storesLoading } = useStores();
+  
+  // Get first store for social connections (for single store view)
+  const firstStore = stores[0];
+  const { connections, connectedCount } = useSocialConnections(firstStore?.id);
+
+  const loading = userLoading || promosLoading || storesLoading;
+
+  // Warning thresholds
+  const MIN_ACTIVE_PROMOTIONS = 3;
+  const MIN_UPCOMING_PROMOTIONS = 5;
+  const showWarning = activePromotions.length < MIN_ACTIVE_PROMOTIONS || scheduledPromotions.length < MIN_UPCOMING_PROMOTIONS;
+
+  // Calculate total views
+  const totalViews = promotions.reduce((sum, promo) => sum + promo.views_count, 0);
+  const totalClicks = promotions.reduce((sum, promo) => sum + promo.clicks_count, 0);
+  const engagementRate = totalViews > 0 ? ((totalClicks / totalViews) * 100).toFixed(1) : "0";
+
+  // Social media stats
+  const totalFollowers = connections.reduce((sum, conn) => sum + (conn.followers_count || 0), 0);
+
+  const stats = isCentral ? [
+    {
+      title: "Magasins",
+      value: stores.length.toString(),
+      change: `${activePromotions.length} promos actives`,
+      icon: StoreIcon,
+      color: "text-primary",
+    },
+    {
+      title: "Promotions actives",
+      value: activePromotions.length.toString(),
+      change: `${scheduledPromotions.length} à venir`,
+      icon: TrendingUp,
+      color: "text-blue-500",
+    },
+    {
+      title: "Total des vues",
+      value: totalViews.toLocaleString(),
+      change: `${totalClicks.toLocaleString()} clics`,
+      icon: Eye,
+      color: "text-green-500",
+    },
+    {
+      title: "Comptes connectés",
+      value: connectedCount.toString(),
+      change: "Réseaux sociaux",
+      icon: Users,
+      color: "text-purple-500",
+    },
+  ] : [
+    {
+      title: "Promotions actives",
+      value: activePromotions.length.toString(),
+      change: `${scheduledPromotions.length} à venir`,
+      icon: TrendingUp,
+      color: "text-primary",
+    },
+    {
+      title: "Total des vues",
+      value: totalViews.toLocaleString(),
+      change: `${totalClicks.toLocaleString()} clics`,
+      icon: Eye,
+      color: "text-blue-500",
+    },
+    {
+      title: "Taux d'engagement",
+      value: `${engagementRate}%`,
+      change: "Clics/Vues",
+      icon: MousePointerClick,
+      color: "text-green-500",
+    },
+    {
+      title: "Total abonnés",
+      value: totalFollowers.toLocaleString(),
+      change: `${connectedCount} réseaux`,
+      icon: Users,
+      color: "text-purple-500",
+    },
   ];
 
-  const recentPromos = [
-    { title: "Réduction 30% sur les chaussures", status: "Actif", views: 523, engagement: "9.2%" },
-    { title: "2 pour 1 sur les T-shirts", status: "Actif", views: 412, engagement: "7.8%" },
-    { title: "Offre spéciale weekend", status: "Programmé", views: 0, engagement: "-" },
-  ];
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -22,13 +109,32 @@ const Dashboard = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Vue d'ensemble de vos promotions</p>
+          <p className="text-muted-foreground">
+            {isCentral ? 'Vue centrale - Tous vos magasins' : `Bienvenue ${organization?.name || ''}`}
+          </p>
         </div>
-        <Button className="gradient-primary text-white shadow-glow">
+        <Button 
+          className="gradient-primary text-white shadow-glow"
+          onClick={() => setCreateDialogOpen(true)}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Nouvelle promotion
         </Button>
       </div>
+
+      {/* Warning Alert */}
+      {showWarning && (
+        <Alert className="glass-card border-orange-500/50 bg-orange-500/5">
+          <AlertTriangle className="h-5 w-5 text-orange-500" />
+          <AlertDescription className="text-orange-600 dark:text-orange-400">
+            {activePromotions.length < MIN_ACTIVE_PROMOTIONS && 
+              `Vous avez moins de ${MIN_ACTIVE_PROMOTIONS} promotions actives. `}
+            {scheduledPromotions.length < MIN_UPCOMING_PROMOTIONS && 
+              `Vous avez moins de ${MIN_UPCOMING_PROMOTIONS} promotions à venir. `}
+            Pensez à ajouter de nouvelles promotions pour maintenir votre visibilité.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -45,7 +151,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{stat.value}</div>
               <p className="text-xs text-muted-foreground mt-2">
-                <span className="text-primary font-semibold">{stat.change}</span> vs mois dernier
+                <span className="text-primary font-semibold">{stat.change}</span>
               </p>
             </CardContent>
           </Card>
@@ -54,81 +160,144 @@ const Dashboard = () => {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Promotions */}
+        {/* Top 5 Promotions */}
         <Card className="lg:col-span-2 glass-card border-border/50">
           <CardHeader>
-            <CardTitle>Promotions récentes</CardTitle>
-            <CardDescription>Vos 5 dernières promotions</CardDescription>
+            <CardTitle>{isCentral ? 'Top 5 promotions globales' : 'Top 5 promotions'}</CardTitle>
+            <CardDescription>Les promotions les plus performantes</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {recentPromos.map((promo, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-4 border border-border/50 rounded-xl hover:shadow-md hover:border-primary/20 transition-smooth bg-card/50"
-                >
-                  <div className="flex-1">
-                    <h4 className="font-semibold">{promo.title}</h4>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Eye className="w-4 h-4" />
-                        {promo.views} vues
-                      </span>
-                      <span>Engagement: {promo.engagement}</span>
+            {topPromotions.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                Aucune promotion pour le moment
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {topPromotions.map((promo, index) => (
+                  <div
+                    key={promo.id}
+                    className="flex items-center justify-between p-4 border border-border/50 rounded-xl hover:shadow-md hover:border-primary/20 transition-smooth bg-card/50"
+                  >
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold">{promo.title}</h4>
+                        <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Eye className="w-4 h-4" />
+                            {promo.views_count} vues
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MousePointerClick className="w-4 h-4" />
+                            {promo.clicks_count} clics
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <span
-                      className={`px-4 py-1.5 rounded-full text-xs font-semibold ${
-                        promo.status === "Actif"
-                          ? "bg-green-500/10 text-green-600 border border-green-500/20"
-                          : "bg-blue-500/10 text-blue-600 border border-blue-500/20"
-                      }`}
+                    <Badge 
+                      className={
+                        promo.status === "active" 
+                          ? "bg-green-100 text-green-700 hover:bg-green-100"
+                          : promo.status === "scheduled"
+                          ? "bg-blue-100 text-blue-700 hover:bg-blue-100"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-100"
+                      }
                     >
-                      {promo.status}
-                    </span>
+                      {promo.status === "active" ? "Actif" : 
+                       promo.status === "scheduled" ? "Programmé" : 
+                       promo.status === "expired" ? "Expiré" : "Brouillon"}
+                    </Badge>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Social Media Status */}
+        {/* Right Sidebar */}
         <div className="space-y-6">
+          {/* Social Media Status */}
           <Card className="glass-card border-border/50">
             <CardHeader>
               <CardTitle>Réseaux sociaux</CardTitle>
-              <CardDescription>Statut des connexions</CardDescription>
+              <CardDescription>
+                {isCentral ? 'Comptes connectés' : 'Statut des connexions'}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card/50 transition-smooth hover:shadow-md">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500/10 to-pink-500/5 flex items-center justify-center">
-                    <Instagram className="w-5 h-5 text-pink-500" />
-                  </div>
-                  <div>
-                    <p className="font-semibold">Instagram</p>
-                    <p className="text-sm text-muted-foreground">567 followers</p>
-                  </div>
-                </div>
-                <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-glow"></div>
-              </div>
-              <div className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card/50 transition-smooth hover:shadow-md">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600/10 to-blue-600/5 flex items-center justify-center">
-                    <Facebook className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="font-semibold">Facebook</p>
-                    <p className="text-sm text-muted-foreground">667 followers</p>
-                  </div>
-                </div>
-                <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-glow"></div>
-              </div>
+              {!firstStore && !isCentral ? (
+                <p className="text-center text-muted-foreground py-8 text-sm">
+                  Configurez votre premier magasin
+                </p>
+              ) : (
+                <>
+                  {connections.find(c => c.platform === 'instagram') ? (
+                    <div className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card/50 transition-smooth hover:shadow-md">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500/10 to-pink-500/5 flex items-center justify-center">
+                          <Instagram className="w-5 h-5 text-pink-500" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">Instagram</p>
+                          <p className="text-sm text-muted-foreground">
+                            {connections.find(c => c.platform === 'instagram')?.followers_count || 0} followers
+                          </p>
+                        </div>
+                      </div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-glow"></div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card/50 transition-smooth hover:shadow-md opacity-60">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500/10 to-pink-500/5 flex items-center justify-center">
+                          <Instagram className="w-5 h-5 text-pink-500" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">Instagram</p>
+                          <p className="text-sm text-muted-foreground">Non connecté</p>
+                        </div>
+                      </div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-gray-400"></div>
+                    </div>
+                  )}
+
+                  {connections.find(c => c.platform === 'facebook') ? (
+                    <div className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card/50 transition-smooth hover:shadow-md">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600/10 to-blue-600/5 flex items-center justify-center">
+                          <Facebook className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">Facebook</p>
+                          <p className="text-sm text-muted-foreground">
+                            {connections.find(c => c.platform === 'facebook')?.followers_count || 0} followers
+                          </p>
+                        </div>
+                      </div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-glow"></div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card/50 transition-smooth hover:shadow-md opacity-60">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600/10 to-blue-600/5 flex items-center justify-center">
+                          <Facebook className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">Facebook</p>
+                          <p className="text-sm text-muted-foreground">Non connecté</p>
+                        </div>
+                      </div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-gray-400"></div>
+                    </div>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
 
+          {/* Tip of the day */}
           <Card className="gradient-primary text-white border-0 shadow-glow">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
@@ -138,12 +307,19 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm opacity-95 leading-relaxed">
-                Publiez vos promotions entre 18h et 20h pour maximiser l'engagement de votre audience !
+                {connectedCount === 0 
+                  ? "Connectez vos réseaux sociaux pour diffuser automatiquement vos promotions et maximiser votre visibilité !"
+                  : "Publiez vos promotions entre 18h et 20h pour maximiser l'engagement de votre audience !"}
               </p>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      <CreatePromotionDialog 
+        open={createDialogOpen} 
+        onOpenChange={setCreateDialogOpen} 
+      />
     </div>
   );
 };
