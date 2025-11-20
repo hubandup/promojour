@@ -28,8 +28,6 @@ export default function StoreFrontend() {
 
         if (storeError) throw storeError;
         setStore(storeData);
-        
-        console.log("Store data:", storeData);
 
         // Fetch organization logo
         if (storeData.organization_id) {
@@ -39,11 +37,8 @@ export default function StoreFrontend() {
             .eq("id", storeData.organization_id)
             .single();
           
-          console.log("Organization data:", orgData);
-          
           if (orgData?.logo_url) {
             setOrgLogo(orgData.logo_url);
-            console.log("Logo set to:", orgData.logo_url);
           }
         }
       } catch (error) {
@@ -172,7 +167,6 @@ export default function StoreFrontend() {
                 src={orgLogo}
                 alt={`Logo ${store.name}`}
                 className="w-20 h-20 rounded-lg object-cover border border-border"
-                onError={(e) => console.error("Error loading logo:", e)}
               />
             ) : (
               <div className="w-20 h-20 rounded-lg bg-primary/10 flex items-center justify-center border border-border">
