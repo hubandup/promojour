@@ -30,26 +30,35 @@ import {
 
 interface Store {
   id: string;
+  organization_id: string;
   name: string;
   description: string | null;
+  logo_url: string | null;
+  cover_image_url: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  postal_code: string | null;
   city: string | null;
+  country: string | null;
   phone: string | null;
   email: string | null;
-  address_line1: string | null;
-  postal_code: string | null;
-  is_active: boolean;
   website_url: string | null;
+  google_maps_url: string | null;
   opening_hours: any;
+  is_active: boolean;
 }
 
 const StoreDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const qrRef = useRef<HTMLDivElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const [store, setStore] = useState<Store | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Store | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [orgLogo, setOrgLogo] = useState<string | null>(null);
 
   // Horaires par défaut
   const defaultHours = {
@@ -77,6 +86,19 @@ const StoreDetail = () => {
       if (error) throw error;
       setStore(data);
       setFormData(data);
+
+      // Fetch organization logo
+      if (data.organization_id) {
+        const { data: orgData } = await supabase
+          .from("organizations")
+          .select("logo_url")
+          .eq("id", data.organization_id)
+          .single();
+        
+        if (orgData?.logo_url) {
+          setOrgLogo(orgData.logo_url);
+        }
+      }
     } catch (error) {
       console.error("Erreur:", error);
       toast.error("Impossible de charger le magasin");
@@ -94,12 +116,16 @@ const StoreDetail = () => {
         .update({
           name: formData.name,
           description: formData.description,
+          cover_image_url: formData.cover_image_url,
+          address_line1: formData.address_line1,
+          address_line2: formData.address_line2,
+          postal_code: formData.postal_code,
           city: formData.city,
+          country: formData.country,
           phone: formData.phone,
           email: formData.email,
-          address_line1: formData.address_line1,
-          postal_code: formData.postal_code,
           website_url: formData.website_url,
+          google_maps_url: formData.google_maps_url,
           opening_hours: formData.opening_hours,
         })
         .eq("id", id);
@@ -111,6 +137,36 @@ const StoreDetail = () => {
     } catch (error) {
       console.error("Erreur:", error);
       toast.error("Erreur lors de la modification");
+    }
+  };
+
+  const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !id) return;
+
+    try {
+      setUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${id}-cover-${Date.now()}.${fileExt}`;
+      const filePath = `stores/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('promotion-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('promotion-images')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData!, cover_image_url: publicUrl });
+      toast.success("Image de couverture uploadée");
+    } catch (error) {
+      console.error("Erreur upload:", error);
+      toast.error("Erreur lors de l'upload");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -284,6 +340,60 @@ const StoreDetail = () => {
             </TabsList>
 
             <TabsContent value="info" className="space-y-6">
+              {/* Logo enseigne + Cover Image */}
+              <Card className="glass-card border-border/50">
+                <CardHeader>
+                  <CardTitle>Visuels</CardTitle>
+                  <CardDescription>Logo de l'enseigne et image de couverture</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Logo enseigne (read-only) */}
+                  {orgLogo && (
+                    <div className="space-y-2">
+                      <Label>Logo de l'enseigne</Label>
+                      <div className="flex items-center gap-4">
+                        <img src={orgLogo} alt="Logo enseigne" className="w-16 h-16 rounded-lg object-cover border border-border" />
+                        <p className="text-sm text-muted-foreground">Logo de l'organisation</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cover image upload */}
+                  <div className="space-y-2">
+                    <Label>Image de couverture</Label>
+                    {formData?.cover_image_url && (
+                      <div className="w-full h-48 rounded-xl overflow-hidden border border-border mb-2">
+                        <img
+                          src={formData.cover_image_url}
+                          alt="Couverture"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    {isEditing && (
+                      <>
+                        <input
+                          ref={coverInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleCoverUpload}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => coverInputRef.current?.click()}
+                          disabled={uploading}
+                          className="rounded-xl"
+                        >
+                          {uploading ? "Upload en cours..." : "Changer l'image de couverture"}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card className="glass-card border-border/50">
                 <CardHeader>
                   <CardTitle>Informations générales</CardTitle>
@@ -326,6 +436,24 @@ const StoreDetail = () => {
                           />
                         </div>
                       </div>
+                      <div className="space-y-2">
+                        <Label>Site web</Label>
+                        <Input
+                          value={formData?.website_url || ""}
+                          onChange={(e) => setFormData({ ...formData!, website_url: e.target.value })}
+                          className="rounded-xl"
+                          placeholder="https://..."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>URL Google Maps</Label>
+                        <Input
+                          value={formData?.google_maps_url || ""}
+                          onChange={(e) => setFormData({ ...formData!, google_maps_url: e.target.value })}
+                          className="rounded-xl"
+                          placeholder="https://maps.google.com/..."
+                        />
+                      </div>
                     </>
                   ) : (
                     <>
@@ -367,10 +495,18 @@ const StoreDetail = () => {
                   {isEditing ? (
                     <>
                       <div className="space-y-2">
-                        <Label>Adresse</Label>
+                        <Label>Adresse ligne 1</Label>
                         <Input
                           value={formData?.address_line1 || ""}
                           onChange={(e) => setFormData({ ...formData!, address_line1: e.target.value })}
+                          className="rounded-xl"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Adresse ligne 2 (complément)</Label>
+                        <Input
+                          value={formData?.address_line2 || ""}
+                          onChange={(e) => setFormData({ ...formData!, address_line2: e.target.value })}
                           className="rounded-xl"
                         />
                       </div>
@@ -392,15 +528,25 @@ const StoreDetail = () => {
                           />
                         </div>
                       </div>
+                      <div className="space-y-2">
+                        <Label>Pays</Label>
+                        <Input
+                          value={formData?.country || ""}
+                          onChange={(e) => setFormData({ ...formData!, country: e.target.value })}
+                          className="rounded-xl"
+                        />
+                      </div>
                     </>
                   ) : (
                     <div className="flex items-start gap-3">
                       <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                       <div>
                         {store.address_line1 && <p>{store.address_line1}</p>}
+                        {store.address_line2 && <p>{store.address_line2}</p>}
                         <p>
                           {store.postal_code} {store.city}
                         </p>
+                        {store.country && <p>{store.country}</p>}
                       </div>
                     </div>
                   )}
@@ -523,47 +669,6 @@ const StoreDetail = () => {
 
         {/* Right Column */}
         <div className="space-y-6">
-          <Card className="gradient-primary text-white border-0 shadow-glow">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <QrCode className="w-5 h-5" />
-                QR Code du magasin
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div 
-                ref={qrRef}
-                className="aspect-square bg-white rounded-xl flex items-center justify-center mb-4 shadow-md p-4"
-              >
-                <QRCodeSVG
-                  value={`${window.location.origin}/store/${store.id}`}
-                  size={200}
-                  level="H"
-                  includeMargin={true}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  onClick={() => downloadQRCode('svg')}
-                  variant="secondary" 
-                  className="flex-1 rounded-xl hover:shadow-md transition-smooth"
-                >
-                  SVG
-                </Button>
-                <Button 
-                  onClick={() => downloadQRCode('png')}
-                  variant="secondary" 
-                  className="flex-1 rounded-xl hover:shadow-md transition-smooth"
-                >
-                  PNG
-                </Button>
-              </div>
-              <p className="text-xs text-white/70 mt-3 text-center">
-                Code unique pour ce magasin
-              </p>
-            </CardContent>
-          </Card>
-
           <Card className="glass-card border-border/50">
             <CardHeader>
               <CardTitle>Réseaux sociaux</CardTitle>
@@ -603,6 +708,47 @@ const StoreDetail = () => {
               <Button variant="outline" className="w-full rounded-xl hover:shadow-md transition-smooth mt-2">
                 Gérer les connexions
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="gradient-primary text-white border-0 shadow-glow">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <QrCode className="w-5 h-5" />
+                QR Code du magasin
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div 
+                ref={qrRef}
+                className="aspect-square bg-white rounded-xl flex items-center justify-center mb-4 shadow-md p-4"
+              >
+                <QRCodeSVG
+                  value={`${window.location.origin}/store/${store.id}`}
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => downloadQRCode('svg')}
+                  variant="secondary" 
+                  className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                >
+                  SVG
+                </Button>
+                <Button 
+                  onClick={() => downloadQRCode('png')}
+                  variant="secondary" 
+                  className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                >
+                  PNG
+                </Button>
+              </div>
+              <p className="text-xs text-white/70 mt-3 text-center">
+                Code unique pour ce magasin
+              </p>
             </CardContent>
           </Card>
         </div>
