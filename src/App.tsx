@@ -11,6 +11,7 @@ import PromotionDetail from "./pages/PromotionDetail";
 import Campaigns from "./pages/Campaigns";
 import Stats from "./pages/Stats";
 import Store from "./pages/Store";
+import Stores from "./pages/Stores";
 import Settings from "./pages/Settings";
 import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
@@ -84,6 +85,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <Store />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/stores"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Stores />
                 </AppLayout>
               </ProtectedRoute>
             }
