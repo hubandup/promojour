@@ -111,6 +111,9 @@ const StoreDetail = () => {
     if (!formData) return;
 
     try {
+      // Initialize opening_hours with defaultHours if null
+      const hoursToSave = formData.opening_hours || defaultHours;
+      
       const { error } = await supabase
         .from("stores")
         .update({
@@ -126,13 +129,16 @@ const StoreDetail = () => {
           email: formData.email,
           website_url: formData.website_url,
           google_maps_url: formData.google_maps_url,
-          opening_hours: formData.opening_hours,
+          opening_hours: hoursToSave,
         })
         .eq("id", id);
 
       if (error) throw error;
+      
+      const updatedFormData = { ...formData, opening_hours: hoursToSave };
       toast.success("Magasin modifié avec succès");
-      setStore(formData);
+      setStore(updatedFormData);
+      setFormData(updatedFormData);
       setIsEditing(false);
     } catch (error) {
       console.error("Erreur:", error);
@@ -173,15 +179,16 @@ const StoreDetail = () => {
   const updateHours = (day: string, field: string, value: string | boolean) => {
     if (!formData) return;
     const hours = formData.opening_hours || defaultHours;
+    const updatedHours = {
+      ...hours,
+      [day]: {
+        ...hours[day],
+        [field]: value,
+      },
+    };
     setFormData({
       ...formData,
-      opening_hours: {
-        ...hours,
-        [day]: {
-          ...hours[day],
-          [field]: value,
-        },
-      },
+      opening_hours: updatedHours,
     });
   };
 
