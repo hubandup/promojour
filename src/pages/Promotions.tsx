@@ -44,8 +44,9 @@ const Promotions = () => {
 
   // Vérifier les limites d'abonnement
   const maxPromotions = organization?.max_promotions;
-  const canCreatePromo = maxPromotions === null || promotions.length < maxPromotions;
-  const isNearLimit = maxPromotions && promotions.length >= maxPromotions * 0.8;
+  const canCreatePromo = loading || maxPromotions === null || promotions.length < maxPromotions;
+  const isNearLimit = !loading && maxPromotions && maxPromotions !== null && promotions.length >= maxPromotions * 0.8;
+  const isAtLimit = !loading && maxPromotions && maxPromotions !== null && promotions.length >= maxPromotions;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -81,7 +82,7 @@ const Promotions = () => {
       </div>
 
       {/* Alerts */}
-      {isNearLimit && (
+      {isNearLimit && !isAtLimit && (
         <Alert className="glass-card border-border/50">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -91,7 +92,7 @@ const Promotions = () => {
         </Alert>
       )}
 
-      {!canCreatePromo && (
+      {isAtLimit && (
         <Alert variant="destructive" className="glass-card">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
