@@ -38,7 +38,9 @@ interface EditPromotionDialogProps {
 export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess }: EditPromotionDialogProps) => {
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const {
     register,
@@ -81,7 +83,11 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
         setValue('endDate', new Date(data.end_date));
         
         if (data.image_url) {
+          setExistingImageUrl(data.image_url);
           setImagePreviews([data.image_url]);
+        } else {
+          setExistingImageUrl(null);
+          setImagePreviews([]);
         }
       }
     } catch (error) {
@@ -116,6 +122,29 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
   const onSubmit = async (data: PromotionFormData) => {
     setLoading(true);
     try {
+      let imageUrl = existingImageUrl;
+
+      // Upload new image if provided
+      if (images.length > 0) {
+        setUploading(true);
+        const file = images[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${promotionId}-${Date.now()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('promotion-images')
+          .upload(fileName, file, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('promotion-images')
+          .getPublicUrl(fileName);
+
+        imageUrl = publicUrl;
+        setUploading(false);
+      }
+
       const { error } = await supabase
         .from('promotions')
         .update({
@@ -125,12 +154,15 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
           status: data.status,
           start_date: data.startDate.toISOString(),
           end_date: data.endDate.toISOString(),
+          image_url: imageUrl,
         })
         .eq('id', promotionId);
 
       if (error) throw error;
       
       toast.success("Promotion modifiée avec succès !");
+      setImages([]);
+      setImagePreviews([]);
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
@@ -138,6 +170,7 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
       toast.error("Erreur lors de la modification de la promotion");
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   };
 
@@ -339,8 +372,8 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
             >
               Annuler
             </Button>
-            <Button type="submit" className="gradient-primary text-white shadow-glow" disabled={loading}>
-              {loading ? "Modification..." : "Modifier la promotion"}
+            <Button type="submit" className="gradient-primary text-white shadow-glow" disabled={loading || uploading}>
+              {uploading ? "Upload en cours..." : loading ? "Modification..." : "Modifier la promotion"}
             </Button>
           </div>
         </form>
