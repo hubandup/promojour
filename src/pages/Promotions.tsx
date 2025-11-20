@@ -74,19 +74,19 @@ const Promotions = () => {
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="glass-card border-border/50">
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 placeholder="Rechercher une promotion..."
-                className="pl-10"
+                className="pl-11 rounded-xl border-border/50 bg-background/50 focus:shadow-md transition-smooth"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button variant="outline">
+            <Button variant="outline" className="rounded-xl border-border/50 hover:shadow-md transition-smooth">
               <Filter className="w-4 h-4 mr-2" />
               Filtres
             </Button>
@@ -97,13 +97,14 @@ const Promotions = () => {
       {/* Promotions Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {promotions.map((promo) => (
-          <Card key={promo.id} className="hover:shadow-lg transition-smooth overflow-hidden">
-            <div className="h-48 overflow-hidden">
+          <Card key={promo.id} className="glass-card border-border/50 hover:shadow-glass hover:border-primary/20 transition-smooth overflow-hidden group">
+            <div className="h-48 overflow-hidden relative">
               <img
                 src={promo.image}
                 alt={promo.title}
-                className="w-full h-full object-cover hover:scale-105 transition-smooth"
+                className="w-full h-full object-cover group-hover:scale-110 transition-smooth duration-500"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-smooth"></div>
             </div>
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -113,25 +114,25 @@ const Promotions = () => {
               <CardDescription>{promo.category}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between p-2 rounded-lg bg-muted/30">
                   <span className="text-muted-foreground">Début:</span>
-                  <span className="font-medium">{promo.startDate}</span>
+                  <span className="font-semibold">{promo.startDate}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between p-2 rounded-lg bg-muted/30">
                   <span className="text-muted-foreground">Fin:</span>
-                  <span className="font-medium">{promo.endDate}</span>
+                  <span className="font-semibold">{promo.endDate}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between p-2 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5">
                   <span className="text-muted-foreground">Vues:</span>
-                  <span className="font-medium">{promo.views}</span>
+                  <span className="font-bold text-primary">{promo.views}</span>
                 </div>
               </div>
-              <div className="flex gap-2 mt-4">
-                <Button variant="outline" size="sm" className="flex-1">
+              <div className="flex gap-2 mt-6">
+                <Button variant="outline" size="sm" className="flex-1 rounded-xl hover:shadow-md transition-smooth">
                   Modifier
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button variant="outline" size="sm" className="flex-1 rounded-xl hover:shadow-md transition-smooth">
                   Stats
                 </Button>
               </div>

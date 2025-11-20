@@ -26,54 +26,62 @@ const Stats = () => {
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+        <Card className="glass-card border-border/50 hover:shadow-glass transition-smooth">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Impressions totales</CardTitle>
-            <Eye className="w-4 h-4 text-primary" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+              <Eye className="w-5 h-5 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">8,234</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              <span className="text-green-500 font-medium">+12.5%</span> vs mois dernier
+            <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">8,234</div>
+            <p className="text-xs text-muted-foreground mt-2">
+              <span className="text-primary font-semibold">+12.5%</span> vs mois dernier
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="glass-card border-border/50 hover:shadow-glass transition-smooth">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Clics totaux</CardTitle>
-            <MousePointer className="w-4 h-4 text-accent" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent/10 to-accent/5 flex items-center justify-center">
+              <MousePointer className="w-5 h-5 text-accent" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,456</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              <span className="text-green-500 font-medium">+8.2%</span> vs mois dernier
+            <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">1,456</div>
+            <p className="text-xs text-muted-foreground mt-2">
+              <span className="text-primary font-semibold">+8.2%</span> vs mois dernier
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="glass-card border-border/50 hover:shadow-glass transition-smooth">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Taux de clic</CardTitle>
-            <TrendingUp className="w-4 h-4 text-green-500" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/10 to-green-500/5 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-green-500" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">17.7%</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              <span className="text-green-500 font-medium">+2.1%</span> vs mois dernier
+            <div className="text-3xl font-bold text-green-500">17.7%</div>
+            <p className="text-xs text-muted-foreground mt-2">
+              <span className="text-primary font-semibold">+2.1%</span> vs mois dernier
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="glass-card border-border/50 hover:shadow-glass transition-smooth">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Portée totale</CardTitle>
-            <Users className="w-4 h-4 text-blue-500" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-500/5 flex items-center justify-center">
+              <Users className="w-5 h-5 text-blue-500" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5,642</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              <span className="text-green-500 font-medium">+15.3%</span> vs mois dernier
+            <div className="text-3xl font-bold text-blue-500">5,642</div>
+            <p className="text-xs text-muted-foreground mt-2">
+              <span className="text-primary font-semibold">+15.3%</span> vs mois dernier
             </p>
           </CardContent>
         </Card>
@@ -82,30 +90,30 @@ const Stats = () => {
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Promotions */}
-        <Card>
+        <Card className="glass-card border-border/50">
           <CardHeader>
             <CardTitle>Top 5 Promotions</CardTitle>
             <CardDescription>Meilleures performances ce mois-ci</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {topPromos.map((promo, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
+                <div key={idx} className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card/50 hover:shadow-md hover:border-primary/20 transition-smooth">
                   <div className="flex-1">
-                    <h4 className="font-medium text-sm">{promo.title}</h4>
-                    <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Eye className="w-3 h-3" />
+                    <h4 className="font-semibold text-sm">{promo.title}</h4>
+                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1.5">
+                        <Eye className="w-3.5 h-3.5" />
                         {promo.views}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <MousePointer className="w-3 h-3" />
+                      <span className="flex items-center gap-1.5">
+                        <MousePointer className="w-3.5 h-3.5" />
                         {promo.clicks}
                       </span>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm font-semibold text-primary">{promo.engagement}</div>
+                  <div className="text-right ml-4">
+                    <div className="text-sm font-bold text-primary">{promo.engagement}</div>
                     <div className="text-xs text-muted-foreground">engagement</div>
                   </div>
                 </div>
@@ -115,7 +123,7 @@ const Stats = () => {
         </Card>
 
         {/* Platform Performance */}
-        <Card>
+        <Card className="glass-card border-border/50">
           <CardHeader>
             <CardTitle>Performance par plateforme</CardTitle>
             <CardDescription>Comparaison des réseaux sociaux</CardDescription>
@@ -123,27 +131,28 @@ const Stats = () => {
           <CardContent>
             <div className="space-y-6">
               {platformStats.map((stat, idx) => (
-                <div key={idx} className="space-y-2">
+                <div key={idx} className="space-y-3 p-4 rounded-xl border border-border/50 bg-card/50 hover:shadow-md transition-smooth">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">{stat.platform}</span>
-                    <span className="text-muted-foreground">{stat.posts} publications</span>
+                    <span className="font-semibold">{stat.platform}</span>
+                    <span className="text-muted-foreground font-medium">{stat.posts} publications</span>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="h-3 bg-muted/50 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
+                          className="h-full bg-gradient-to-r from-primary via-accent to-primary rounded-full shadow-glow animate-pulse"
                           style={{ width: `${(stat.reach / 3500) * 100}%` }}
                         ></div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm font-semibold">{stat.reach}</div>
+                    <div className="text-right min-w-[60px]">
+                      <div className="text-sm font-bold text-primary">{stat.reach}</div>
                       <div className="text-xs text-muted-foreground">portée</div>
                     </div>
                   </div>
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Engagement: {stat.engagement}</span>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Engagement:</span>
+                    <span className="font-semibold text-primary">{stat.engagement}</span>
                   </div>
                 </div>
               ))}
