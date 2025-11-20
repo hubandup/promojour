@@ -22,6 +22,7 @@ import {
   ArrowLeft,
   Edit,
   Eye,
+  ExternalLink,
   MousePointer,
   TrendingUp,
   Save,
@@ -244,6 +245,14 @@ const StoreDetail = () => {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => window.open(`/magasin/${store.id}/magasin`, '_blank')}
+            className="rounded-xl"
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Voir le frontend
+          </Button>
           {isEditing ? (
             <>
               <Button variant="outline" onClick={() => setIsEditing(false)} className="rounded-xl">
