@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CreatePromotionDialog } from "@/components/CreatePromotionDialog";
+import { EditPromotionDialog } from "@/components/EditPromotionDialog";
 import { usePromotions } from "@/hooks/use-promotions";
 import { useUserData } from "@/hooks/use-user-data";
 import { useStores } from "@/hooks/use-stores";
@@ -23,6 +24,8 @@ const Promotions = () => {
   const [storeFilter, setStoreFilter] = useState<string>("all");
   const [campaignFilter, setCampaignFilter] = useState<string>("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedPromotionId, setSelectedPromotionId] = useState<string | null>(null);
 
   const { promotions, loading: promotionsLoading, refetch } = usePromotions();
   const { organization, isFree, loading: userLoading } = useUserData();
@@ -195,17 +198,31 @@ const Promotions = () => {
                     <img
                       src={promo.image_url}
                       alt={promo.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-smooth duration-500"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-smooth duration-500 cursor-pointer"
+                      onClick={() => {
+                        setSelectedPromotionId(promo.id);
+                        setEditDialogOpen(true);
+                      }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-smooth"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-smooth flex items-center justify-center">
+                      <span className="text-white font-semibold text-sm bg-black/50 px-3 py-1 rounded-lg">
+                        Cliquer pour modifier
+                      </span>
+                    </div>
                   </>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
+                  <div 
+                    className="w-full h-full flex items-center justify-center cursor-pointer"
+                    onClick={() => {
+                      setSelectedPromotionId(promo.id);
+                      setEditDialogOpen(true);
+                    }}
+                  >
                     <div className="text-center text-muted-foreground">
                       <svg className="w-16 h-16 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      <p className="text-xs">Pas d'image</p>
+                      <p className="text-xs">Cliquer pour ajouter une image</p>
                     </div>
                   </div>
                 )}
@@ -246,7 +263,15 @@ const Promotions = () => {
                   </div>
                 </div>
                 <div className="flex gap-2 mt-6">
-                  <Button variant="outline" size="sm" className="flex-1 rounded-xl hover:shadow-md transition-smooth">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                    onClick={() => {
+                      setSelectedPromotionId(promo.id);
+                      setEditDialogOpen(true);
+                    }}
+                  >
                     Modifier
                   </Button>
                   <Button 
@@ -268,6 +293,18 @@ const Promotions = () => {
         open={createDialogOpen} 
         onOpenChange={setCreateDialogOpen}
       />
+      
+      {selectedPromotionId && (
+        <EditPromotionDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          promotionId={selectedPromotionId}
+          onSuccess={() => {
+            refetch();
+            setSelectedPromotionId(null);
+          }}
+        />
+      )}
     </div>
   );
 };
