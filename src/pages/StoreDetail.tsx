@@ -84,8 +84,15 @@ const StoreDetail = () => {
         .single();
 
       if (error) throw error;
-      setStore(data);
-      setFormData(data);
+      
+      // Initialize opening_hours with defaultHours if null
+      const storeWithHours = {
+        ...data,
+        opening_hours: data.opening_hours || defaultHours
+      };
+      
+      setStore(storeWithHours);
+      setFormData(storeWithHours);
 
       // Fetch organization logo
       if (data.organization_id) {
