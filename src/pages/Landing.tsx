@@ -1,14 +1,42 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { Store, Users, TrendingUp, Zap, Instagram, Mail, QrCode, BarChart3 } from "lucide-react";
+import { Store, Users, TrendingUp, Zap, Instagram, Mail, QrCode, BarChart3, User, Settings, LogOut, ChevronDown } from "lucide-react";
 import logoPromoJour from "@/assets/logo-promojour.png";
 import { useUserData } from "@/hooks/use-user-data";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Landing = () => {
   const navigate = useNavigate();
   const { profile, loading } = useUserData();
+  const { toast } = useToast();
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de se déconnecter",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Déconnexion réussie",
+        description: "À bientôt !",
+      });
+      navigate("/");
+    }
+  };
 
   const features = [
     {
@@ -78,23 +106,55 @@ const Landing = () => {
           </div>
           <div className="flex items-center gap-3">
             {!loading && profile ? (
-              <Button 
-                variant="ghost" 
-                onClick={() => navigate("/dashboard")} 
-                className="font-medium flex items-center gap-2"
-              >
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={profile.avatar_url || undefined} />
-                  <AvatarFallback className="bg-primary/10 text-primary">
-                    {profile.first_name?.[0] || profile.last_name?.[0] || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <span>
-                  {profile.first_name && profile.last_name 
-                    ? `${profile.first_name} ${profile.last_name}`
-                    : profile.first_name || profile.last_name || "Mon compte"}
-                </span>
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className="font-medium flex items-center gap-2 hover:bg-primary/5"
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={profile.avatar_url || undefined} />
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {profile.first_name?.[0] || profile.last_name?.[0] || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span>
+                      {profile.first_name && profile.last_name 
+                        ? `${profile.first_name} ${profile.last_name}`
+                        : profile.first_name || profile.last_name || "Mon compte"}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 glass-card border-border/50 z-50 bg-background" align="end">
+                  <DropdownMenuLabel className="font-medium">
+                    Mon compte
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-border/50" />
+                  <DropdownMenuItem 
+                    onClick={() => navigate("/dashboard")}
+                    className="cursor-pointer hover:bg-primary/5"
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Mon compte</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => navigate("/settings")}
+                    className="cursor-pointer hover:bg-primary/5"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Paramètres</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-border/50" />
+                  <DropdownMenuItem 
+                    onClick={handleSignOut}
+                    className="cursor-pointer hover:bg-destructive/10 text-destructive focus:text-destructive"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Déconnexion</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <>
                 <Button variant="ghost" onClick={() => navigate("/auth")} className="font-medium">
