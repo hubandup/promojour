@@ -199,12 +199,14 @@ const Promotions = () => {
                       src={promo.image_url}
                       alt={promo.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-smooth duration-500 cursor-pointer"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('Image clicked, promotion ID:', promo.id);
                         setSelectedPromotionId(promo.id);
                         setEditDialogOpen(true);
                       }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-smooth flex items-center justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-smooth flex items-center justify-center pointer-events-none">
                       <span className="text-white font-semibold text-sm bg-black/50 px-3 py-1 rounded-lg">
                         Cliquer pour modifier
                       </span>
@@ -213,7 +215,9 @@ const Promotions = () => {
                 ) : (
                   <div 
                     className="w-full h-full flex items-center justify-center cursor-pointer"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log('No image placeholder clicked, promotion ID:', promo.id);
                       setSelectedPromotionId(promo.id);
                       setEditDialogOpen(true);
                     }}
@@ -267,7 +271,9 @@ const Promotions = () => {
                     variant="outline" 
                     size="sm" 
                     className="flex-1 rounded-xl hover:shadow-md transition-smooth"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log('Modifier button clicked, promotion ID:', promo.id);
                       setSelectedPromotionId(promo.id);
                       setEditDialogOpen(true);
                     }}
@@ -278,7 +284,10 @@ const Promotions = () => {
                     variant="outline" 
                     size="sm" 
                     className="flex-1 rounded-xl hover:shadow-md transition-smooth"
-                    onClick={() => navigate(`/promotions/${promo.id}`)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/promotions/${promo.id}`);
+                    }}
                   >
                     Détails
                   </Button>
@@ -297,9 +306,16 @@ const Promotions = () => {
       {selectedPromotionId && (
         <EditPromotionDialog
           open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
+          onOpenChange={(open) => {
+            console.log('Dialog onOpenChange:', open);
+            setEditDialogOpen(open);
+            if (!open) {
+              setSelectedPromotionId(null);
+            }
+          }}
           promotionId={selectedPromotionId}
           onSuccess={() => {
+            console.log('Edit success, refreshing...');
             refetch();
             setSelectedPromotionId(null);
           }}
