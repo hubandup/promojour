@@ -1,0 +1,284 @@
+import { useParams, useNavigate } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Eye, MousePointer, Share2, Calendar, TrendingUp, MapPin } from "lucide-react";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
+
+const PromotionDetail = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  // Mock data - to be replaced with real data
+  const promotion = {
+    id: id,
+    title: "Réduction 30% sur les chaussures",
+    category: "Mode",
+    status: "active",
+    startDate: "01/01/2025",
+    endDate: "15/01/2025",
+    description: "Profitez de 30% de réduction sur toute notre collection de chaussures. Offre valable en magasin et en ligne.",
+    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
+    views: 523,
+    clicks: 87,
+    conversionRate: "16.6%",
+  };
+
+  const performanceData = [
+    { date: "01/01", views: 45, clicks: 8 },
+    { date: "02/01", views: 68, clicks: 12 },
+    { date: "03/01", views: 92, clicks: 15 },
+    { date: "04/01", views: 71, clicks: 11 },
+    { date: "05/01", views: 83, clicks: 14 },
+    { date: "06/01", views: 97, clicks: 16 },
+    { date: "07/01", views: 67, clicks: 11 },
+  ];
+
+  const platformData = [
+    { platform: "Instagram", impressions: 234 },
+    { platform: "Facebook", impressions: 189 },
+    { platform: "Google", impressions: 100 },
+  ];
+
+  const historyEvents = [
+    { date: "07/01/2025 14:30", action: "Modification", user: "Marie Dubois", description: "Mise à jour de l'image" },
+    { date: "05/01/2025 10:15", action: "Publication", user: "Jean Martin", description: "Publiée sur Instagram" },
+    { date: "03/01/2025 09:00", action: "Publication", user: "Jean Martin", description: "Publiée sur Facebook" },
+    { date: "01/01/2025 08:00", action: "Activation", user: "Marie Dubois", description: "Promotion activée" },
+  ];
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "active":
+        return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Actif</Badge>;
+      case "scheduled":
+        return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Programmé</Badge>;
+      case "expired":
+        return <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">Expiré</Badge>;
+      default:
+        return <Badge>Brouillon</Badge>;
+    }
+  };
+
+  const chartConfig = {
+    views: {
+      label: "Vues",
+      color: "hsl(var(--primary))",
+    },
+    clicks: {
+      label: "Clics",
+      color: "hsl(var(--accent))",
+    },
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/promotions")}
+          className="rounded-xl hover:shadow-md transition-smooth"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold">{promotion.title}</h1>
+            {getStatusBadge(promotion.status)}
+          </div>
+          <p className="text-muted-foreground">{promotion.category}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" className="rounded-xl hover:shadow-md transition-smooth">
+            <Share2 className="w-4 h-4 mr-2" />
+            Partager
+          </Button>
+          <Button className="gradient-primary text-white shadow-glow">
+            Modifier
+          </Button>
+        </div>
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Image and Details */}
+        <div className="lg:col-span-1 space-y-6">
+          <Card className="glass-card border-border/50 overflow-hidden">
+            <div className="aspect-square overflow-hidden">
+              <img
+                src={promotion.image}
+                alt={promotion.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Période:</span>
+                  <span className="font-semibold">{promotion.startDate} - {promotion.endDate}</span>
+                </div>
+                <div className="p-4 rounded-xl bg-muted/30">
+                  <p className="text-sm text-muted-foreground mb-2">Description</p>
+                  <p className="text-sm">{promotion.description}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column - Stats and Performance */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* KPIs */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="glass-card border-border/50 hover:shadow-glass transition-smooth">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Vues totales</CardTitle>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                  <Eye className="w-5 h-5 text-primary" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  {promotion.views}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  <span className="text-primary font-semibold">+12.3%</span> vs semaine dernière
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="glass-card border-border/50 hover:shadow-glass transition-smooth">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Clics</CardTitle>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent/10 to-accent/5 flex items-center justify-center">
+                  <MousePointer className="w-5 h-5 text-accent" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  {promotion.clicks}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  <span className="text-primary font-semibold">+8.7%</span> vs semaine dernière
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="glass-card border-border/50 hover:shadow-glass transition-smooth">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Taux de conversion</CardTitle>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/10 to-green-500/5 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-green-500" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-green-500">
+                  {promotion.conversionRate}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  <span className="text-primary font-semibold">+2.4%</span> vs semaine dernière
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Performance Chart */}
+          <Card className="glass-card border-border/50">
+            <CardHeader>
+              <CardTitle>Performance sur 7 jours</CardTitle>
+              <CardDescription>Évolution des vues et clics</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={performanceData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="date" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line
+                      type="monotone"
+                      dataKey="views"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      dot={{ fill: "hsl(var(--primary))", r: 4 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="clicks"
+                      stroke="hsl(var(--accent))"
+                      strokeWidth={2}
+                      dot={{ fill: "hsl(var(--accent))", r: 4 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          {/* Platform Performance */}
+          <Card className="glass-card border-border/50">
+            <CardHeader>
+              <CardTitle>Performance par plateforme</CardTitle>
+              <CardDescription>Impressions par canal de diffusion</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={platformData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="platform" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar
+                      dataKey="impressions"
+                      fill="hsl(var(--primary))"
+                      radius={[8, 8, 0, 0]}
+                      className="fill-primary"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          {/* History */}
+          <Card className="glass-card border-border/50">
+            <CardHeader>
+              <CardTitle>Historique</CardTitle>
+              <CardDescription>Toutes les actions sur cette promotion</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {historyEvents.map((event, idx) => (
+                  <div
+                    key={idx}
+                    className="flex gap-4 p-4 rounded-xl border border-border/50 bg-card/50 hover:shadow-md transition-smooth"
+                  >
+                    <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                      <MapPin className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="font-semibold text-sm">{event.action}</h4>
+                        <span className="text-xs text-muted-foreground">{event.date}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{event.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Par {event.user}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PromotionDetail;

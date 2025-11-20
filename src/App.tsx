@@ -7,6 +7,7 @@ import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Promotions from "./pages/Promotions";
+import PromotionDetail from "./pages/PromotionDetail";
 import Campaigns from "./pages/Campaigns";
 import Stats from "./pages/Stats";
 import Store from "./pages/Store";
@@ -43,6 +44,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <Promotions />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/promotions/:id"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <PromotionDetail />
                 </AppLayout>
               </ProtectedRoute>
             }
