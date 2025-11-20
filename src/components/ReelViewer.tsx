@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Store } from "@/hooks/use-stores";
 import { Promotion } from "@/hooks/use-promotions";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +14,8 @@ interface ReelViewerProps {
 }
 
 export function ReelViewer({ store, promotions, previewMode = false }: ReelViewerProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [viewTracked, setViewTracked] = useState<Set<string>>(new Set());
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
@@ -20,6 +23,11 @@ export function ReelViewer({ store, promotions, previewMode = false }: ReelViewe
   const touchStartY = useRef<number>(0);
 
   const currentPromo = promotions[currentIndex];
+
+  const handleLogoClick = () => {
+    if (previewMode) return;
+    navigate(`${location.pathname}/magasin`);
+  };
 
   // Track view for current promotion
   const trackView = useCallback(async (promoId: string) => {
@@ -181,12 +189,18 @@ export function ReelViewer({ store, promotions, previewMode = false }: ReelViewe
           {/* Top gradient with store info */}
           <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 via-black/30 to-transparent p-4 pt-safe z-10">
             <div className="flex items-center gap-3">
-              <Avatar className="h-12 w-12 border-2 border-white">
-                <AvatarImage src={store.logo_url || ""} alt={store.name} />
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  {store.name.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <button
+                onClick={handleLogoClick}
+                className={`${!previewMode ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+                disabled={previewMode}
+              >
+                <Avatar className="h-12 w-12 border-2 border-white">
+                  <AvatarImage src={store.logo_url || ""} alt={store.name} />
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {store.name.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </button>
               <div className="flex-1">
                 <h2 className="font-semibold text-white text-lg leading-tight">
                   {store.name}
