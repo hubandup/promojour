@@ -18,11 +18,31 @@ export function ReelViewer({ store, promotions, previewMode = false }: ReelViewe
   const location = useLocation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [viewTracked, setViewTracked] = useState<Set<string>>(new Set());
+  const [orgLogo, setOrgLogo] = useState<string | null>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
 
   const currentPromo = promotions[currentIndex];
+
+  // Fetch organization logo
+  useEffect(() => {
+    const fetchOrgLogo = async () => {
+      if (!store.organization_id) return;
+      
+      const { data: orgData } = await supabase
+        .from("organizations")
+        .select("logo_url")
+        .eq("id", store.organization_id)
+        .single();
+      
+      if (orgData?.logo_url) {
+        setOrgLogo(orgData.logo_url);
+      }
+    };
+
+    fetchOrgLogo();
+  }, [store.organization_id]);
 
   const handleLogoClick = () => {
     if (previewMode) return;
@@ -195,7 +215,7 @@ export function ReelViewer({ store, promotions, previewMode = false }: ReelViewe
                 disabled={previewMode}
               >
                 <Avatar className="h-12 w-12 border-2 border-white">
-                  <AvatarImage src={store.logo_url || ""} alt={store.name} />
+                  <AvatarImage src={orgLogo || store.logo_url || ""} alt={store.name} />
                   <AvatarFallback className="bg-primary text-primary-foreground">
                     {store.name.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
