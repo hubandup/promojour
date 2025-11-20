@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { CreatePromotionDialog } from "@/components/CreatePromotionDialog";
 
 const Promotions = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
@@ -132,8 +134,13 @@ const Promotions = () => {
                 <Button variant="outline" size="sm" className="flex-1 rounded-xl hover:shadow-md transition-smooth">
                   Modifier
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1 rounded-xl hover:shadow-md transition-smooth">
-                  Stats
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                  onClick={() => navigate(`/promotions/${promo.id}`)}
+                >
+                  Détails
                 </Button>
               </div>
             </CardContent>
