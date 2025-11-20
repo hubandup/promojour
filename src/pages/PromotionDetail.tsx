@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,25 +7,41 @@ import { ArrowLeft, Eye, MousePointer, Share2, Calendar, TrendingUp, MapPin } fr
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import { EditPromotionDialog } from "@/components/EditPromotionDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const PromotionDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [promotion, setPromotion] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data - to be replaced with real data
-  const promotion = {
-    id: id,
-    title: "Réduction 30% sur les chaussures",
-    category: "Mode",
-    status: "active",
-    startDate: "01/01/2025",
-    endDate: "15/01/2025",
-    description: "Profitez de 30% de réduction sur toute notre collection de chaussures. Offre valable en magasin et en ligne.",
-    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
-    views: 523,
-    clicks: 87,
-    conversionRate: "16.6%",
+  useEffect(() => {
+    if (id) {
+      fetchPromotion();
+    }
+  }, [id]);
+
+  const fetchPromotion = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('promotions')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      setPromotion(data);
+    } catch (error) {
+      console.error('Error fetching promotion:', error);
+      toast.error("Erreur lors du chargement de la promotion");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const performanceData = [
@@ -75,6 +91,39 @@ const PromotionDetail = () => {
     },
   };
 
+  const conversionRate = promotion?.clicks_count && promotion?.views_count 
+    ? ((promotion.clicks_count / promotion.views_count) * 100).toFixed(1) 
+    : "0";
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10 rounded-xl" />
+          <Skeleton className="h-10 flex-1" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-96" />
+          <div className="lg:col-span-2 space-y-6">
+            <Skeleton className="h-32" />
+            <Skeleton className="h-96" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!promotion) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <h2 className="text-2xl font-bold">Promotion introuvable</h2>
+        <Button onClick={() => navigate("/promotions")}>
+          Retour aux promotions
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -92,7 +141,7 @@ const PromotionDetail = () => {
             <h1 className="text-3xl font-bold">{promotion.title}</h1>
             {getStatusBadge(promotion.status)}
           </div>
-          <p className="text-muted-foreground">{promotion.category}</p>
+          <p className="text-muted-foreground">{promotion.category || "Non catégorisé"}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="rounded-xl hover:shadow-md transition-smooth">
@@ -115,7 +164,7 @@ const PromotionDetail = () => {
           <Card className="glass-card border-border/50 overflow-hidden">
             <div className="aspect-square overflow-hidden">
               <img
-                src={promotion.image}
+                src={promotion.image_url || "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800"}
                 alt={promotion.title}
                 className="w-full h-full object-cover"
               />
@@ -125,12 +174,16 @@ const PromotionDetail = () => {
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span className="text-muted-foreground">Période:</span>
-                  <span className="font-semibold">{promotion.startDate} - {promotion.endDate}</span>
+                  <span className="font-semibold">
+                    {format(new Date(promotion.start_date), "dd/MM/yyyy", { locale: fr })} - {format(new Date(promotion.end_date), "dd/MM/yyyy", { locale: fr })}
+                  </span>
                 </div>
-                <div className="p-4 rounded-xl bg-muted/30">
-                  <p className="text-sm text-muted-foreground mb-2">Description</p>
-                  <p className="text-sm">{promotion.description}</p>
-                </div>
+                {promotion.description && (
+                  <div className="p-4 rounded-xl bg-muted/30">
+                    <p className="text-sm text-muted-foreground mb-2">Description</p>
+                    <p className="text-sm">{promotion.description}</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -149,10 +202,10 @@ const PromotionDetail = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  {promotion.views}
+                  {promotion.views_count || 0}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  <span className="text-primary font-semibold">+12.3%</span> vs semaine dernière
+                  Total des vues
                 </p>
               </CardContent>
             </Card>
@@ -166,10 +219,10 @@ const PromotionDetail = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  {promotion.clicks}
+                  {promotion.clicks_count || 0}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  <span className="text-primary font-semibold">+8.7%</span> vs semaine dernière
+                  Total des clics
                 </p>
               </CardContent>
             </Card>
@@ -183,10 +236,10 @@ const PromotionDetail = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-green-500">
-                  {promotion.conversionRate}
+                  {conversionRate}%
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  <span className="text-primary font-semibold">+2.4%</span> vs semaine dernière
+                  Taux de conversion
                 </p>
               </CardContent>
             </Card>
@@ -289,8 +342,7 @@ const PromotionDetail = () => {
         onOpenChange={setEditDialogOpen}
         promotionId={id || ""}
         onSuccess={() => {
-          // Refresh promotion data
-          window.location.reload();
+          fetchPromotion();
         }}
       />
     </div>
