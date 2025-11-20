@@ -3,13 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, AlertCircle } from "lucide-react";
+import { Plus, Search, AlertCircle, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CreatePromotionDialog } from "@/components/CreatePromotionDialog";
 import { EditPromotionDialog } from "@/components/EditPromotionDialog";
+import { ReelPreviewDialog } from "@/components/ReelPreviewDialog";
 import { usePromotions } from "@/hooks/use-promotions";
 import { useUserData } from "@/hooks/use-user-data";
 import { useStores } from "@/hooks/use-stores";
@@ -25,7 +26,9 @@ const Promotions = () => {
   const [campaignFilter, setCampaignFilter] = useState<string>("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [selectedPromotionId, setSelectedPromotionId] = useState<string | null>(null);
+  const [previewPromotion, setPreviewPromotion] = useState<any>(null);
 
   const { promotions, loading: promotionsLoading, refetch } = usePromotions();
   const { organization, isFree, loading: userLoading } = useUserData();
@@ -273,6 +276,19 @@ const Promotions = () => {
                     className="flex-1 rounded-xl hover:shadow-md transition-smooth"
                     onClick={(e) => {
                       e.stopPropagation();
+                      setPreviewPromotion(promo);
+                      setPreviewDialogOpen(true);
+                    }}
+                  >
+                    <Eye className="w-4 h-4 mr-1" />
+                    Aperçu
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                    onClick={(e) => {
+                      e.stopPropagation();
                       console.log('Modifier button clicked, promotion ID:', promo.id);
                       setSelectedPromotionId(promo.id);
                       setEditDialogOpen(true);
@@ -319,6 +335,20 @@ const Promotions = () => {
             refetch();
             setSelectedPromotionId(null);
           }}
+        />
+      )}
+
+      {previewPromotion && (
+        <ReelPreviewDialog
+          open={previewDialogOpen}
+          onOpenChange={(open) => {
+            setPreviewDialogOpen(open);
+            if (!open) {
+              setPreviewPromotion(null);
+            }
+          }}
+          store={stores.find(s => s.id === previewPromotion.store_id) || null}
+          promotion={previewPromotion}
         />
       )}
     </div>

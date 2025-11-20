@@ -9,9 +9,10 @@ import { ChevronUp, ChevronDown, ExternalLink } from "lucide-react";
 interface ReelViewerProps {
   store: Store;
   promotions: Promotion[];
+  previewMode?: boolean;
 }
 
-export function ReelViewer({ store, promotions }: ReelViewerProps) {
+export function ReelViewer({ store, promotions, previewMode = false }: ReelViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [viewTracked, setViewTracked] = useState<Set<string>>(new Set());
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
@@ -22,7 +23,7 @@ export function ReelViewer({ store, promotions }: ReelViewerProps) {
 
   // Track view for current promotion
   const trackView = useCallback(async (promoId: string) => {
-    if (viewTracked.has(promoId)) return;
+    if (previewMode || viewTracked.has(promoId)) return; // Skip in preview mode or if already tracked
 
     try {
       const { data: promo } = await supabase
@@ -41,10 +42,12 @@ export function ReelViewer({ store, promotions }: ReelViewerProps) {
     } catch (error) {
       console.error("Error tracking view:", error);
     }
-  }, [viewTracked]);
+  }, [viewTracked, previewMode]);
 
   // Track click on CTA
   const trackClick = async () => {
+    if (previewMode) return; // Skip in preview mode
+    
     try {
       const { data: promo } = await supabase
         .from("promotions")
