@@ -14,6 +14,7 @@ import Store from "./pages/Store";
 import Stores from "./pages/Stores";
 import StoreDetail from "./pages/StoreDetail";
 import StoreReels from "./pages/StoreReels";
+import StoreFrontend from "./pages/StoreFrontend";
 import Settings from "./pages/Settings";
 import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
@@ -31,7 +32,12 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
+            {/* Public store frontend routes */}
             <Route path="/store/:storeId/reels" element={<StoreReels />} />
+            <Route path="/enseigne/magasin/:storeId" element={<StoreReels />} />
+            <Route path="/magasin/:storeId" element={<StoreReels />} />
+            <Route path="/enseigne/magasin/:storeId/magasin" element={<StoreFrontend />} />
+            <Route path="/magasin/:storeId/magasin" element={<StoreFrontend />} />
             <Route
               path="/dashboard"
               element={
