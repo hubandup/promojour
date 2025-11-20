@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,7 @@ interface Store {
 const StoreDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const qrRef = useRef<HTMLDivElement>(null);
   const [store, setStore] = useState<Store | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -124,6 +126,65 @@ const StoreDetail = () => {
         },
       },
     });
+  };
+
+  const downloadQRCode = (format: 'svg' | 'png') => {
+    if (!qrRef.current || !store) return;
+
+    const svg = qrRef.current.querySelector('svg');
+    if (!svg) return;
+
+    const storeUrl = `${window.location.origin}/store/${store.id}`;
+    const fileName = `qr-${store.name.toLowerCase().replace(/\s+/g, '-')}.${format}`;
+
+    if (format === 'svg') {
+      // Download SVG
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+      const link = document.createElement('a');
+      link.href = svgUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(svgUrl);
+      toast.success('QR Code SVG téléchargé');
+    } else {
+      // Download PNG
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+      const img = new Image();
+
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        
+        canvas.toBlob((blob) => {
+          if (!blob) return;
+          const pngUrl = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = pngUrl;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(pngUrl);
+          URL.revokeObjectURL(url);
+          toast.success('QR Code PNG téléchargé');
+        });
+      };
+
+      img.src = url;
+    }
   };
 
   if (loading) {
@@ -461,12 +522,33 @@ const StoreDetail = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="aspect-square bg-white rounded-xl flex items-center justify-center mb-4 shadow-md">
-                <QrCode className="w-32 h-32 text-primary" />
+              <div 
+                ref={qrRef}
+                className="aspect-square bg-white rounded-xl flex items-center justify-center mb-4 shadow-md p-4"
+              >
+                <QRCodeSVG
+                  value={`${window.location.origin}/store/${store.id}`}
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                />
               </div>
-              <Button variant="secondary" className="w-full rounded-xl hover:shadow-md transition-smooth">
-                Télécharger le QR Code
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => downloadQRCode('svg')}
+                  variant="secondary" 
+                  className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                >
+                  SVG
+                </Button>
+                <Button 
+                  onClick={() => downloadQRCode('png')}
+                  variant="secondary" 
+                  className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                >
+                  PNG
+                </Button>
+              </div>
               <p className="text-xs text-white/70 mt-3 text-center">
                 Code unique pour ce magasin
               </p>
