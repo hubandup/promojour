@@ -232,18 +232,18 @@ const Stores = () => {
                   <Button
                     onClick={() => navigate(`/stores/${store.id}`)}
                     variant="outline"
-                    className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                    size="icon"
+                    className="rounded-xl hover:shadow-md transition-smooth"
                   >
-                    <Eye className="w-4 h-4 mr-2" />
-                    Détails
+                    <Eye className="w-4 h-4" />
                   </Button>
                   <Button
                     onClick={() => handleEdit(store)}
                     variant="outline"
-                    className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                    size="icon"
+                    className="rounded-xl hover:shadow-md transition-smooth"
                   >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Modifier
+                    <Edit className="w-4 h-4" />
                   </Button>
                 </div>
               </CardContent>
