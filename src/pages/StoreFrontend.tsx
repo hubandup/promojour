@@ -96,8 +96,7 @@ export default function StoreFrontend() {
   const fullAddress = [
     store.address_line1,
     store.address_line2,
-    store.postal_code,
-    store.city,
+    `${store.postal_code || ''} ${store.city || ''}`.trim(),
     store.country
   ].filter(Boolean).join(', ');
 
