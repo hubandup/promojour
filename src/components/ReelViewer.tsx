@@ -1,0 +1,293 @@
+import { useEffect, useRef, useState, useCallback } from "react";
+import { Store } from "@/hooks/use-stores";
+import { Promotion } from "@/hooks/use-promotions";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ChevronUp, ChevronDown, ExternalLink } from "lucide-react";
+
+interface ReelViewerProps {
+  store: Store;
+  promotions: Promotion[];
+}
+
+export function ReelViewer({ store, promotions }: ReelViewerProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [viewTracked, setViewTracked] = useState<Set<string>>(new Set());
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef<number>(0);
+
+  const currentPromo = promotions[currentIndex];
+
+  // Track view for current promotion
+  const trackView = useCallback(async (promoId: string) => {
+    if (viewTracked.has(promoId)) return;
+
+    try {
+      const { data: promo } = await supabase
+        .from("promotions")
+        .select("views_count")
+        .eq("id", promoId)
+        .single();
+
+      if (promo) {
+        await supabase
+          .from("promotions")
+          .update({ views_count: (promo.views_count || 0) + 1 })
+          .eq("id", promoId);
+      }
+      setViewTracked((prev) => new Set(prev).add(promoId));
+    } catch (error) {
+      console.error("Error tracking view:", error);
+    }
+  }, [viewTracked]);
+
+  // Track click on CTA
+  const trackClick = async () => {
+    try {
+      const { data: promo } = await supabase
+        .from("promotions")
+        .select("clicks_count")
+        .eq("id", currentPromo.id)
+        .single();
+
+      if (promo) {
+        await supabase
+          .from("promotions")
+          .update({ clicks_count: (promo.clicks_count || 0) + 1 })
+          .eq("id", currentPromo.id);
+      }
+    } catch (error) {
+      console.error("Error tracking click:", error);
+    }
+  };
+
+  // Handle video autoplay
+  useEffect(() => {
+    const currentVideo = videoRefs.current[currentIndex];
+    if (currentVideo) {
+      currentVideo.play().catch(console.error);
+    }
+
+    // Pause other videos
+    videoRefs.current.forEach((video, idx) => {
+      if (video && idx !== currentIndex) {
+        video.pause();
+        video.currentTime = 0;
+      }
+    });
+
+    // Track view
+    if (currentPromo) {
+      trackView(currentPromo.id);
+    }
+  }, [currentIndex, currentPromo, trackView]);
+
+  // Handle swipe navigation
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const touchEndY = e.changedTouches[0].clientY;
+    const diff = touchStartY.current - touchEndY;
+
+    if (Math.abs(diff) > 50) {
+      if (diff > 0 && currentIndex < promotions.length - 1) {
+        setCurrentIndex((prev) => prev + 1);
+      } else if (diff < 0 && currentIndex > 0) {
+        setCurrentIndex((prev) => prev - 1);
+      }
+    }
+  };
+
+  // Handle wheel scroll
+  const handleWheel = (e: WheelEvent) => {
+    e.preventDefault();
+    if (e.deltaY > 0 && currentIndex < promotions.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
+    } else if (e.deltaY < 0 && currentIndex > 0) {
+      setCurrentIndex((prev) => prev - 1);
+    }
+  };
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener("wheel", handleWheel, { passive: false });
+      return () => container.removeEventListener("wheel", handleWheel);
+    }
+  }, [currentIndex, promotions.length]);
+
+  const goToNext = () => {
+    if (currentIndex < promotions.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
+    }
+  };
+
+  const goToPrev = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex((prev) => prev - 1);
+    }
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
+    }).format(price);
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative h-screen w-full overflow-hidden bg-black"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {promotions.map((promo, index) => (
+        <div
+          key={promo.id}
+          className={`absolute inset-0 transition-transform duration-500 ${
+            index === currentIndex
+              ? "translate-y-0"
+              : index < currentIndex
+              ? "-translate-y-full"
+              : "translate-y-full"
+          }`}
+        >
+          {/* Media (Image or Video) */}
+          {promo.video_url ? (
+            <video
+              ref={(el) => (videoRefs.current[index] = el)}
+              src={promo.video_url}
+              className="absolute inset-0 w-full h-full object-cover"
+              loop
+              muted
+              playsInline
+            />
+          ) : (
+            <img
+              src={promo.image_url || "/placeholder.svg"}
+              alt={promo.title}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          )}
+
+          {/* Top gradient with store info */}
+          <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 via-black/30 to-transparent p-4 pt-safe z-10">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-12 w-12 border-2 border-white">
+                <AvatarImage src={store.logo_url || ""} alt={store.name} />
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {store.name.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <h2 className="font-semibold text-white text-lg leading-tight">
+                  {store.name}
+                </h2>
+                {store.city && (
+                  <p className="text-white/80 text-sm">{store.city}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom gradient with promo info */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-6 pb-safe z-10">
+            <div className="space-y-4">
+              <div>
+                <h1 className="text-2xl font-bold text-white mb-2">
+                  {promo.title}
+                </h1>
+                {promo.description && (
+                  <p className="text-white/90 text-sm line-clamp-3 mb-3">
+                    {promo.description}
+                  </p>
+                )}
+                {promo.category && (
+                  <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs font-medium mb-3">
+                    {promo.category}
+                  </span>
+                )}
+              </div>
+
+              {/* Pricing */}
+              {promo.attributes && (
+                <div className="flex items-baseline gap-3">
+                  {promo.attributes.price_original && (
+                    <span className="text-white/60 text-lg line-through">
+                      {formatPrice(promo.attributes.price_original)}
+                    </span>
+                  )}
+                  {promo.attributes.price_reduced && (
+                    <span className="text-white text-3xl font-bold">
+                      {formatPrice(promo.attributes.price_reduced)}
+                    </span>
+                  )}
+                  {promo.attributes.discount_percentage && (
+                    <span className="px-3 py-1 bg-primary text-primary-foreground rounded-full text-sm font-bold">
+                      -{promo.attributes.discount_percentage}%
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* CTA Button */}
+              <Button
+                size="lg"
+                className="w-full bg-white text-black hover:bg-white/90 font-semibold shadow-lg"
+                onClick={trackClick}
+              >
+                {promo.attributes?.cta_text || "En savoir +"}
+                <ExternalLink className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Navigation arrows */}
+          {index === currentIndex && (
+            <>
+              {currentIndex > 0 && (
+                <button
+                  onClick={goToPrev}
+                  className="absolute top-1/2 right-4 -translate-y-1/2 z-20 p-2 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-colors"
+                  aria-label="Promotion précédente"
+                >
+                  <ChevronUp className="h-6 w-6" />
+                </button>
+              )}
+              {currentIndex < promotions.length - 1 && (
+                <button
+                  onClick={goToNext}
+                  className="absolute bottom-32 right-4 z-20 p-2 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-colors"
+                  aria-label="Promotion suivante"
+                >
+                  <ChevronDown className="h-6 w-6" />
+                </button>
+              )}
+            </>
+          )}
+
+          {/* Progress indicator */}
+          {index === currentIndex && promotions.length > 1 && (
+            <div className="absolute top-20 right-4 z-20 flex flex-col gap-2">
+              {promotions.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`w-1 h-8 rounded-full transition-colors ${
+                    idx === currentIndex
+                      ? "bg-white"
+                      : "bg-white/30"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
