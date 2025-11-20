@@ -13,6 +13,7 @@ import Stats from "./pages/Stats";
 import Store from "./pages/Store";
 import Stores from "./pages/Stores";
 import StoreDetail from "./pages/StoreDetail";
+import StoreReels from "./pages/StoreReels";
 import Settings from "./pages/Settings";
 import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
@@ -27,19 +28,20 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Dashboard />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/store/:storeId/reels" element={<StoreReels />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Dashboard />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
           <Route
             path="/promotions"
             element={
