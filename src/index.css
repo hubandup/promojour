@@ -8,66 +8,72 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* PromoJour Design System - Modern SaaS B2B */
-    --background: 0 0% 99%;
-    --foreground: 280 30% 20%;
+    /* PromoJour Modern Design System */
+    --background: 0 0% 100%;
+    --foreground: 280 15% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 280 30% 20%;
+    --card-foreground: 280 15% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 280 30% 20%;
+    --popover-foreground: 280 15% 15%;
 
     /* Primary: Magenta vibrant - Brand PromoJour */
     --primary: 320 85% 60%;
     --primary-foreground: 0 0% 100%;
     --primary-hover: 320 85% 55%;
     --primary-glow: 320 85% 70%;
+    --primary-light: 320 85% 95%;
 
     /* Secondary: Violet profond - Confiance B2B */
     --secondary: 280 70% 55%;
     --secondary-foreground: 0 0% 100%;
+    --secondary-light: 280 70% 95%;
 
     /* Accent: Magenta clair - Highlights */
     --accent: 310 90% 65%;
     --accent-foreground: 0 0% 100%;
+    --accent-light: 310 90% 95%;
 
-    --muted: 280 15% 96%;
-    --muted-foreground: 280 10% 47%;
+    --muted: 280 10% 96%;
+    --muted-foreground: 280 10% 45%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 280 20% 91%;
-    --input: 280 20% 91%;
+    --border: 280 10% 92%;
+    --input: 280 10% 92%;
     --ring: 320 85% 60%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
     /* Sidebar */
-    --sidebar-background: 280 30% 20%;
-    --sidebar-foreground: 280 15% 90%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 280 15% 15%;
     --sidebar-primary: 320 85% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 280 25% 30%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 280 25% 30%;
+    --sidebar-accent: 280 10% 96%;
+    --sidebar-accent-foreground: 280 15% 15%;
+    --sidebar-border: 280 10% 92%;
     --sidebar-ring: 320 85% 60%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(320, 85%, 60%), hsl(310, 90%, 65%));
-    --gradient-secondary: linear-gradient(135deg, hsl(280, 70%, 55%), hsl(280, 60%, 65%));
-    --gradient-hero: linear-gradient(135deg, hsl(320, 85%, 60%) 0%, hsl(280, 70%, 55%) 100%);
+    /* Gradients - Modern and subtle */
+    --gradient-primary: linear-gradient(135deg, hsl(320, 85%, 60%) 0%, hsl(280, 70%, 55%) 100%);
+    --gradient-mesh: radial-gradient(at 0% 0%, hsl(320, 85%, 95%) 0%, transparent 50%),
+                     radial-gradient(at 100% 100%, hsl(280, 70%, 95%) 0%, transparent 50%);
+    --gradient-glass: linear-gradient(135deg, hsl(0, 0%, 100%, 0.7) 0%, hsl(0, 0%, 100%, 0.3) 100%);
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(280 30% 20% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(280 30% 20% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(280 30% 20% / 0.1);
-    --shadow-xl: 0 20px 25px -5px hsl(280 30% 20% / 0.1);
-    --shadow-glow: 0 0 40px hsl(320 85% 60% / 0.3);
+    /* Shadows - Soft and modern */
+    --shadow-sm: 0 1px 2px 0 hsl(280 15% 15% / 0.03);
+    --shadow-md: 0 4px 12px -2px hsl(280 15% 15% / 0.08);
+    --shadow-lg: 0 12px 24px -4px hsl(280 15% 15% / 0.12);
+    --shadow-xl: 0 24px 48px -8px hsl(280 15% 15% / 0.16);
+    --shadow-glow: 0 0 60px hsl(320 85% 60% / 0.25);
+    --shadow-glass: 0 8px 32px 0 hsl(280 15% 15% / 0.1);
 
     /* Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 }
 
@@ -92,19 +98,36 @@ All colors MUST be HSL.
     background: var(--gradient-primary);
   }
 
-  .gradient-secondary {
-    background: var(--gradient-secondary);
+  .gradient-mesh {
+    background: var(--gradient-mesh);
   }
 
-  .gradient-hero {
-    background: var(--gradient-hero);
+  .gradient-glass {
+    background: var(--gradient-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .shadow-glow {
     box-shadow: var(--shadow-glow);
   }
 
+  .shadow-glass {
+    box-shadow: var(--shadow-glass);
+  }
+
   .transition-smooth {
     transition: var(--transition-smooth);
+  }
+
+  .transition-bounce {
+    transition: var(--transition-bounce);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
   }
 }
