@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useStores } from "@/hooks/use-stores";
-import { MapPin, Phone, Mail, Clock, Edit, Plus, Search, Store as StoreIcon } from "lucide-react";
+import { MapPin, Phone, Mail, Clock, Edit, Plus, Search, Store as StoreIcon, Eye } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ interface StoreFormData {
 }
 
 const Stores = () => {
+  const navigate = useNavigate();
   const { stores, loading, refetch } = useStores();
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -226,14 +228,24 @@ const Stores = () => {
                   )}
                 </div>
 
-                <Button
-                  onClick={() => handleEdit(store)}
-                  variant="outline"
-                  className="w-full rounded-xl hover:shadow-md transition-smooth mt-4"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Modifier
-                </Button>
+                <div className="flex gap-2 mt-4">
+                  <Button
+                    onClick={() => navigate(`/stores/${store.id}`)}
+                    variant="outline"
+                    className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Détails
+                  </Button>
+                  <Button
+                    onClick={() => handleEdit(store)}
+                    variant="outline"
+                    className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Modifier
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
