@@ -20,7 +20,7 @@ const menuItems = [
   { title: "Promotions", url: "/promotions", icon: Tag },
   { title: "Campagnes", url: "/campaigns", icon: CalendarDays },
   { title: "Statistiques", url: "/stats", icon: BarChart3 },
-  { title: "Magasin", url: "/store", icon: Store },
+  { title: "Mes Magasins", url: "/stores", icon: Store },
 ];
 
 const settingsItems = [
