@@ -11,6 +11,7 @@ export default function StoreFrontend() {
   const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
   const [store, setStore] = useState<Store | null>(null);
+  const [orgLogo, setOrgLogo] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,6 +28,19 @@ export default function StoreFrontend() {
 
         if (storeError) throw storeError;
         setStore(storeData);
+
+        // Fetch organization logo
+        if (storeData.organization_id) {
+          const { data: orgData } = await supabase
+            .from("organizations")
+            .select("logo_url")
+            .eq("id", storeData.organization_id)
+            .single();
+          
+          if (orgData?.logo_url) {
+            setOrgLogo(orgData.logo_url);
+          }
+        }
       } catch (error) {
         console.error("Error fetching store data:", error);
       } finally {
@@ -148,9 +162,9 @@ export default function StoreFrontend() {
         <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
           {/* Header */}
           <div className="flex items-start gap-4">
-            {store.logo_url && (
+            {orgLogo && (
               <img
-                src={store.logo_url}
+                src={orgLogo}
                 alt={`Logo ${store.name}`}
                 className="w-20 h-20 rounded-lg object-cover border border-border"
               />
