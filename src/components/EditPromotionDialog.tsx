@@ -267,12 +267,11 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="category">Catégorie</Label>
-                <Select value={category || ""} onValueChange={(value) => setValue("category", value)}>
+                <Select value={category || undefined} onValueChange={(value) => setValue("category", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner une catégorie" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucune catégorie</SelectItem>
                     <SelectItem value="mode">Mode</SelectItem>
                     <SelectItem value="alimentation">Alimentation</SelectItem>
                     <SelectItem value="electronique">Électronique</SelectItem>
