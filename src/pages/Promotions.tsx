@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, AlertCircle, Eye, Pencil, Trash2, ArrowRight, LayoutGrid, List, X } from "lucide-react";
+import { Plus, Search, AlertCircle, Eye, Pencil, Trash2, BarChart3, LayoutGrid, List, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -526,9 +526,9 @@ const Promotions = () => {
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => navigate(`/promotions/${promo.id}`)}
-                        title="Détails"
+                        title="Analyse"
                       >
-                        <ArrowRight className="w-4 h-4" />
+                        <BarChart3 className="w-4 h-4" />
                       </Button>
                     </div>
                   </TableCell>
@@ -706,9 +706,9 @@ const Promotions = () => {
                       e.stopPropagation();
                       navigate(`/promotions/${promo.id}`);
                     }}
-                    title="Détails"
+                    title="Analyse"
                   >
-                    <ArrowRight className="w-4 h-4" />
+                    <BarChart3 className="w-4 h-4" />
                   </Button>
                 </div>
               </CardContent>
