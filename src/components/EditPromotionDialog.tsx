@@ -228,7 +228,7 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
 
       if (!updatedData || updatedData.length === 0) {
         console.error('[EditPromotion] No rows updated. Promotion might not exist or RLS blocking access');
-        throw new Error('Aucune ligne mise à jour - vérifiez les permissions');
+        throw new Error("Vous n'avez pas les permissions pour modifier cette promotion. Elle appartient peut-être à une autre organisation.");
       }
 
       console.log('[EditPromotion] Promotion updated successfully:', updatedData);
