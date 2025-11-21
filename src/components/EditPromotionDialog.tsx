@@ -162,11 +162,14 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
         const fileExt = file.name.split('.').pop();
         const fileName = `${promotionId}-${Date.now()}.${fileExt}`;
         
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('promotion-images')
           .upload(fileName, file, { upsert: true });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw uploadError;
+        }
 
         const { data: { publicUrl } } = supabase.storage
           .from('promotion-images')
@@ -176,29 +179,42 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
         setUploading(false);
       }
 
+      const updateData: any = {
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        status: data.status,
+        start_date: data.startDate.toISOString(),
+        end_date: data.endDate.toISOString(),
+      };
+
+      // Only update image_url if we have one
+      if (imageUrl) {
+        updateData.image_url = imageUrl;
+      }
+
+      console.log('Updating promotion with data:', updateData);
+
       const { error } = await supabase
         .from('promotions')
-        .update({
-          title: data.title,
-          description: data.description,
-          category: data.category,
-          status: data.status,
-          start_date: data.startDate.toISOString(),
-          end_date: data.endDate.toISOString(),
-          image_url: imageUrl,
-        })
+        .update(updateData)
         .eq('id', promotionId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Update error:', error);
+        throw error;
+      }
+
+      console.log('Promotion updated successfully');
       
       toast.success("Promotion modifiée avec succès !");
       setImages([]);
       setImagePreviews([]);
-      onOpenChange(false);
       onSuccess?.();
-    } catch (error) {
+      onOpenChange(false);
+    } catch (error: any) {
       console.error('Error updating promotion:', error);
-      toast.error("Erreur lors de la modification de la promotion");
+      toast.error(error.message || "Erreur lors de la modification de la promotion");
     } finally {
       setLoading(false);
       setUploading(false);
