@@ -155,6 +155,9 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
 
   const onSubmit = async (data: PromotionFormData) => {
     setLoading(true);
+    console.log('[EditPromotion] Starting update for promotion:', promotionId);
+    console.log('[EditPromotion] Form data:', data);
+    
     try {
       let imageUrl = existingImageUrl;
 
@@ -165,20 +168,25 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
         const fileExt = file.name.split('.').pop();
         const fileName = `${promotionId}-${Date.now()}.${fileExt}`;
         
-        const { error: uploadError } = await supabase.storage
+        console.log('[EditPromotion] Uploading image:', fileName);
+        
+        const { error: uploadError, data: uploadData } = await supabase.storage
           .from('promotion-images')
           .upload(fileName, file, { upsert: true });
 
         if (uploadError) {
-          console.error('Upload error:', uploadError);
+          console.error('[EditPromotion] Upload error:', uploadError);
           throw uploadError;
         }
+
+        console.log('[EditPromotion] Upload successful:', uploadData);
 
         const { data: { publicUrl } } = supabase.storage
           .from('promotion-images')
           .getPublicUrl(fileName);
 
         imageUrl = publicUrl;
+        console.log('[EditPromotion] Image URL:', imageUrl);
         setUploading(false);
       }
 
@@ -196,19 +204,34 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
         updateData.image_url = imageUrl;
       }
 
-      console.log('Updating promotion with data:', updateData);
+      console.log('[EditPromotion] Updating promotion ID:', promotionId);
+      console.log('[EditPromotion] Update data:', updateData);
 
-      const { error } = await supabase
+      const { data: updatedData, error } = await supabase
         .from('promotions')
         .update(updateData)
-        .eq('id', promotionId);
+        .eq('id', promotionId)
+        .select();
+
+      console.log('[EditPromotion] Update response - Data:', updatedData);
+      console.log('[EditPromotion] Update response - Error:', error);
 
       if (error) {
-        console.error('Update error:', error);
+        console.error('[EditPromotion] Update error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
 
-      console.log('Promotion updated successfully');
+      if (!updatedData || updatedData.length === 0) {
+        console.error('[EditPromotion] No rows updated. Promotion might not exist or RLS blocking access');
+        throw new Error('Aucune ligne mise à jour - vérifiez les permissions');
+      }
+
+      console.log('[EditPromotion] Promotion updated successfully:', updatedData);
       
       toast.success("Promotion modifiée avec succès !");
       setImages([]);
@@ -216,7 +239,7 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
       onSuccess?.();
       onOpenChange(false);
     } catch (error: any) {
-      console.error('Error updating promotion:', error);
+      console.error('[EditPromotion] Error updating promotion:', error);
       toast.error(error.message || "Erreur lors de la modification de la promotion");
     } finally {
       setLoading(false);
