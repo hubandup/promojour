@@ -235,7 +235,12 @@ const Stores = () => {
                           <StoreIcon className="w-5 h-5 text-primary" />
                         </div>
                         <div>
-                          <p className="font-medium">{store.name}</p>
+                          <p 
+                            className="font-medium cursor-pointer hover:text-primary transition-colors"
+                            onClick={() => navigate(`/stores/${store.id}`)}
+                          >
+                            {store.name}
+                          </p>
                           {store.phone && (
                             <p className="text-xs text-muted-foreground">{store.phone}</p>
                           )}
@@ -302,7 +307,12 @@ const Stores = () => {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
-                    <CardTitle className="text-lg">{store.name}</CardTitle>
+                    <CardTitle 
+                      className="text-lg cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => navigate(`/stores/${store.id}`)}
+                    >
+                      {store.name}
+                    </CardTitle>
                     {store.city && (
                       <CardDescription className="flex items-center gap-1 mt-1">
                         <MapPin className="w-3 h-3" />
