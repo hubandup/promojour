@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { SocialConnectionsManager } from "@/components/SocialConnectionsManager";
 import {
   MapPin,
   Phone,
@@ -26,6 +27,7 @@ import {
   MousePointer,
   TrendingUp,
   Save,
+  Share2,
 } from "lucide-react";
 
 interface Store {
@@ -74,6 +76,23 @@ const StoreDetail = () => {
   useEffect(() => {
     fetchStore();
   }, [id]);
+
+  useEffect(() => {
+    // Check for OAuth callback success/error
+    const params = new URLSearchParams(window.location.search);
+    const success = params.get('success');
+    const error = params.get('error');
+
+    if (success === 'social_connected') {
+      toast.success('Compte connecté avec succès !');
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (error === 'oauth_denied') {
+      toast.error('Connexion annulée');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
 
   const fetchStore = async () => {
     try {
@@ -347,9 +366,13 @@ const StoreDetail = () => {
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-6">
           <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 rounded-xl">
+            <TabsList className="grid w-full grid-cols-4 rounded-xl">
               <TabsTrigger value="info" className="rounded-xl">Informations</TabsTrigger>
               <TabsTrigger value="hours" className="rounded-xl">Horaires</TabsTrigger>
+              <TabsTrigger value="social" className="rounded-xl">
+                <Share2 className="w-4 h-4 mr-2" />
+                Connexions
+              </TabsTrigger>
               <TabsTrigger value="stats" className="rounded-xl">Statistiques</TabsTrigger>
             </TabsList>
 
@@ -621,6 +644,10 @@ const StoreDetail = () => {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="social" className="space-y-6">
+              <SocialConnectionsManager storeId={store.id} />
             </TabsContent>
 
             <TabsContent value="stats" className="space-y-6">
