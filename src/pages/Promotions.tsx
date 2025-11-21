@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, AlertCircle, Eye, Pencil, Trash2, BarChart3, LayoutGrid, List, X } from "lucide-react";
+import { Plus, Search, AlertCircle, Eye, Pencil, Trash2, BarChart3, LayoutGrid, List, X, Copy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -139,6 +139,50 @@ const Promotions = () => {
       toast({
         title: "Erreur",
         description: "Impossible de mettre à jour les promotions",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDuplicatePromotion = async (promo: any) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      const duplicatedPromo = {
+        title: `${promo.title} (Copie)`,
+        description: promo.description,
+        category: promo.category,
+        image_url: promo.image_url,
+        video_url: promo.video_url,
+        organization_id: promo.organization_id,
+        store_id: promo.store_id,
+        campaign_id: promo.campaign_id,
+        start_date: promo.start_date,
+        end_date: promo.end_date,
+        status: 'draft' as const,
+        can_be_modified_by_stores: promo.can_be_modified_by_stores,
+        is_mandatory: promo.is_mandatory,
+        attributes: promo.attributes,
+        created_by: user.id,
+      };
+
+      const { error } = await supabase
+        .from('promotions')
+        .insert(duplicatedPromo);
+
+      if (error) throw error;
+
+      toast({
+        title: "Promotion dupliquée",
+        description: "La promotion a été dupliquée avec succès.",
+      });
+
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de dupliquer la promotion.",
         variant: "destructive",
       });
     }
@@ -493,9 +537,18 @@ const Promotions = () => {
                           setPreviewPromotion(promo);
                           setPreviewDialogOpen(true);
                         }}
-                        title="Aperçu"
+                        title="Voir"
                       >
                         <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => navigate(`/promotions/${promo.id}`)}
+                        title="Détails"
+                      >
+                        <BarChart3 className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -512,6 +565,15 @@ const Promotions = () => {
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleDuplicatePromotion(promo)}
+                        title="Dupliquer"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="h-8 w-8 hover:text-destructive"
                         onClick={() => {
                           setPromotionToDelete(promo.id);
@@ -520,15 +582,6 @@ const Promotions = () => {
                         title="Supprimer"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => navigate(`/promotions/${promo.id}`)}
-                        title="Analyse"
-                      >
-                        <BarChart3 className="w-4 h-4" />
                       </Button>
                     </div>
                   </TableCell>
@@ -668,9 +721,21 @@ const Promotions = () => {
                       setPreviewPromotion(promo);
                       setPreviewDialogOpen(true);
                     }}
-                    title="Aperçu"
+                    title="Voir"
                   >
                     <Eye className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="rounded-xl hover:shadow-md transition-smooth"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/promotions/${promo.id}`);
+                    }}
+                    title="Détails"
+                  >
+                    <BarChart3 className="w-4 h-4" />
                   </Button>
                   <Button 
                     variant="outline" 
@@ -688,6 +753,18 @@ const Promotions = () => {
                   <Button 
                     variant="outline" 
                     size="icon" 
+                    className="rounded-xl hover:shadow-md transition-smooth"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDuplicatePromotion(promo);
+                    }}
+                    title="Dupliquer"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
                     className="rounded-xl hover:shadow-md transition-smooth hover:border-destructive hover:text-destructive"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -697,18 +774,6 @@ const Promotions = () => {
                     title="Supprimer"
                   >
                     <Trash2 className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="rounded-xl hover:shadow-md transition-smooth"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/promotions/${promo.id}`);
-                    }}
-                    title="Analyse"
-                  >
-                    <BarChart3 className="w-4 h-4" />
                   </Button>
                 </div>
               </CardContent>
