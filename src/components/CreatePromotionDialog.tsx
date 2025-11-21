@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -70,6 +70,33 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
   const category = watch("category");
   const status = watch("status");
   const mechanicType = watch("mechanicType");
+  const originalPrice = watch("originalPrice");
+  const discountedPrice = watch("discountedPrice");
+  const discountPercentage = watch("discountPercentage");
+
+  // Auto-calculate discount percentage when prices change
+  useEffect(() => {
+    if (mechanicType === "price_discount" && originalPrice && discountedPrice) {
+      const original = parseFloat(originalPrice);
+      const discounted = parseFloat(discountedPrice);
+      if (!isNaN(original) && !isNaN(discounted) && original > 0 && discounted < original) {
+        const percentage = Math.round(((original - discounted) / original) * 100);
+        setValue("discountPercentage", percentage.toString());
+      }
+    }
+  }, [originalPrice, discountedPrice, mechanicType, setValue]);
+
+  // Auto-calculate discounted price when percentage changes
+  useEffect(() => {
+    if (mechanicType === "percentage_discount" && originalPrice && discountPercentage) {
+      const original = parseFloat(originalPrice);
+      const percentage = parseFloat(discountPercentage);
+      if (!isNaN(original) && !isNaN(percentage) && percentage > 0 && percentage <= 100) {
+        const discounted = original - (original * percentage / 100);
+        setValue("discountedPrice", discounted.toFixed(2));
+      }
+    }
+  }, [originalPrice, discountPercentage, mechanicType, setValue]);
 
   const processFiles = (files: File[]) => {
     if (files.length + images.length > 5) {
@@ -174,9 +201,15 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
       if (data.mechanicType === 'price_discount' && data.originalPrice && data.discountedPrice) {
         attributes.originalPrice = data.originalPrice;
         attributes.discountedPrice = data.discountedPrice;
+        if (data.discountPercentage) {
+          attributes.discountPercentage = data.discountPercentage;
+        }
       } else if (data.mechanicType === 'percentage_discount' && data.originalPrice && data.discountPercentage) {
         attributes.originalPrice = data.originalPrice;
         attributes.discountPercentage = data.discountPercentage;
+        if (data.discountedPrice) {
+          attributes.discountedPrice = data.discountedPrice;
+        }
       }
 
       const { error } = await supabase
