@@ -56,6 +56,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
     resolver: zodResolver(promotionSchema),
     defaultValues: {
       status: "draft",
+      category: "mode",
     },
   });
 
