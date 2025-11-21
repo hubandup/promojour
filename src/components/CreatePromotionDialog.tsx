@@ -21,10 +21,11 @@ const promotionSchema = z.object({
   title: z.string().min(3, "Le titre doit contenir au moins 3 caractères").max(100),
   description: z.string().min(10, "La description doit contenir au moins 10 caractères").max(500),
   category: z.string().min(1, "Veuillez sélectionner une catégorie"),
+  mechanicType: z.string().min(1, "Veuillez sélectionner une mécanique promotionnelle"),
   productName: z.string().min(1, "Le nom du produit est requis"),
   ean: z.string().optional(),
-  originalPrice: z.string().min(1, "Le prix original est requis"),
-  discountedPrice: z.string().min(1, "Le prix promotionnel est requis"),
+  originalPrice: z.string().optional(),
+  discountedPrice: z.string().optional(),
   discountPercentage: z.string().optional(),
   startDate: z.date({ required_error: "La date de début est requise" }),
   endDate: z.date({ required_error: "La date de fin est requise" }),
@@ -57,6 +58,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
     defaultValues: {
       status: "draft",
       category: "mode",
+      mechanicType: "price_discount",
     },
   });
 
@@ -64,6 +66,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
   const endDate = watch("endDate");
   const category = watch("category");
   const status = watch("status");
+  const mechanicType = watch("mechanicType");
 
   const processFiles = (files: File[]) => {
     if (files.length + images.length > 5) {
@@ -158,7 +161,21 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
         imageUrl = publicUrl;
       }
 
-      // Create promotion
+      // Create promotion with attributes
+      const attributes: any = {
+        mechanicType: data.mechanicType,
+        productName: data.productName,
+        ean: data.ean,
+      };
+
+      if (data.mechanicType === 'price_discount' && data.originalPrice && data.discountedPrice) {
+        attributes.originalPrice = data.originalPrice;
+        attributes.discountedPrice = data.discountedPrice;
+      } else if (data.mechanicType === 'percentage_discount' && data.originalPrice && data.discountPercentage) {
+        attributes.originalPrice = data.originalPrice;
+        attributes.discountPercentage = data.discountPercentage;
+      }
+
       const { error } = await supabase
         .from('promotions')
         .insert({
@@ -170,6 +187,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
           start_date: data.startDate.toISOString(),
           end_date: data.endDate.toISOString(),
           image_url: imageUrl,
+          attributes,
           created_by: user.id,
         });
 
@@ -298,45 +316,86 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="originalPrice">Prix original (€) *</Label>
-                <Input
-                  id="originalPrice"
-                  type="number"
-                  step="0.01"
-                  placeholder="99.99"
-                  {...register("originalPrice")}
-                />
-                {errors.originalPrice && (
-                  <p className="text-sm text-destructive">{errors.originalPrice.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="discountedPrice">Prix promo (€) *</Label>
-                <Input
-                  id="discountedPrice"
-                  type="number"
-                  step="0.01"
-                  placeholder="69.99"
-                  {...register("discountedPrice")}
-                />
-                {errors.discountedPrice && (
-                  <p className="text-sm text-destructive">{errors.discountedPrice.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="discountPercentage">Réduction (%)</Label>
-                <Input
-                  id="discountPercentage"
-                  type="number"
-                  placeholder="30"
-                  {...register("discountPercentage")}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="mechanicType">Mécanique promotionnelle *</Label>
+              <Select value={mechanicType} onValueChange={(value) => setValue("mechanicType", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une mécanique" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="price_discount">Remise de prix</SelectItem>
+                  <SelectItem value="percentage_discount">Pourcentage</SelectItem>
+                  <SelectItem value="bundle_offer">Offre groupée</SelectItem>
+                  <SelectItem value="free">Gratuit</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.mechanicType && (
+                <p className="text-sm text-destructive">{errors.mechanicType.message}</p>
+              )}
             </div>
+
+            {mechanicType === "price_discount" && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="originalPrice">Prix original (€) *</Label>
+                  <Input
+                    id="originalPrice"
+                    type="number"
+                    step="0.01"
+                    placeholder="99.99"
+                    {...register("originalPrice")}
+                  />
+                  {errors.originalPrice && (
+                    <p className="text-sm text-destructive">{errors.originalPrice.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="discountedPrice">Prix remisé (€) *</Label>
+                  <Input
+                    id="discountedPrice"
+                    type="number"
+                    step="0.01"
+                    placeholder="69.99"
+                    {...register("discountedPrice")}
+                  />
+                  {errors.discountedPrice && (
+                    <p className="text-sm text-destructive">{errors.discountedPrice.message}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {mechanicType === "percentage_discount" && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="originalPrice">Prix original (€) *</Label>
+                  <Input
+                    id="originalPrice"
+                    type="number"
+                    step="0.01"
+                    placeholder="99.99"
+                    {...register("originalPrice")}
+                  />
+                  {errors.originalPrice && (
+                    <p className="text-sm text-destructive">{errors.originalPrice.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="discountPercentage">Pourcentage de réduction (%) *</Label>
+                  <Input
+                    id="discountPercentage"
+                    type="number"
+                    placeholder="30"
+                    {...register("discountPercentage")}
+                  />
+                  {errors.discountPercentage && (
+                    <p className="text-sm text-destructive">{errors.discountPercentage.message}</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Période */}
