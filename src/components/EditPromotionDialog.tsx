@@ -53,7 +53,6 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
   } = useForm<PromotionFormData>({
     resolver: zodResolver(promotionSchema),
     defaultValues: {
-      category: "",
       status: "draft",
     },
   });
@@ -82,7 +81,7 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
       if (data) {
         setValue('title', data.title);
         setValue('description', data.description || "");
-        setValue('category', data.category || "");
+        setValue('category', data.category || "mode");
         setValue('status', data.status);
         setValue('startDate', new Date(data.start_date));
         setValue('endDate', new Date(data.end_date));
@@ -267,7 +266,7 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="category">Catégorie</Label>
-                <Select value={category || undefined} onValueChange={(value) => setValue("category", value)}>
+                <Select value={category} onValueChange={(value) => setValue("category", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner une catégorie" />
                   </SelectTrigger>
