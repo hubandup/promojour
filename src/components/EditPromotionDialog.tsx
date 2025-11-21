@@ -16,6 +16,7 @@ import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { usePromotionalMechanics } from "@/hooks/use-promotional-mechanics";
 
 const promotionSchema = z.object({
   title: z.string().min(3, "Le titre doit contenir au moins 3 caractères").max(100),
@@ -48,6 +49,8 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  
+  const { mechanics } = usePromotionalMechanics();
 
   const {
     register,
@@ -393,10 +396,11 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
                   <SelectValue placeholder="Sélectionner une mécanique" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="price_discount">Remise de prix</SelectItem>
-                  <SelectItem value="percentage_discount">Pourcentage</SelectItem>
-                  <SelectItem value="bundle_offer">Offre groupée</SelectItem>
-                  <SelectItem value="free">Gratuit</SelectItem>
+                  {mechanics.map((mechanic) => (
+                    <SelectItem key={mechanic.id} value={mechanic.code}>
+                      {mechanic.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {errors.mechanicType && (

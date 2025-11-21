@@ -3,10 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Palette, Bell, Webhook, Key, Building2 } from "lucide-react";
+import { Palette, Bell, Webhook, Key, Building2, Settings2, Plus, Edit, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { usePromotionalMechanics } from "@/hooks/use-promotional-mechanics";
+import { PromotionalMechanicDialog } from "@/components/PromotionalMechanicDialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const Settings = () => {
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -15,6 +18,12 @@ const Settings = () => {
   const [orgName, setOrgName] = useState("");
   const [orgDescription, setOrgDescription] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [mechanicDialogOpen, setMechanicDialogOpen] = useState(false);
+  const [editingMechanic, setEditingMechanic] = useState<any>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [mechanicToDelete, setMechanicToDelete] = useState<string | null>(null);
+  
+  const { mechanics, createMechanic, updateMechanic, deleteMechanic } = usePromotionalMechanics();
 
   useEffect(() => {
     fetchOrganization();
@@ -143,6 +152,33 @@ const Settings = () => {
       console.error("Erreur:", error);
       toast.error("Erreur lors de la sauvegarde");
     }
+  };
+
+  const handleSaveMechanic = (data: any) => {
+    if (editingMechanic) {
+      updateMechanic({ id: editingMechanic.id, ...data });
+    } else {
+      createMechanic(data);
+    }
+    setEditingMechanic(null);
+  };
+
+  const handleEditMechanic = (mechanic: any) => {
+    setEditingMechanic(mechanic);
+    setMechanicDialogOpen(true);
+  };
+
+  const handleDeleteClick = (mechanicId: string) => {
+    setMechanicToDelete(mechanicId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (mechanicToDelete) {
+      deleteMechanic(mechanicToDelete);
+      setMechanicToDelete(null);
+    }
+    setDeleteDialogOpen(false);
   };
 
   return (
@@ -390,7 +426,103 @@ const Settings = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Promotional Mechanics */}
+        <Card className="glass-card border-border/50 lg:col-span-2">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
+                  <Settings2 className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle>Mécaniques promotionnelles</CardTitle>
+                  <CardDescription>Gérez les types de promotions disponibles</CardDescription>
+                </div>
+              </div>
+              <Button
+                onClick={() => {
+                  setEditingMechanic(null);
+                  setMechanicDialogOpen(true);
+                }}
+                className="rounded-xl"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nouvelle mécanique
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {mechanics.map((mechanic) => (
+                <div
+                  key={mechanic.id}
+                  className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card/50 hover:shadow-md transition-smooth"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-semibold">{mechanic.name}</p>
+                      <span className="text-xs text-muted-foreground px-2 py-1 rounded-md bg-muted">
+                        {mechanic.code}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {mechanic.fields.length} champ{mechanic.fields.length > 1 ? "s" : ""} défini{mechanic.fields.length > 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditMechanic(mechanic)}
+                      className="rounded-lg"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteClick(mechanic.id)}
+                      className="rounded-lg text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {mechanics.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  Aucune mécanique promotionnelle configurée
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      <PromotionalMechanicDialog
+        open={mechanicDialogOpen}
+        onOpenChange={setMechanicDialogOpen}
+        mechanic={editingMechanic}
+        onSave={handleSaveMechanic}
+      />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer cette mécanique promotionnelle ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
