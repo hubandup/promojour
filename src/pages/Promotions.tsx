@@ -262,6 +262,42 @@ const Promotions = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 text-sm">
+                  {promo.attributes?.originalPrice && (
+                    <div className="p-3 rounded-lg bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
+                      <div className="flex items-baseline justify-between gap-2">
+                        {promo.attributes?.discountedPrice ? (
+                          <>
+                            <div className="flex flex-col">
+                              <span className="text-xs text-muted-foreground line-through">
+                                {parseFloat(promo.attributes.originalPrice).toFixed(2)}€
+                              </span>
+                              <span className="text-2xl font-bold text-primary">
+                                {parseFloat(promo.attributes.discountedPrice).toFixed(2)}€
+                              </span>
+                            </div>
+                            {promo.attributes.discountPercentage && (
+                              <Badge className="bg-destructive text-destructive-foreground font-bold text-base px-3 py-1">
+                                -{promo.attributes.discountPercentage}%
+                              </Badge>
+                            )}
+                          </>
+                        ) : promo.attributes?.discountPercentage ? (
+                          <>
+                            <span className="text-lg font-semibold">
+                              {parseFloat(promo.attributes.originalPrice).toFixed(2)}€
+                            </span>
+                            <Badge className="bg-destructive text-destructive-foreground font-bold text-base px-3 py-1">
+                              -{promo.attributes.discountPercentage}%
+                            </Badge>
+                          </>
+                        ) : (
+                          <span className="text-lg font-semibold">
+                            {parseFloat(promo.attributes.originalPrice).toFixed(2)}€
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex justify-between p-2 rounded-lg bg-muted/30">
                     <span className="text-muted-foreground">Début:</span>
                     <span className="font-semibold">
