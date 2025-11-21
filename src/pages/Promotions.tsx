@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, AlertCircle, Eye, Pencil, Trash2, BarChart3, LayoutGrid, List, X, Copy } from "lucide-react";
+import { Plus, Search, AlertCircle, Eye, Pencil, Trash2, BarChart3, LayoutGrid, List, X, Copy, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -30,6 +30,7 @@ import {
 import { CreatePromotionDialog } from "@/components/CreatePromotionDialog";
 import { EditPromotionDialog } from "@/components/EditPromotionDialog";
 import { ReelPreviewDialog } from "@/components/ReelPreviewDialog";
+import { BulkImportPromotionsDialog } from "@/components/BulkImportPromotionsDialog";
 import { usePromotions } from "@/hooks/use-promotions";
 import { useUserData } from "@/hooks/use-user-data";
 import { useStores } from "@/hooks/use-stores";
@@ -58,6 +59,7 @@ const Promotions = () => {
   const [selectedPromotionId, setSelectedPromotionId] = useState<string | null>(null);
   const [previewPromotion, setPreviewPromotion] = useState<any>(null);
   const [promotionToDelete, setPromotionToDelete] = useState<string | null>(null);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
 
   const { promotions, loading: promotionsLoading, refetch, deletePromotion } = usePromotions();
   const { organization, isFree, loading: userLoading } = useUserData();
@@ -248,6 +250,14 @@ const Promotions = () => {
               <List className="w-4 h-4" />
             </Button>
           </div>
+          <Button 
+            variant="outline"
+            onClick={() => setBulkImportOpen(true)}
+            disabled={loading}
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Import en masse
+          </Button>
           <Button 
             className="gradient-primary text-white shadow-glow"
             onClick={() => setCreateDialogOpen(true)}
@@ -868,6 +878,13 @@ const Promotions = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BulkImportPromotionsDialog
+        open={bulkImportOpen}
+        onOpenChange={setBulkImportOpen}
+        onImportComplete={refetch}
+        organizationId={organization?.id || ""}
+      />
     </div>
   );
 };

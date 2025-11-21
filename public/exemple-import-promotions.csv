@@ -1,0 +1,4 @@
+title,description,category,start_date,end_date,status,original_price,discounted_price,discount_percentage,image_url,video_url
+"Chaussures Nike Air Max","Basket sportive haute performance","Chaussures","2025-01-15","2025-02-15","active","149.99","119.99","20","",""
+"Pull en laine","Pull chaud pour l'hiver","Vêtements","2025-01-20","2025-03-01","scheduled","79.99","59.99","25","",""
+"Sac à dos étudiant","Sac spacieux et résistant","Accessoires","2025-01-10","2025-01-31","active","49.99","39.99","20","",""
