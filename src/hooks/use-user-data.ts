@@ -24,7 +24,7 @@ export interface Organization {
 }
 
 export interface UserRole {
-  role: 'admin' | 'editor' | 'viewer';
+  role: 'admin' | 'editor' | 'viewer' | 'super_admin';
   organization_id: string;
 }
 
@@ -88,7 +88,8 @@ export function useUserData() {
     }
   };
 
-  const isAdmin = userRole?.role === 'admin';
+  const isSuperAdmin = userRole?.role === 'super_admin';
+  const isAdmin = userRole?.role === 'admin' || isSuperAdmin;
   const isEditor = userRole?.role === 'editor' || isAdmin;
   const isCentral = organization?.account_type === 'central';
   const isStore = organization?.account_type === 'store';
@@ -99,6 +100,7 @@ export function useUserData() {
     organization,
     userRole,
     loading,
+    isSuperAdmin,
     isAdmin,
     isEditor,
     isCentral,
