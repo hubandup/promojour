@@ -30,12 +30,12 @@ export default function StoreReels() {
         setStore(storeData);
 
         // Fetch active promotions for this store
-        // Include both store-specific promotions and central promotions (store_id = null)
+        // Include ALL active promotions from the organization (visible on all stores)
         const { data: promoData, error: promoError } = await supabase
           .from("promotions")
           .select("*")
           .eq("status", "active")
-          .or(`store_id.eq.${storeId},and(store_id.is.null,organization_id.eq.${storeData.organization_id})`)
+          .eq("organization_id", storeData.organization_id)
           .order("created_at", { ascending: false });
 
         if (promoError) throw promoError;
