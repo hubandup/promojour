@@ -254,19 +254,19 @@ export function ReelViewer({ store, promotions, previewMode = false }: ReelViewe
               {/* Pricing */}
               {promo.attributes && (
                 <div className="flex items-baseline gap-3">
-                  {promo.attributes.price_original && (
+                  {promo.attributes.originalPrice && (
                     <span className="text-white/60 text-lg line-through">
-                      {formatPrice(promo.attributes.price_original)}
+                      {parseFloat(promo.attributes.originalPrice).toFixed(2)}€
                     </span>
                   )}
-                  {promo.attributes.price_reduced && (
+                  {promo.attributes.discountedPrice && (
                     <span className="text-white text-3xl font-bold">
-                      {formatPrice(promo.attributes.price_reduced)}
+                      {parseFloat(promo.attributes.discountedPrice).toFixed(2)}€
                     </span>
                   )}
-                  {promo.attributes.discount_percentage && (
-                    <span className="px-3 py-1 bg-primary text-primary-foreground rounded-full text-sm font-bold">
-                      -{promo.attributes.discount_percentage}%
+                  {promo.attributes.discountPercentage && (
+                    <span className="px-3 py-1 bg-destructive text-destructive-foreground rounded-full text-sm font-bold">
+                      -{promo.attributes.discountPercentage}%
                     </span>
                   )}
                 </div>
