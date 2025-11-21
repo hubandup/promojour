@@ -21,6 +21,12 @@ const promotionSchema = z.object({
   title: z.string().min(3, "Le titre doit contenir au moins 3 caractères").max(100),
   description: z.string().min(10, "La description doit contenir au moins 10 caractères").max(500).nullable(),
   category: z.string().nullable(),
+  mechanicType: z.string().min(1, "Veuillez sélectionner une mécanique promotionnelle"),
+  productName: z.string().min(1, "Le nom du produit est requis"),
+  ean: z.string().optional(),
+  originalPrice: z.string().optional(),
+  discountedPrice: z.string().optional(),
+  discountPercentage: z.string().optional(),
   startDate: z.date({ required_error: "La date de début est requise" }),
   endDate: z.date({ required_error: "La date de fin est requise" }),
   status: z.enum(["draft", "scheduled", "active", "expired", "archived"]),
@@ -61,6 +67,7 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
   const endDate = watch("endDate");
   const category = watch("category");
   const status = watch("status");
+  const mechanicType = watch("mechanicType");
 
   useEffect(() => {
     if (open && promotionId) {
@@ -85,6 +92,19 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
         setValue('status', data.status);
         setValue('startDate', new Date(data.start_date));
         setValue('endDate', new Date(data.end_date));
+        
+        // Load attributes data
+        const attributes = data.attributes as any;
+        if (attributes) {
+          setValue('mechanicType', attributes.mechanicType || "price_discount");
+          setValue('productName', attributes.productName || "");
+          setValue('ean', attributes.ean || "");
+          setValue('originalPrice', attributes.originalPrice || "");
+          setValue('discountedPrice', attributes.discountedPrice || "");
+          setValue('discountPercentage', attributes.discountPercentage || "");
+        } else {
+          setValue('mechanicType', "price_discount");
+        }
         
         if (data.image_url) {
           setExistingImageUrl(data.image_url);
@@ -190,6 +210,21 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
         setUploading(false);
       }
 
+      // Build attributes object
+      const attributes: any = {
+        mechanicType: data.mechanicType,
+        productName: data.productName,
+        ean: data.ean,
+      };
+
+      if (data.mechanicType === 'price_discount' && data.originalPrice && data.discountedPrice) {
+        attributes.originalPrice = data.originalPrice;
+        attributes.discountedPrice = data.discountedPrice;
+      } else if (data.mechanicType === 'percentage_discount' && data.originalPrice && data.discountPercentage) {
+        attributes.originalPrice = data.originalPrice;
+        attributes.discountPercentage = data.discountPercentage;
+      }
+
       const updateData: any = {
         title: data.title,
         description: data.description,
@@ -197,6 +232,7 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
         status: data.status,
         start_date: data.startDate.toISOString(),
         end_date: data.endDate.toISOString(),
+        attributes,
       };
 
       // Only update image_url if we have one
@@ -321,6 +357,115 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
                 </Select>
               </div>
             </div>
+          </div>
+
+          {/* Informations produit */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Informations produit</h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="productName">Nom du produit *</Label>
+                <Input
+                  id="productName"
+                  placeholder="Ex: Chaussures Nike Air Max"
+                  {...register("productName")}
+                />
+                {errors.productName && (
+                  <p className="text-sm text-destructive">{errors.productName.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="ean">Code EAN (optionnel)</Label>
+                <Input
+                  id="ean"
+                  placeholder="Ex: 1234567890123"
+                  {...register("ean")}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="mechanicType">Mécanique promotionnelle *</Label>
+              <Select value={mechanicType} onValueChange={(value) => setValue("mechanicType", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une mécanique" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="price_discount">Remise de prix</SelectItem>
+                  <SelectItem value="percentage_discount">Pourcentage</SelectItem>
+                  <SelectItem value="bundle_offer">Offre groupée</SelectItem>
+                  <SelectItem value="free">Gratuit</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.mechanicType && (
+                <p className="text-sm text-destructive">{errors.mechanicType.message}</p>
+              )}
+            </div>
+
+            {mechanicType === "price_discount" && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="originalPrice">Prix original (€) *</Label>
+                  <Input
+                    id="originalPrice"
+                    type="number"
+                    step="0.01"
+                    placeholder="99.99"
+                    {...register("originalPrice")}
+                  />
+                  {errors.originalPrice && (
+                    <p className="text-sm text-destructive">{errors.originalPrice.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="discountedPrice">Prix remisé (€) *</Label>
+                  <Input
+                    id="discountedPrice"
+                    type="number"
+                    step="0.01"
+                    placeholder="69.99"
+                    {...register("discountedPrice")}
+                  />
+                  {errors.discountedPrice && (
+                    <p className="text-sm text-destructive">{errors.discountedPrice.message}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {mechanicType === "percentage_discount" && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="originalPrice">Prix original (€) *</Label>
+                  <Input
+                    id="originalPrice"
+                    type="number"
+                    step="0.01"
+                    placeholder="99.99"
+                    {...register("originalPrice")}
+                  />
+                  {errors.originalPrice && (
+                    <p className="text-sm text-destructive">{errors.originalPrice.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="discountPercentage">Pourcentage de réduction (%) *</Label>
+                  <Input
+                    id="discountPercentage"
+                    type="number"
+                    placeholder="30"
+                    {...register("discountPercentage")}
+                  />
+                  {errors.discountPercentage && (
+                    <p className="text-sm text-destructive">{errors.discountPercentage.message}</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">
