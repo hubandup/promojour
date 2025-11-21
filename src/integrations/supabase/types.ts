@@ -627,10 +627,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       account_type: "free" | "store" | "central"
-      app_role: "admin" | "editor" | "viewer"
+      app_role: "admin" | "editor" | "viewer" | "super_admin"
       campaign_status:
         | "draft"
         | "scheduled"
@@ -772,7 +773,7 @@ export const Constants = {
   public: {
     Enums: {
       account_type: ["free", "store", "central"],
-      app_role: ["admin", "editor", "viewer"],
+      app_role: ["admin", "editor", "viewer", "super_admin"],
       campaign_status: [
         "draft",
         "scheduled",
