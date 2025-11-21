@@ -342,7 +342,9 @@ const PromotionDetail = () => {
         onOpenChange={setEditDialogOpen}
         promotionId={id || ""}
         onSuccess={() => {
+          console.log('Promotion updated, refreshing data...');
           fetchPromotion();
+          setEditDialogOpen(false);
         }}
       />
     </div>
