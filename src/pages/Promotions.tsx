@@ -317,6 +317,7 @@ const Promotions = () => {
       <CreatePromotionDialog 
         open={createDialogOpen} 
         onOpenChange={setCreateDialogOpen}
+        onSuccess={refetch}
       />
       
       {selectedPromotionId && (

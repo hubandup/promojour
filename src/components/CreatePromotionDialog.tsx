@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const promotionSchema = z.object({
   title: z.string().min(3, "Le titre doit contenir au moins 3 caractères").max(100),
@@ -35,9 +36,10 @@ type PromotionFormData = z.infer<typeof promotionSchema>;
 interface CreatePromotionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
-export const CreatePromotionDialog = ({ open, onOpenChange }: CreatePromotionDialogProps) => {
+export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreatePromotionDialogProps) => {
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
@@ -85,8 +87,55 @@ export const CreatePromotionDialog = ({ open, onOpenChange }: CreatePromotionDia
 
   const onSubmit = async (data: PromotionFormData) => {
     try {
-      console.log("Promotion data:", data);
-      console.log("Images:", images);
+      // Get user organization
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Non authentifié");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("organization_id")
+        .eq("id", user.id)
+        .single();
+
+      if (!profile?.organization_id) throw new Error("Organisation introuvable");
+
+      let imageUrl: string | null = null;
+
+      // Upload image if provided
+      if (images.length > 0) {
+        const file = images[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `promotion-${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('promotion-images')
+          .upload(fileName, file, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('promotion-images')
+          .getPublicUrl(fileName);
+
+        imageUrl = publicUrl;
+      }
+
+      // Create promotion
+      const { error } = await supabase
+        .from('promotions')
+        .insert({
+          organization_id: profile.organization_id,
+          title: data.title,
+          description: data.description,
+          category: data.category,
+          status: data.status,
+          start_date: data.startDate.toISOString(),
+          end_date: data.endDate.toISOString(),
+          image_url: imageUrl,
+          created_by: user.id,
+        });
+
+      if (error) throw error;
       
       toast.success("Promotion créée avec succès !");
       reset();
@@ -94,6 +143,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange }: CreatePromotionDia
       setImagePreviews([]);
       onOpenChange(false);
     } catch (error) {
+      console.error('Error creating promotion:', error);
       toast.error("Erreur lors de la création de la promotion");
     }
   };
