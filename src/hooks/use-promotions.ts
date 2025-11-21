@@ -59,6 +59,31 @@ export function usePromotions() {
     .sort((a, b) => b.views_count - a.views_count)
     .slice(0, 5);
 
+  const deletePromotion = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('promotions')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      toast({
+        title: "Succès",
+        description: "Promotion supprimée avec succès",
+      });
+      
+      await fetchPromotions();
+    } catch (error) {
+      console.error('Error deleting promotion:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer la promotion",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     promotions,
     activePromotions,
@@ -66,5 +91,6 @@ export function usePromotions() {
     topPromotions,
     loading,
     refetch: fetchPromotions,
+    deletePromotion,
   };
 }

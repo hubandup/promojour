@@ -3,11 +3,21 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, AlertCircle, Eye } from "lucide-react";
+import { Plus, Search, AlertCircle, Eye, Pencil, Trash2, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { CreatePromotionDialog } from "@/components/CreatePromotionDialog";
 import { EditPromotionDialog } from "@/components/EditPromotionDialog";
 import { ReelPreviewDialog } from "@/components/ReelPreviewDialog";
@@ -28,10 +38,12 @@ const Promotions = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedPromotionId, setSelectedPromotionId] = useState<string | null>(null);
   const [previewPromotion, setPreviewPromotion] = useState<any>(null);
+  const [promotionToDelete, setPromotionToDelete] = useState<string | null>(null);
 
-  const { promotions, loading: promotionsLoading, refetch } = usePromotions();
+  const { promotions, loading: promotionsLoading, refetch, deletePromotion } = usePromotions();
   const { organization, isFree, loading: userLoading } = useUserData();
   const { stores, loading: storesLoading } = useStores();
   const { campaigns, loading: campaignsLoading } = useCampaigns();
@@ -322,40 +334,54 @@ const Promotions = () => {
                 <div className="flex gap-2 mt-6">
                   <Button 
                     variant="outline" 
-                    size="sm" 
-                    className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                    size="icon" 
+                    className="rounded-xl hover:shadow-md transition-smooth"
                     onClick={(e) => {
                       e.stopPropagation();
                       setPreviewPromotion(promo);
                       setPreviewDialogOpen(true);
                     }}
+                    title="Aperçu"
                   >
-                    <Eye className="w-4 h-4 mr-1" />
-                    Aperçu
+                    <Eye className="w-4 h-4" />
                   </Button>
                   <Button 
                     variant="outline" 
-                    size="sm" 
-                    className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                    size="icon" 
+                    className="rounded-xl hover:shadow-md transition-smooth"
                     onClick={(e) => {
                       e.stopPropagation();
-                      console.log('Modifier button clicked, promotion ID:', promo.id);
                       setSelectedPromotionId(promo.id);
                       setEditDialogOpen(true);
                     }}
+                    title="Modifier"
                   >
-                    Modifier
+                    <Pencil className="w-4 h-4" />
                   </Button>
                   <Button 
                     variant="outline" 
-                    size="sm" 
-                    className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                    size="icon" 
+                    className="rounded-xl hover:shadow-md transition-smooth hover:border-destructive hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPromotionToDelete(promo.id);
+                      setDeleteDialogOpen(true);
+                    }}
+                    title="Supprimer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="rounded-xl hover:shadow-md transition-smooth"
                     onClick={(e) => {
                       e.stopPropagation();
                       navigate(`/promotions/${promo.id}`);
                     }}
+                    title="Détails"
                   >
-                    Détails
+                    <ArrowRight className="w-4 h-4" />
                   </Button>
                 </div>
               </CardContent>
@@ -402,6 +428,34 @@ const Promotions = () => {
           promotion={previewPromotion}
         />
       )}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer cette promotion ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPromotionToDelete(null)}>
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (promotionToDelete) {
+                  await deletePromotion(promotionToDelete);
+                  setPromotionToDelete(null);
+                  setDeleteDialogOpen(false);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
