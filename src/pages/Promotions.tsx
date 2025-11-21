@@ -15,6 +15,7 @@ import { usePromotions } from "@/hooks/use-promotions";
 import { useUserData } from "@/hooks/use-user-data";
 import { useStores } from "@/hooks/use-stores";
 import { useCampaigns } from "@/hooks/use-campaigns";
+import { usePromotionalMechanics } from "@/hooks/use-promotional-mechanics";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -34,8 +35,14 @@ const Promotions = () => {
   const { organization, isFree, loading: userLoading } = useUserData();
   const { stores, loading: storesLoading } = useStores();
   const { campaigns, loading: campaignsLoading } = useCampaigns();
+  const { mechanics, isLoading: mechanicsLoading } = usePromotionalMechanics();
 
-  const loading = promotionsLoading || userLoading || storesLoading || campaignsLoading;
+  const loading = promotionsLoading || userLoading || storesLoading || campaignsLoading || mechanicsLoading;
+
+  const getMechanicName = (mechanicCode: string) => {
+    const mechanic = mechanics.find(m => m.code === mechanicCode);
+    return mechanic?.name || null;
+  };
 
   // Filtrer les promotions
   const filteredPromotions = promotions.filter((promo) => {
@@ -242,9 +249,16 @@ const Promotions = () => {
                 {promo.description && (
                   <CardDescription className="line-clamp-2">{promo.description}</CardDescription>
                 )}
-                {promo.category && (
-                  <Badge variant="outline" className="w-fit">{promo.category}</Badge>
-                )}
+                <div className="flex gap-2 flex-wrap">
+                  {promo.category && (
+                    <Badge variant="outline" className="w-fit">{promo.category}</Badge>
+                  )}
+                  {promo.attributes?.mechanicType && getMechanicName(promo.attributes.mechanicType) && (
+                    <Badge variant="secondary" className="w-fit bg-primary/10 text-primary hover:bg-primary/20">
+                      {getMechanicName(promo.attributes.mechanicType)}
+                    </Badge>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 text-sm">
