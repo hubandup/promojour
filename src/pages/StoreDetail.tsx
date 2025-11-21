@@ -205,7 +205,7 @@ const StoreDetail = () => {
     const svg = qrRef.current.querySelector('svg');
     if (!svg) return;
 
-    const storeUrl = `${window.location.origin}/store/${store.id}`;
+    const storeUrl = `${window.location.origin}/magasin/${store.id}`;
     const fileName = `qr-${store.name.toLowerCase().replace(/\s+/g, '-')}.${format}`;
 
     if (format === 'svg') {
@@ -738,7 +738,7 @@ const StoreDetail = () => {
                 className="aspect-square bg-white rounded-xl flex items-center justify-center mb-4 shadow-md p-4"
               >
                 <QRCodeSVG
-                  value={`${window.location.origin}/store/${store.id}`}
+                  value={`${window.location.origin}/magasin/${store.id}`}
                   size={200}
                   level="H"
                   includeMargin={true}
