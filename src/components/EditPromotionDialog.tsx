@@ -41,6 +41,7 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const {
     register,
@@ -96,8 +97,7 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+  const processFiles = (files: File[]) => {
     if (files.length + images.length > 5) {
       toast.error("Vous ne pouvez pas ajouter plus de 5 images");
       return;
@@ -112,6 +112,37 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
       };
       reader.readAsDataURL(file);
     });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    processFiles(files);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const files = Array.from(e.dataTransfer.files).filter(
+      file => file.type.startsWith('image/') || file.type.startsWith('video/')
+    );
+    
+    if (files.length === 0) {
+      toast.error("Veuillez déposer des fichiers image ou vidéo");
+      return;
+    }
+    
+    processFiles(files);
   };
 
   const removeImage = (index: number) => {
@@ -321,7 +352,15 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
             <h3 className="text-lg font-semibold">Visuels</h3>
             
             <div className="space-y-4">
-              <div className="border-2 border-dashed rounded-lg p-6 text-center">
+              <div 
+                className={cn(
+                  "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+                  isDragging ? "border-primary bg-primary/5" : "border-border"
+                )}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
                 <input
                   type="file"
                   id="images"
@@ -333,7 +372,7 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
                 <label htmlFor="images" className="cursor-pointer">
                   <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                   <p className="text-sm font-medium mb-1">
-                    Cliquez pour ajouter des images ou vidéos
+                    Cliquez ou glissez-déposez vos images
                   </p>
                   <p className="text-xs text-muted-foreground">
                     PNG, JPG, MP4 jusqu'à 10MB (max 5 fichiers)

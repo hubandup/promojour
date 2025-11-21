@@ -42,6 +42,8 @@ interface CreatePromotionDialogProps {
 export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreatePromotionDialogProps) => {
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const {
     register,
@@ -62,8 +64,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
   const category = watch("category");
   const status = watch("status");
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+  const processFiles = (files: File[]) => {
     if (files.length + images.length > 5) {
       toast.error("Vous ne pouvez pas ajouter plus de 5 images");
       return;
@@ -80,6 +81,37 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
     });
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    processFiles(files);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const files = Array.from(e.dataTransfer.files).filter(
+      file => file.type.startsWith('image/') || file.type.startsWith('video/')
+    );
+    
+    if (files.length === 0) {
+      toast.error("Veuillez déposer des fichiers image ou vidéo");
+      return;
+    }
+    
+    processFiles(files);
+  };
+
   const removeImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
@@ -87,6 +119,8 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
 
   const onSubmit = async (data: PromotionFormData) => {
     try {
+      setUploading(true);
+      
       // Get user organization
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
@@ -111,7 +145,10 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
           .from('promotion-images')
           .upload(fileName, file, { upsert: true });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw uploadError;
+        }
 
         const { data: { publicUrl } } = supabase.storage
           .from('promotion-images')
@@ -135,16 +172,22 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
           created_by: user.id,
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
       
       toast.success("Promotion créée avec succès !");
       reset();
       setImages([]);
       setImagePreviews([]);
       onOpenChange(false);
-    } catch (error) {
+      onSuccess?.();
+    } catch (error: any) {
       console.error('Error creating promotion:', error);
-      toast.error("Erreur lors de la création de la promotion");
+      toast.error(error.message || "Erreur lors de la création de la promotion");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -368,7 +411,15 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
             <h3 className="text-lg font-semibold">Visuels</h3>
             
             <div className="space-y-4">
-              <div className="border-2 border-dashed rounded-lg p-6 text-center">
+              <div 
+                className={cn(
+                  "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+                  isDragging ? "border-primary bg-primary/5" : "border-border"
+                )}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
                 <input
                   type="file"
                   id="images"
@@ -380,7 +431,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
                 <label htmlFor="images" className="cursor-pointer">
                   <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                   <p className="text-sm font-medium mb-1">
-                    Cliquez pour ajouter des images ou vidéos
+                    Cliquez ou glissez-déposez vos images
                   </p>
                   <p className="text-xs text-muted-foreground">
                     PNG, JPG, MP4 jusqu'à 10MB (max 5 fichiers)
@@ -422,11 +473,12 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
                 setImagePreviews([]);
                 onOpenChange(false);
               }}
+              disabled={uploading}
             >
               Annuler
             </Button>
-            <Button type="submit" className="gradient-primary text-white shadow-glow">
-              Créer la promotion
+            <Button type="submit" className="gradient-primary text-white shadow-glow" disabled={uploading}>
+              {uploading ? "Création en cours..." : "Créer la promotion"}
             </Button>
           </div>
         </form>
