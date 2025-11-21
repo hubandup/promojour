@@ -3,11 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, AlertCircle, Eye, Pencil, Trash2, ArrowRight } from "lucide-react";
+import { Plus, Search, AlertCircle, Eye, Pencil, Trash2, ArrowRight, LayoutGrid, List, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,19 +35,26 @@ import { useUserData } from "@/hooks/use-user-data";
 import { useStores } from "@/hooks/use-stores";
 import { useCampaigns } from "@/hooks/use-campaigns";
 import { usePromotionalMechanics } from "@/hooks/use-promotional-mechanics";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 const Promotions = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [storeFilter, setStoreFilter] = useState<string>("all");
   const [campaignFilter, setCampaignFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [bulkStatusDialogOpen, setBulkStatusDialogOpen] = useState(false);
   const [selectedPromotionId, setSelectedPromotionId] = useState<string | null>(null);
   const [previewPromotion, setPreviewPromotion] = useState<any>(null);
   const [promotionToDelete, setPromotionToDelete] = useState<string | null>(null);
@@ -54,6 +70,78 @@ const Promotions = () => {
   const getMechanicName = (mechanicCode: string) => {
     const mechanic = mechanics.find(m => m.code === mechanicCode);
     return mechanic?.name || null;
+  };
+
+  const toggleSelection = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredPromotions.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredPromotions.map(p => p.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      const { error } = await supabase
+        .from('promotions')
+        .delete()
+        .in('id', Array.from(selectedIds));
+
+      if (error) throw error;
+
+      toast({
+        title: "Succès",
+        description: `${selectedIds.size} promotion(s) supprimée(s)`,
+      });
+
+      setSelectedIds(new Set());
+      setBulkDeleteDialogOpen(false);
+      await refetch();
+    } catch (error) {
+      console.error('Error deleting promotions:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer les promotions",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkStatusChange = async (newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('promotions')
+        .update({ status: newStatus as 'draft' | 'scheduled' | 'active' | 'expired' | 'archived' })
+        .in('id', Array.from(selectedIds));
+
+      if (error) throw error;
+
+      toast({
+        title: "Succès",
+        description: `${selectedIds.size} promotion(s) mise(s) à jour`,
+      });
+
+      setSelectedIds(new Set());
+      setBulkStatusDialogOpen(false);
+      await refetch();
+    } catch (error) {
+      console.error('Error updating promotions:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour les promotions",
+        variant: "destructive",
+      });
+    }
   };
 
   // Filtrer les promotions
@@ -94,17 +182,82 @@ const Promotions = () => {
           <h1 className="text-3xl font-bold">Promotions</h1>
           <p className="text-muted-foreground">
             {loading ? "Chargement..." : `${filteredPromotions.length} promotion${filteredPromotions.length > 1 ? 's' : ''}`}
+            {selectedIds.size > 0 && ` · ${selectedIds.size} sélectionnée(s)`}
           </p>
         </div>
-        <Button 
-          className="gradient-primary text-white shadow-glow"
-          onClick={() => setCreateDialogOpen(true)}
-          disabled={!canCreatePromo || loading}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nouvelle promotion
-        </Button>
+        <div className="flex gap-2">
+          <div className="flex gap-1 bg-muted/50 p-1 rounded-xl">
+            <Button
+              variant={viewMode === "grid" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("grid")}
+              className="rounded-lg"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("list")}
+              className="rounded-lg"
+            >
+              <List className="w-4 h-4" />
+            </Button>
+          </div>
+          <Button 
+            className="gradient-primary text-white shadow-glow"
+            onClick={() => setCreateDialogOpen(true)}
+            disabled={!canCreatePromo || loading}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nouvelle promotion
+          </Button>
+        </div>
       </div>
+
+      {/* Bulk Actions Bar */}
+      {selectedIds.size > 0 && (
+        <Card className="glass-card border-primary/50 shadow-glow">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedIds(new Set())}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Désélectionner tout
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {selectedIds.size} promotion(s) sélectionnée(s)
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <Select onValueChange={handleBulkStatusChange}>
+                  <SelectTrigger className="w-[200px] rounded-xl">
+                    <SelectValue placeholder="Changer le statut" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Brouillon</SelectItem>
+                    <SelectItem value="scheduled">Programmé</SelectItem>
+                    <SelectItem value="active">Actif</SelectItem>
+                    <SelectItem value="expired">Expiré</SelectItem>
+                    <SelectItem value="archived">Archivé</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="destructive"
+                  onClick={() => setBulkDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Supprimer
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Alerts */}
       {isNearLimit && !isAtLimit && (
@@ -190,7 +343,7 @@ const Promotions = () => {
         </CardContent>
       </Card>
 
-      {/* Promotions Grid */}
+      {/* Promotions List/Grid */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
@@ -209,6 +362,180 @@ const Promotions = () => {
       ) : filteredPromotions.length === 0 ? (
         <Card className="glass-card border-border/50 p-12 text-center">
           <p className="text-muted-foreground">Aucune promotion trouvée</p>
+        </Card>
+      ) : viewMode === "list" ? (
+        <Card className="glass-card border-border/50 overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent border-border/50">
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={selectedIds.size === filteredPromotions.length}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
+                <TableHead className="w-20">Image</TableHead>
+                <TableHead>Titre</TableHead>
+                <TableHead>Mécanique</TableHead>
+                <TableHead>Prix</TableHead>
+                <TableHead>Dates</TableHead>
+                <TableHead>Statut</TableHead>
+                <TableHead className="text-center">Stats</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredPromotions.map((promo) => (
+                <TableRow key={promo.id} className="border-border/50">
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.has(promo.id)}
+                      onCheckedChange={() => toggleSelection(promo.id)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted">
+                      {promo.image_url ? (
+                        <img
+                          src={promo.image_url}
+                          alt={promo.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="max-w-xs">
+                      <p className="font-medium truncate">{promo.title}</p>
+                      {promo.description && (
+                        <p className="text-sm text-muted-foreground truncate">{promo.description}</p>
+                      )}
+                      {promo.category && (
+                        <Badge variant="outline" className="mt-1">{promo.category}</Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {promo.attributes?.mechanicType && getMechanicName(promo.attributes.mechanicType) && (
+                      <Badge variant="secondary" className="bg-primary/10 text-primary">
+                        {getMechanicName(promo.attributes.mechanicType)}
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {promo.attributes?.originalPrice && (
+                      <div className="space-y-1">
+                        {promo.attributes?.discountedPrice ? (
+                          <>
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-xs text-muted-foreground line-through">
+                                {parseFloat(promo.attributes.originalPrice).toFixed(2)}€
+                              </span>
+                              {promo.attributes.discountPercentage && (
+                                <Badge className="bg-destructive text-destructive-foreground text-xs">
+                                  -{promo.attributes.discountPercentage}%
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-lg font-bold text-primary">
+                              {parseFloat(promo.attributes.discountedPrice).toFixed(2)}€
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-base font-semibold">
+                            {parseFloat(promo.attributes.originalPrice).toFixed(2)}€
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground text-xs">Du:</span>
+                        <span className="font-medium">
+                          {format(new Date(promo.start_date), "dd/MM/yy", { locale: fr })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground text-xs">Au:</span>
+                        <span className="font-medium">
+                          {format(new Date(promo.end_date), "dd/MM/yy", { locale: fr })}
+                        </span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>{getStatusBadge(promo.status)}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col items-center gap-1 text-sm">
+                      <div className="flex items-center gap-1">
+                        <Eye className="w-3 h-3 text-muted-foreground" />
+                        <span className="font-semibold">{promo.views_count}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground">{promo.clicks_count} clics</span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          setPreviewPromotion(promo);
+                          setPreviewDialogOpen(true);
+                        }}
+                        title="Aperçu"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          setSelectedPromotionId(promo.id);
+                          setEditDialogOpen(true);
+                        }}
+                        title="Modifier"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:text-destructive"
+                        onClick={() => {
+                          setPromotionToDelete(promo.id);
+                          setDeleteDialogOpen(true);
+                        }}
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => navigate(`/promotions/${promo.id}`)}
+                        title="Détails"
+                      >
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -452,6 +779,26 @@ const Promotions = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression groupée</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer {selectedIds.size} promotion(s) ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer tout
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
