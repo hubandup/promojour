@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useUserData } from "@/hooks/use-user-data";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 import { 
   ArrowRight,
   Check,
@@ -19,6 +20,12 @@ export default function Landing() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { profile } = useUserData();
+  
+  const statsAnimation = useScrollAnimation();
+  const dashboardAnimation = useScrollAnimation();
+  const featuresAnimation = useScrollAnimation();
+  const pricingAnimation = useScrollAnimation();
+  const ctaAnimation = useScrollAnimation();
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -121,7 +128,12 @@ export default function Landing() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/30">
+      <section 
+        ref={statsAnimation.ref as React.RefObject<HTMLElement>}
+        className={`py-20 px-4 sm:px-6 lg:px-8 bg-muted/30 transition-all duration-700 ${
+          statsAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
         <div className="container mx-auto max-w-5xl">
           <div className="text-center space-y-6 animate-fade-in">
             <h2 className="text-4xl sm:text-5xl font-bold">
@@ -153,7 +165,12 @@ export default function Landing() {
       </section>
 
       {/* Dashboard Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
+      <section 
+        ref={dashboardAnimation.ref as React.RefObject<HTMLElement>}
+        className={`py-20 px-4 sm:px-6 lg:px-8 transition-all duration-700 ${
+          dashboardAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
         <div className="container mx-auto max-w-5xl">
           <div className="text-center space-y-6 animate-fade-in">
             <h2 className="text-4xl sm:text-5xl font-bold">
@@ -175,7 +192,12 @@ export default function Landing() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/30">
+      <section 
+        ref={featuresAnimation.ref as React.RefObject<HTMLElement>}
+        className={`py-20 px-4 sm:px-6 lg:px-8 bg-muted/30 transition-all duration-700 ${
+          featuresAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-bold mb-4">Fonctionnalités complètes</h2>
@@ -249,7 +271,12 @@ export default function Landing() {
       </section>
 
       {/* Pricing Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
+      <section 
+        ref={pricingAnimation.ref as React.RefObject<HTMLElement>}
+        className={`py-20 px-4 sm:px-6 lg:px-8 transition-all duration-700 ${
+          pricingAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-bold mb-4">Tarifs simples et transparents</h2>
@@ -392,7 +419,12 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
+      <section 
+        ref={ctaAnimation.ref as React.RefObject<HTMLElement>}
+        className={`py-20 px-4 sm:px-6 lg:px-8 transition-all duration-700 ${
+          ctaAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
         <div className="container mx-auto max-w-4xl">
           <div className="relative rounded-3xl bg-gradient-to-br from-primary/10 via-orange/5 to-coral/10 border border-primary/20 p-12 text-center overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
