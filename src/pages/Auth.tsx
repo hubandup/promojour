@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import logoPromojour from "@/assets/logo-promojour.png";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -67,7 +68,11 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
-          <div className="w-12 h-12 rounded-lg gradient-hero mx-auto mb-4"></div>
+          <img 
+            src={logoPromojour} 
+            alt="PromoJour Logo" 
+            className="h-16 mx-auto mb-4"
+          />
           <CardTitle className="text-3xl font-bold">PromoJour</CardTitle>
           <CardDescription>Gérez vos promotions efficacement</CardDescription>
         </CardHeader>
