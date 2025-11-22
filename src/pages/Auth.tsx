@@ -94,7 +94,6 @@ const Auth = () => {
             alt="PromoJour Logo" 
             className="h-16 mx-auto mb-4"
           />
-          <CardTitle className="text-3xl font-bold">PromoJour</CardTitle>
           <CardDescription>Gérez vos promotions efficacement</CardDescription>
         </CardHeader>
         <CardContent>
