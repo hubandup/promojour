@@ -17,6 +17,9 @@ import StoreReels from "./pages/StoreReels";
 import StoreFrontend from "./pages/StoreFrontend";
 import Settings from "./pages/Settings";
 import Account from "./pages/Account";
+import LegalNotice from "./pages/LegalNotice";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
@@ -32,6 +35,10 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
+            {/* Legal pages */}
+            <Route path="/mentions-legales" element={<LegalNotice />} />
+            <Route path="/politique-de-confidentialite" element={<PrivacyPolicy />} />
+            <Route path="/conditions-generales" element={<TermsOfService />} />
             {/* Public store frontend routes */}
             <Route path="/store/:storeId/reels" element={<StoreReels />} />
             <Route path="/enseigne/magasin/:storeId" element={<StoreReels />} />
