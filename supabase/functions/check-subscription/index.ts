@@ -71,23 +71,30 @@ serve(async (req) => {
       logStep("Subscription data", { 
         subscriptionId: subscription.id, 
         currentPeriodEnd: subscription.current_period_end,
-        currentPeriodEndType: typeof subscription.current_period_end
+        status: subscription.status
       });
       
-      if (subscription.current_period_end && typeof subscription.current_period_end === 'number') {
+      // Handle current_period_end - it should be a number (Unix timestamp)
+      if (subscription.current_period_end) {
         try {
-          subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-          logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
+          const timestamp = typeof subscription.current_period_end === 'number' 
+            ? subscription.current_period_end 
+            : parseInt(String(subscription.current_period_end));
+          
+          if (!isNaN(timestamp)) {
+            subscriptionEnd = new Date(timestamp * 1000).toISOString();
+            logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
+          } else {
+            logStep("Invalid timestamp", { currentPeriodEnd: subscription.current_period_end });
+          }
         } catch (dateError) {
           const errorMessage = dateError instanceof Error ? dateError.message : String(dateError);
           logStep("Error converting date", { error: errorMessage, value: subscription.current_period_end });
         }
       } else {
-        logStep("Active subscription found but invalid end date", { 
-          subscriptionId: subscription.id, 
-          currentPeriodEnd: subscription.current_period_end 
-        });
+        logStep("Active subscription but no end date", { subscriptionId: subscription.id });
       }
+      
       productId = subscription.items.data[0].price.product as string;
       logStep("Determined subscription tier", { productId });
     } else {
