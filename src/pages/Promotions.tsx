@@ -49,7 +49,7 @@ const Promotions = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [storeFilter, setStoreFilter] = useState<string>("all");
   const [campaignFilter, setCampaignFilter] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list" | "calendar">("list");
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "calendar">("grid");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -239,6 +239,7 @@ const Promotions = () => {
               size="sm"
               onClick={() => setViewMode("grid")}
               className="rounded-lg"
+              title="Vue grille"
             >
               <LayoutGrid className="w-4 h-4" />
             </Button>
@@ -247,6 +248,7 @@ const Promotions = () => {
               size="sm"
               onClick={() => setViewMode("list")}
               className="rounded-lg"
+              title="Vue liste"
             >
               <List className="w-4 h-4" />
             </Button>
@@ -255,6 +257,7 @@ const Promotions = () => {
               size="sm"
               onClick={() => setViewMode("calendar")}
               className="rounded-lg"
+              title="Vue calendrier"
             >
               <CalendarIcon className="w-4 h-4" />
             </Button>
