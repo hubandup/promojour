@@ -61,6 +61,8 @@ const StoreDetail = () => {
   const [formData, setFormData] = useState<Store | null>(null);
   const [uploading, setUploading] = useState(false);
   const [orgLogo, setOrgLogo] = useState<string | null>(null);
+  const [promotions, setPromotions] = useState<any[]>([]);
+  const [loadingPromotions, setLoadingPromotions] = useState(true);
 
   // Horaires par défaut
   const defaultHours = {
@@ -75,6 +77,7 @@ const StoreDetail = () => {
 
   useEffect(() => {
     fetchStore();
+    fetchPromotions();
   }, [id]);
 
   useEffect(() => {
@@ -130,6 +133,26 @@ const StoreDetail = () => {
       toast.error("Impossible de charger le magasin");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPromotions = async () => {
+    try {
+      setLoadingPromotions(true);
+      const { data, error } = await supabase
+        .from("promotions")
+        .select("*")
+        .or(`store_id.eq.${id},store_id.is.null`)
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setPromotions(data || []);
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast.error("Impossible de charger les promotions");
+    } finally {
+      setLoadingPromotions(false);
     }
   };
 
@@ -366,9 +389,12 @@ const StoreDetail = () => {
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-6">
           <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 rounded-xl">
+            <TabsList className="grid w-full grid-cols-5 rounded-xl">
               <TabsTrigger value="info" className="rounded-xl">Informations</TabsTrigger>
               <TabsTrigger value="hours" className="rounded-xl">Horaires</TabsTrigger>
+              <TabsTrigger value="promotions" className="rounded-xl">
+                Promotions {promotions.length > 0 && `(${promotions.length})`}
+              </TabsTrigger>
               <TabsTrigger value="social" className="rounded-xl">
                 <Share2 className="w-4 h-4 mr-2" />
                 Connexions
@@ -646,6 +672,78 @@ const StoreDetail = () => {
               </Card>
             </TabsContent>
 
+            <TabsContent value="promotions" className="space-y-6">
+              <Card className="glass-card border-border/50">
+                <CardHeader>
+                  <CardTitle>Promotions actives</CardTitle>
+                  <CardDescription>
+                    Promotions visibles dans ce magasin
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loadingPromotions ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-24" />
+                      <Skeleton className="h-24" />
+                      <Skeleton className="h-24" />
+                    </div>
+                  ) : promotions.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      Aucune promotion active pour ce magasin
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {promotions.map((promo) => (
+                        <Card key={promo.id} className="border-border/50 hover:shadow-md transition-smooth">
+                          <CardContent className="p-4">
+                            <div className="flex gap-4">
+                              {promo.image_url && (
+                                <img
+                                  src={promo.image_url}
+                                  alt={promo.title}
+                                  className="w-24 h-24 object-cover rounded-lg"
+                                />
+                              )}
+                              <div className="flex-1">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div>
+                                    <h3 className="font-semibold">{promo.title}</h3>
+                                    {promo.description && (
+                                      <p className="text-sm text-muted-foreground mt-1">
+                                        {promo.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20">
+                                    Actif
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                                  <div className="flex items-center gap-1">
+                                    <Eye className="w-3 h-3" />
+                                    {promo.views_count || 0} vues
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <MousePointer className="w-3 h-3" />
+                                    {promo.clicks_count || 0} clics
+                                  </div>
+                                  {promo.category && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      {promo.category}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             <TabsContent value="social" className="space-y-6">
               <SocialConnectionsManager storeId={store.id} />
             </TabsContent>
@@ -698,7 +796,7 @@ const StoreDetail = () => {
               <Card className="glass-card border-border/50">
                 <CardHeader>
                   <CardTitle>Promotions actives</CardTitle>
-                  <CardDescription>3 promotions en cours dans ce magasin</CardDescription>
+                  <CardDescription>{promotions.length} promotion{promotions.length > 1 ? 's' : ''} en cours dans ce magasin</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">Statistiques détaillées à venir...</p>
