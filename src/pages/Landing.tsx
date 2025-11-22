@@ -248,6 +248,149 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl sm:text-5xl font-bold mb-4">Tarifs simples et transparents</h2>
+            <p className="text-xl text-muted-foreground">
+              Choisissez l'offre adaptée à vos besoins
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Free Tier */}
+            <div className="p-8 rounded-2xl bg-background border border-border hover:border-primary/50 transition-all">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-2xl font-bold mb-2">Gratuit</h3>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-5xl font-bold">0€</span>
+                    <span className="text-muted-foreground">/mois</span>
+                  </div>
+                </div>
+                
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm">1 magasin maximum</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm">7 promos planifiables</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm">Statistiques de base</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm">Connexions réseaux sociaux</span>
+                  </li>
+                </ul>
+
+                <Button variant="outline" className="w-full" onClick={() => navigate("/auth")}>
+                  Commencer gratuitement
+                </Button>
+              </div>
+            </div>
+
+            {/* Pro Tier - Highlighted */}
+            <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/10 via-orange/5 to-coral/10 border-2 border-primary relative hover:shadow-2xl transition-all scale-105">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                Recommandé
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-2xl font-bold mb-2">Magasin Pro</h3>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-5xl font-bold">49€</span>
+                    <span className="text-muted-foreground">/mois</span>
+                  </div>
+                </div>
+                
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm font-medium">Jusqu'à 5 magasins</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm font-medium">Promos illimitées</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm font-medium">Statistiques complètes</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm font-medium">Import CSV/Excel</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm font-medium">QR codes personnalisés</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm font-medium">Jusqu'à 5 utilisateurs</span>
+                  </li>
+                </ul>
+
+                <Button className="w-full bg-primary hover:bg-primary/90" onClick={() => navigate("/auth")}>
+                  Démarrer l'essai gratuit
+                </Button>
+              </div>
+            </div>
+
+            {/* Centrale Tier */}
+            <div className="p-8 rounded-2xl bg-background border border-border hover:border-primary/50 transition-all">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-2xl font-bold mb-2">Centrale</h3>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-5xl font-bold">180€</span>
+                    <span className="text-muted-foreground">/mois</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">+ 19€/mois par magasin</p>
+                </div>
+                
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm">Magasins illimités</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm">Utilisateurs illimités</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm">Gestion centralisée</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm">API & Webhooks</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm">Import en masse</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm">Support prioritaire</span>
+                  </li>
+                </ul>
+
+                <Button variant="outline" className="w-full" onClick={() => navigate("/auth")}>
+                  Nous contacter
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="container mx-auto max-w-4xl">
