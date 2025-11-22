@@ -1,4 +1,6 @@
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useNavigate } from "react-router-dom";
 import { useUserData } from "@/hooks/use-user-data";
 import { useToast } from "@/hooks/use-toast";
@@ -12,7 +14,8 @@ import {
   Smartphone,
   QrCode,
   Facebook,
-  Instagram
+  Instagram,
+  Quote
 } from "lucide-react";
 import logoPromoJour from "@/assets/logo-promojour.png";
 
@@ -25,7 +28,31 @@ export default function Landing() {
   const dashboardAnimation = useScrollAnimation();
   const featuresAnimation = useScrollAnimation();
   const pricingAnimation = useScrollAnimation();
+  const testimonialsAnimation = useScrollAnimation();
   const ctaAnimation = useScrollAnimation();
+
+  const testimonials = [
+    {
+      quote: "PromoJour a transformé notre façon de communiquer. Nos promotions touchent désormais 3 fois plus de clients qu'avec les prospectus papier.",
+      author: "Marie Durand",
+      role: "Gérante, Boulangerie Au Bon Pain - Lille",
+    },
+    {
+      quote: "L'interface est ultra simple et le gain de temps est considérable. On gère toutes nos promos en quelques clics au lieu de passer des heures sur chaque réseau social.",
+      author: "Thomas Leroy",
+      role: "Responsable Marketing, Chaussures Centrale - 30 magasins",
+    },
+    {
+      quote: "Nos clients adorent scanner le QR code en vitrine. C'est moderne, écologique et on voit directement l'impact dans nos statistiques de visite.",
+      author: "Sophie Martin",
+      role: "Propriétaire, Pharmacie Martin - Lyon",
+    },
+    {
+      quote: "Le ROI est impressionnant. Pour 49€/mois, on économise des milliers d'euros en impression et on touche plus de monde. C'est un no-brainer.",
+      author: "Jean-Pierre Dubois",
+      role: "Directeur, Supérette Bio Dubois - Paris",
+    },
+  ];
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -415,6 +442,53 @@ export default function Landing() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section 
+        ref={testimonialsAnimation.ref as React.RefObject<HTMLElement>}
+        className={`py-20 px-4 sm:px-6 lg:px-8 bg-muted/30 transition-all duration-700 ${
+          testimonialsAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
+        <div className="container mx-auto max-w-5xl">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl sm:text-5xl font-bold mb-4">Ils nous font confiance</h2>
+            <p className="text-xl text-muted-foreground">
+              Découvrez les retours de nos utilisateurs
+            </p>
+          </div>
+
+          <Carousel className="w-full max-w-4xl mx-auto">
+            <CarouselContent>
+              {testimonials.map((testimonial, index) => (
+                <CarouselItem key={index}>
+                  <Card className="border-2 border-border/50">
+                    <CardContent className="p-8 sm:p-12">
+                      <Quote className="h-12 w-12 text-primary/20 mb-6" />
+                      <blockquote className="text-lg sm:text-xl text-foreground mb-8 leading-relaxed">
+                        "{testimonial.quote}"
+                      </blockquote>
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-lg font-bold text-primary">
+                            {testimonial.author.split(' ').map(n => n[0]).join('')}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-bold text-foreground">{testimonial.author}</p>
+                          <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
         </div>
       </section>
 
