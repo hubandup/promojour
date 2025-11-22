@@ -18,6 +18,8 @@ export default function StoreReels() {
 
     const fetchData = async () => {
       try {
+        console.log('Fetching store with ID:', storeId);
+        
         // Fetch store info
         const { data: storeData, error: storeError } = await supabase
           .from("stores_public")
@@ -25,18 +27,24 @@ export default function StoreReels() {
           .eq("id", storeId)
           .single();
 
+        console.log('Store query result:', { storeData, storeError });
+
         if (storeError) throw storeError;
         // stores_public view doesn't include phone/email for privacy
         setStore({ ...storeData, phone: null, email: null });
 
         // Fetch active promotions for this store
         // Include ALL active promotions from the organization
+        console.log('Fetching promotions for organization:', storeData.organization_id);
+        
         const { data: promoData, error: promoError } = await supabase
           .from("promotions")
           .select("*")
           .eq("status", "active")
           .eq("organization_id", storeData.organization_id)
           .order("created_at", { ascending: false });
+
+        console.log('Promotions query result:', { promoData, promoError, count: promoData?.length });
 
         if (promoError) throw promoError;
         setPromotions(promoData || []);
