@@ -1,25 +1,35 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { Store, Users, TrendingUp, Zap, Instagram, Mail, QrCode, BarChart3, User, Settings, LogOut, ChevronDown } from "lucide-react";
-import logoPromoJour from "@/assets/logo-promojour.png";
 import { useUserData } from "@/hooks/use-user-data";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { 
+  BarChart3, 
+  Calendar, 
+  Smartphone, 
+  Target, 
+  TrendingUp, 
+  Zap,
+  Facebook,
+  Instagram,
+  MapPin,
+  QrCode,
+  Settings,
+  ChevronRight
+} from "lucide-react";
+import heroImage from "@/assets/landing-hero.png";
+import benefitsImage from "@/assets/landing-benefits.png";
+import discoverImage from "@/assets/landing-discover.png";
+import featuresImage from "@/assets/landing-features.png";
+import managementImage from "@/assets/landing-management.png";
+import budgetImage from "@/assets/landing-budget.png";
+import logoPromoJour from "@/assets/logo-promojour.png";
 
-const Landing = () => {
+export default function Landing() {
   const navigate = useNavigate();
-  const { profile, loading } = useUserData();
   const { toast } = useToast();
+  const { profile } = useUserData();
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -34,133 +44,95 @@ const Landing = () => {
         title: "Déconnexion réussie",
         description: "À bientôt !",
       });
-      navigate("/");
+      navigate("/auth");
     }
   };
 
   const features = [
     {
-      icon: Store,
-      title: "Multi-magasins",
-      description: "Gérez toutes vos promotions depuis une seule plateforme"
-    },
-    {
-      icon: Instagram,
-      title: "Réseaux sociaux",
-      description: "Publication automatique sur Instagram, Facebook et Google Business"
-    },
-    {
-      icon: QrCode,
-      title: "QR Codes dynamiques",
-      description: "Remplacez vos catalogues papier par des QR codes intelligents"
-    },
-    {
-      icon: Mail,
-      title: "Email & SMS",
-      description: "Diffusez vos promotions par email et SMS en quelques clics"
-    },
-    {
-      icon: BarChart3,
-      title: "Statistiques détaillées",
-      description: "Suivez l'impact de chaque promotion en temps réel"
+      icon: Settings,
+      title: "Création et gestion en temps réel",
+      description: "Créez, modifiez et gérez toutes vos promotions depuis un tableau de bord unique et intuitif.",
     },
     {
       icon: Zap,
-      title: "Automatisation",
-      description: "Créez des campagnes qui se publient automatiquement"
-    }
+      title: "Diffusion automatique",
+      description: "Vos promotions sont automatiquement publiées sur Facebook, Instagram et Google My Business.",
+    },
+    {
+      icon: Calendar,
+      title: "Planification intelligente",
+      description: "Programmez vos publications à l'avance et optimisez votre calendrier promotionnel.",
+    },
+    {
+      icon: Smartphone,
+      title: "Accès mobile",
+      description: "Gérez vos promotions n'importe où, n'importe quand depuis votre smartphone.",
+    },
+    {
+      icon: Target,
+      title: "Communication ciblée",
+      description: "Atteignez précisément votre audience locale sur les canaux où elle est active.",
+    },
+    {
+      icon: BarChart3,
+      title: "Analyse du ROI",
+      description: "Mesurez l'efficacité de vos campagnes avec des KPI détaillés et des analyses comportementales.",
+    },
   ];
 
-  const plans = [
+  const benefits = [
     {
-      name: "Free",
-      price: "0€",
-      period: "/mois",
-      features: ["1 magasin", "7 promotions / 7 jours", "Statistiques limitées", "Support communauté"],
-      cta: "Commencer gratuitement"
+      icon: QrCode,
+      title: "Simplicité d'utilisation",
+      description: "Interface intuitive et conviviale, sans expertise technique requise. Créez vos promotions en quelques clics.",
+      image: managementImage,
     },
     {
-      name: "Pro",
-      price: "49€",
-      period: "/mois",
-      features: ["5 magasins", "Promotions illimitées", "Stats complètes", "Support prioritaire"],
-      cta: "Démarrer l'essai gratuit",
-      popular: true
+      icon: MapPin,
+      title: "Communication locale et ciblée",
+      description: "Diffusez vos promotions spécifiquement dans votre zone de chalandise, sur les canaux les plus pertinents.",
+      image: featuresImage,
     },
     {
-      name: "Centrale",
-      price: "Sur mesure",
-      period: "",
-      features: ["Magasins illimités", "Utilisateurs illimités", "API & webhooks", "Account manager dédié"],
-      cta: "Nous contacter"
-    }
+      icon: TrendingUp,
+      title: "Analyse du ROI",
+      description: "Mesurez le retour sur investissement avec des indicateurs de performance et comportement clients détaillés.",
+      image: benefitsImage,
+    },
+    {
+      icon: BarChart3,
+      title: "Maîtrise du budget",
+      description: "Contrôlez et optimisez vos dépenses marketing grâce aux outils de suivi et d'analyse en temps réel.",
+      image: budgetImage,
+    },
   ];
 
   return (
-    <div className="min-h-screen gradient-mesh">
+    <div className="min-h-screen bg-background">
       {/* Navbar */}
-      <nav className="glass-card sticky top-0 z-50 border-b border-border/50">
-        <div className="container mx-auto px-6 py-5 flex items-center justify-between">
+      <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={logoPromoJour} alt="PromoJour" className="h-11" />
+            <img src={logoPromoJour} alt="PromoJour" className="h-8" />
           </div>
-          <div className="flex items-center gap-3">
-            {!loading && profile ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    className="font-medium flex items-center gap-2 hover:bg-primary/5"
-                  >
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={profile.avatar_url || undefined} />
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {profile.first_name?.[0] || profile.last_name?.[0] || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span>
-                      {profile.first_name && profile.last_name 
-                        ? `${profile.first_name} ${profile.last_name}`
-                        : profile.first_name || profile.last_name || "Mon compte"}
-                    </span>
-                    <ChevronDown className="h-4 w-4 opacity-50" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 glass-card border-border/50 z-50 bg-background" align="end">
-                  <DropdownMenuLabel className="font-medium">
-                    Mon compte
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-border/50" />
-                  <DropdownMenuItem 
-                    onClick={() => navigate("/dashboard")}
-                    className="cursor-pointer hover:bg-primary/5"
-                  >
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Mon compte</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => navigate("/settings")}
-                    className="cursor-pointer hover:bg-primary/5"
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Paramètres</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-border/50" />
-                  <DropdownMenuItem 
-                    onClick={handleSignOut}
-                    className="cursor-pointer hover:bg-destructive/10 text-destructive focus:text-destructive"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Déconnexion</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+          
+          <div className="flex items-center gap-4">
+            {profile ? (
+              <>
+                <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+                  Dashboard
+                </Button>
+                <Button variant="ghost" onClick={handleSignOut}>
+                  Déconnexion
+                </Button>
+              </>
             ) : (
               <>
-                <Button variant="ghost" onClick={() => navigate("/auth")} className="font-medium">
+                <Button variant="ghost" onClick={() => navigate("/auth")}>
                   Connexion
                 </Button>
-                <Button className="gradient-primary text-white shadow-glow hover:shadow-xl transition-smooth font-medium" onClick={() => navigate("/auth")}>
+                <Button onClick={() => navigate("/auth")}>
                   Essai gratuit
                 </Button>
               </>
@@ -170,141 +142,222 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-6 py-32 text-center relative">
-        <div className="max-w-5xl mx-auto relative z-10">
-          <div className="inline-block mb-6 px-6 py-2 glass-card rounded-full">
-            <p className="text-sm font-medium bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              ✨ La plateforme tout-en-un pour vos promotions
+      <section className="relative overflow-hidden bg-gradient-to-br from-yellow/30 via-background to-background">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(245,227,133,0.2),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(93,175,184,0.15),transparent_50%)]" />
+        
+        <div className="container mx-auto px-4 py-20 lg:py-32">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-8 relative z-10">
+              <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
+                Créez, gérez et diffusez vos promos sur les{" "}
+                <span className="text-primary">réseaux sociaux</span>
+              </h1>
+              <p className="text-xl text-muted-foreground">
+                Dès 0€/mois
+              </p>
+              <p className="text-lg text-foreground/80">
+                La fin du prospectus approche : découvrez la nouvelle plateforme qui vous permet de diffuser vos promotions simplement et en temps réel sur Facebook, Instagram et Google.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <Button size="lg" onClick={() => navigate("/auth")} className="shadow-lg hover:shadow-xl transition-all">
+                  Démarrer gratuitement
+                  <ChevronRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button size="lg" variant="outline" onClick={() => navigate("/auth")}>
+                  Voir la démo
+                </Button>
+              </div>
+            </div>
+            
+            <div className="relative">
+              <img 
+                src={heroImage} 
+                alt="PromoJour Interface" 
+                className="w-full rounded-2xl shadow-2xl"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* QR Code Stats Section */}
+      <section className="py-20 bg-teal/5">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center space-y-6">
+            <h2 className="text-4xl font-bold">Au cœur du commerce local</h2>
+            <p className="text-xl text-foreground/80">
+              Plus d'un français sur 2 interagit avec les QR codes en 2024.
+            </p>
+            <div className="grid md:grid-cols-2 gap-8 mt-12">
+              <Card className="p-8 bg-card/50 backdrop-blur border-2">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="p-4 bg-teal/10 rounded-2xl">
+                    <QrCode className="h-12 w-12 text-teal" />
+                  </div>
+                </div>
+                <h3 className="text-2xl font-semibold mb-3">QR Code unique</h3>
+                <p className="text-foreground/70">
+                  En plus de diffuser vos promotions en ligne, vous générez un QR code unique pour les intégrer à vos supports de proximité : affiches, PLV, presse locale, flyers…
+                </p>
+              </Card>
+              
+              <Card className="p-8 bg-card/50 backdrop-blur border-2">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="p-4 bg-primary/10 rounded-2xl">
+                    <Target className="h-12 w-12 text-primary" />
+                  </div>
+                </div>
+                <h3 className="text-2xl font-semibold mb-3">Visibilité multipliée</h3>
+                <p className="text-foreground/70">
+                  Quand la puissance du digital rencontre l'ancrage local, ça donne une visibilité multipliée !
+                </p>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Dashboard Section */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="relative order-2 lg:order-1">
+              <img 
+                src={discoverImage} 
+                alt="Découvrir PromoJour" 
+                className="w-full rounded-2xl shadow-xl"
+              />
+            </div>
+            
+            <div className="space-y-6 order-1 lg:order-2">
+              <h2 className="text-4xl font-bold">
+                Un seul tableau de bord pour toutes vos promos
+              </h2>
+              <p className="text-lg text-foreground/80">
+                La force de PromoJour est de réunir en un seul endroit tout votre contenu promotionnel. Ici, vous créez, gérez et diffusez directement vos promotions sur vos réseaux sociaux.
+              </p>
+              <p className="text-xl font-semibold text-primary">
+                Et tout ça, en divisant vos coûts par 100 !
+              </p>
+              <div className="flex gap-6 pt-4">
+                <div className="flex items-center gap-2">
+                  <Facebook className="h-8 w-8 text-[#1877F2]" />
+                  <Instagram className="h-8 w-8 text-[#E4405F]" />
+                  <div className="p-1 bg-coral/10 rounded">
+                    <MapPin className="h-6 w-6 text-coral" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Grid */}
+      <section className="py-20 bg-gradient-to-br from-background via-yellow/5 to-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4">Fonctionnalités complètes</h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Tout ce dont vous avez besoin pour gérer et diffuser vos promotions efficacement
             </p>
           </div>
-          <h1 className="text-6xl md:text-7xl font-bold mb-8 bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent leading-tight">
-            Diffusez vos promotions sur tous vos canaux
-          </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed">
-            PromoJour remplace vos catalogues papier et maximise la visibilité locale de vos offres commerciales sur les réseaux sociaux, Google, email et plus encore.
-          </p>
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            <Button size="lg" className="gradient-primary text-white shadow-glow hover:shadow-xl transition-smooth h-14 px-10 text-lg font-medium rounded-full" onClick={() => navigate("/auth")}>
-              Commencer gratuitement
-            </Button>
-            <Button size="lg" variant="outline" className="h-14 px-10 text-lg font-medium rounded-full border-2 hover:bg-primary/5">
-              Voir la démo
-            </Button>
-          </div>
-        </div>
-      </section>
 
-      {/* Stats Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <div className="text-center">
-              <Users className="w-12 h-12 text-primary mx-auto mb-4" />
-              <div className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">500+</div>
-              <div className="text-muted-foreground">Commerçants actifs</div>
-            </div>
-            <div className="text-center">
-              <TrendingUp className="w-12 h-12 text-primary mx-auto mb-4" />
-              <div className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">+40%</div>
-              <div className="text-muted-foreground">Visibilité moyenne</div>
-            </div>
-            <div className="text-center">
-              <Zap className="w-12 h-12 text-primary mx-auto mb-4" />
-              <div className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">10k+</div>
-              <div className="text-muted-foreground">Promotions créées</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="container mx-auto px-6 py-32">
-        <div className="text-center mb-20">
-          <h2 className="text-5xl font-bold mb-6">Une plateforme complète</h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">Tout ce dont vous avez besoin pour créer, diffuser et analyser vos promotions</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-          {features.map((feature, index) => (
-            <Card key={index} className="glass-card hover:shadow-glass transition-smooth border-border/50 group hover:scale-105">
-              <CardContent className="pt-8 pb-6 px-6">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-bounce">
-                  <feature.icon className="w-7 h-7 text-primary" />
-                </div>
-                <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section className="py-32">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-20">
-            <h2 className="text-5xl font-bold mb-6">Tarifs simples et transparents</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">Choisissez le plan qui correspond à vos besoins, sans engagement</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
-            {plans.map((plan, index) => (
-              <Card key={index} className={`glass-card hover:shadow-glass transition-smooth ${plan.popular ? 'border-primary border-2 shadow-glow scale-105 relative' : 'border-border/50'}`}>
-                <CardContent className="pt-8 pb-8 px-8">
-                  {plan.popular && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <span className="gradient-primary text-white px-5 py-2 rounded-full text-sm font-semibold shadow-lg">
-                        ⭐ Plus populaire
-                      </span>
-                    </div>
-                  )}
-                  <h3 className="text-2xl font-bold mb-4">{plan.name}</h3>
-                  <div className="mb-8">
-                    <span className="text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{plan.price}</span>
-                    <span className="text-muted-foreground text-lg">{plan.period}</span>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <Card key={index} className="p-6 hover:shadow-xl transition-all border-2 hover:border-primary/20">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-primary/10 rounded-xl">
+                    <feature.icon className="h-6 w-6 text-primary" />
                   </div>
-                  <ul className="space-y-4 mb-8">
-                    {plan.features.map((feature, fIndex) => (
-                      <li key={fIndex} className="flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0">
-                          <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>
-                        </div>
-                        <span className="text-foreground">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button className={`w-full h-12 text-base font-semibold rounded-xl transition-smooth ${plan.popular ? 'gradient-primary text-white shadow-glow hover:shadow-xl' : 'border-2'}`} variant={plan.popular ? 'default' : 'outline'}>
-                    {plan.cta}
-                  </Button>
-                </CardContent>
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-lg">{feature.title}</h3>
+                    <p className="text-foreground/70 text-sm">{feature.description}</p>
+                  </div>
+                </div>
               </Card>
             ))}
           </div>
         </div>
       </section>
 
+      {/* Benefits Section */}
+      <section className="py-20">
+        <div className="container mx-auto px-4 space-y-32">
+          {benefits.map((benefit, index) => (
+            <div 
+              key={index} 
+              className={`grid lg:grid-cols-2 gap-12 items-center ${
+                index % 2 === 1 ? 'lg:flex-row-reverse' : ''
+              }`}
+            >
+              <div className={`space-y-6 ${index % 2 === 1 ? 'lg:order-2' : ''}`}>
+                <div className="inline-flex items-center gap-3 px-4 py-2 bg-primary/10 rounded-full">
+                  <benefit.icon className="h-5 w-5 text-primary" />
+                  <span className="font-semibold text-primary">Avantage</span>
+                </div>
+                <h2 className="text-4xl font-bold">{benefit.title}</h2>
+                <p className="text-lg text-foreground/80 leading-relaxed">
+                  {benefit.description}
+                </p>
+              </div>
+              
+              <div className={`relative ${index % 2 === 1 ? 'lg:order-1' : ''}`}>
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent rounded-2xl transform rotate-3" />
+                <img 
+                  src={benefit.image} 
+                  alt={benefit.title} 
+                  className="relative w-full rounded-2xl shadow-2xl transform hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* CTA Section */}
-      <section className="container mx-auto px-6 py-32 text-center">
-        <Card className="max-w-5xl mx-auto gradient-primary text-white border-0 shadow-glow overflow-hidden relative">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.1)_0%,transparent_50%)]"></div>
-          <CardContent className="pt-16 pb-16 px-8 relative z-10">
-            <h2 className="text-5xl font-bold mb-6">Prêt à transformer vos promotions ?</h2>
-            <p className="text-xl mb-10 text-white/90 max-w-2xl mx-auto leading-relaxed">
-              Rejoignez des centaines de commerçants qui ont déjà fait le choix PromoJour
-            </p>
-            <Button size="lg" variant="secondary" className="h-14 px-10 text-lg font-semibold rounded-full hover:scale-105 transition-bounce bg-white text-primary hover:bg-white/90" onClick={() => navigate("/auth")}>
-              Commencer gratuitement →
-            </Button>
-          </CardContent>
-        </Card>
+      <section className="py-20 bg-gradient-to-br from-primary/5 via-background to-teal/5">
+        <div className="container mx-auto px-4">
+          <Card className="relative overflow-hidden border-2 border-primary/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-teal/10" />
+            <div className="relative p-12 text-center space-y-8">
+              <h2 className="text-4xl lg:text-5xl font-bold">
+                Prêt à révolutionner votre communication locale ?
+              </h2>
+              <p className="text-xl text-foreground/80 max-w-2xl mx-auto">
+                Rejoignez les commerçants qui ont déjà adopté PromoJour et multipliez votre visibilité.
+              </p>
+              <div className="flex flex-wrap gap-4 justify-center">
+                <Button size="lg" onClick={() => navigate("/auth")} className="shadow-lg hover:shadow-xl">
+                  Commencer gratuitement
+                  <ChevronRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button size="lg" variant="outline">
+                  Demander une démo
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Sans engagement • Essai gratuit • Support dédié
+              </p>
+            </div>
+          </Card>
+        </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border/50 py-12 glass-card">
-        <div className="container mx-auto px-6 text-center text-muted-foreground">
-          <p className="text-base">&copy; 2025 PromoJour. Tous droits réservés.</p>
+      <footer className="border-t border-border py-12 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-2">
+              <img src={logoPromoJour} alt="PromoJour" className="h-8" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              © 2024 PromoJour. Tous droits réservés.
+            </p>
+          </div>
         </div>
       </footer>
     </div>
   );
-};
-
-export default Landing;
+}
