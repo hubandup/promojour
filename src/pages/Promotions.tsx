@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, AlertCircle, Eye, Pencil, Trash2, BarChart3, LayoutGrid, List, X, Copy, Upload } from "lucide-react";
+import { Plus, Search, AlertCircle, Eye, Pencil, Trash2, BarChart3, LayoutGrid, List, X, Copy, Upload, Calendar as CalendarIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -31,6 +31,7 @@ import { CreatePromotionDialog } from "@/components/CreatePromotionDialog";
 import { EditPromotionDialog } from "@/components/EditPromotionDialog";
 import { ReelPreviewDialog } from "@/components/ReelPreviewDialog";
 import { BulkImportPromotionsDialog } from "@/components/BulkImportPromotionsDialog";
+import { PromotionsCalendar } from "@/components/PromotionsCalendar";
 import { usePromotions } from "@/hooks/use-promotions";
 import { useUserData } from "@/hooks/use-user-data";
 import { useStores } from "@/hooks/use-stores";
@@ -48,7 +49,7 @@ const Promotions = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [storeFilter, setStoreFilter] = useState<string>("all");
   const [campaignFilter, setCampaignFilter] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "calendar">("list");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -249,6 +250,14 @@ const Promotions = () => {
             >
               <List className="w-4 h-4" />
             </Button>
+            <Button
+              variant={viewMode === "calendar" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("calendar")}
+              className="rounded-lg"
+            >
+              <CalendarIcon className="w-4 h-4" />
+            </Button>
           </div>
           <Button 
             variant="outline"
@@ -417,6 +426,14 @@ const Promotions = () => {
         <Card className="glass-card border-border/50 p-12 text-center">
           <p className="text-muted-foreground">Aucune promotion trouvée</p>
         </Card>
+      ) : viewMode === "calendar" ? (
+        <PromotionsCalendar
+          promotions={filteredPromotions}
+          onPromotionClick={(promo) => {
+            setSelectedPromotionId(promo.id);
+            setEditDialogOpen(true);
+          }}
+        />
       ) : viewMode === "list" ? (
         <Card className="glass-card border-border/50 overflow-hidden">
           <Table>
