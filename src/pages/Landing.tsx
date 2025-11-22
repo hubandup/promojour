@@ -563,13 +563,49 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-8 px-4 sm:px-6 lg:px-8">
+      <footer className="border-t border-border py-12 px-4 sm:px-6 lg:px-8">
         <div className="container mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <img src={logoPromoJour} alt="PromoJour" className="h-6" />
-            <p className="text-sm text-muted-foreground">
-              © 2024 PromoJour. Tous droits réservés.
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <div>
+              <img src={logoPromoJour} alt="PromoJour" className="h-8 mb-4" />
+              <p className="text-sm text-muted-foreground">
+                La solution digitale pour vos promotions locales
+              </p>
+            </div>
+            
+            <div>
+              <h3 className="font-bold mb-4">Légal</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <button onClick={() => navigate("/mentions-legales")} className="hover:text-primary transition-colors">
+                    Mentions légales
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => navigate("/politique-de-confidentialite")} className="hover:text-primary transition-colors">
+                    Politique de confidentialité
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => navigate("/conditions-generales")} className="hover:text-primary transition-colors">
+                    Conditions générales
+                  </button>
+                </li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="font-bold mb-4">Contact</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>+33 (0)4 82 54 00 33</li>
+                <li>contact@promojour.com</li>
+                <li>330 allée des Hêtres<br />69760 Limonest</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="pt-8 border-t border-border text-center text-sm text-muted-foreground">
+            <p>© 2024 PromoJour® - Une marque d'Hub & Up. Tous droits réservés.</p>
           </div>
         </div>
       </footer>
