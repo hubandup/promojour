@@ -19,12 +19,6 @@ import {
   ChevronRight,
   Sparkles
 } from "lucide-react";
-import heroImage from "@/assets/landing-hero.png";
-import benefitsImage from "@/assets/landing-benefits.png";
-import discoverImage from "@/assets/landing-discover.png";
-import featuresImage from "@/assets/landing-features.png";
-import managementImage from "@/assets/landing-management.png";
-import budgetImage from "@/assets/landing-budget.png";
 import logoPromoJour from "@/assets/logo-promojour.png";
 
 export default function Landing() {
@@ -93,25 +87,25 @@ export default function Landing() {
       icon: QrCode,
       title: "Simplicité d'utilisation",
       description: "Interface intuitive et conviviale, sans expertise technique requise. Créez vos promotions en quelques clics.",
-      image: managementImage,
+      color: "primary"
     },
     {
       icon: MapPin,
       title: "Communication locale et ciblée",
       description: "Diffusez vos promotions spécifiquement dans votre zone de chalandise, sur les canaux les plus pertinents.",
-      image: featuresImage,
+      color: "teal"
     },
     {
       icon: TrendingUp,
       title: "Analyse du ROI",
       description: "Mesurez le retour sur investissement avec des indicateurs de performance et comportement clients détaillés.",
-      image: benefitsImage,
+      color: "orange"
     },
     {
       icon: BarChart3,
       title: "Maîtrise du budget",
       description: "Contrôlez et optimisez vos dépenses marketing grâce aux outils de suivi et d'analyse en temps réel.",
-      image: budgetImage,
+      color: "coral"
     },
   ];
 
@@ -214,12 +208,31 @@ export default function Landing() {
             </div>
             
             <div className="relative animate-fade-in" style={{ animationDelay: "0.2s" }}>
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 via-orange/20 to-coral/20 rounded-3xl blur-2xl" />
-              <img 
-                src={heroImage} 
-                alt="PromoJour Interface" 
-                className="relative w-full rounded-3xl shadow-2xl hover:scale-105 transition-transform duration-500"
-              />
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-orange/30 to-coral/30 rounded-3xl blur-3xl animate-pulse" style={{ animationDuration: "3s" }} />
+              <div className="relative p-16 bg-gradient-to-br from-background/80 to-muted/80 backdrop-blur-xl rounded-3xl border-2 border-primary/20 shadow-2xl">
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="p-8 bg-gradient-to-br from-primary/20 to-orange/20 rounded-2xl backdrop-blur border border-primary/30">
+                    <Smartphone className="h-16 w-16 text-primary mb-4" />
+                    <h3 className="text-2xl font-bold mb-2">Mobile First</h3>
+                    <p className="text-foreground/70">Gérez partout</p>
+                  </div>
+                  <div className="p-8 bg-gradient-to-br from-teal/20 to-primary/20 rounded-2xl backdrop-blur border border-teal/30">
+                    <Zap className="h-16 w-16 text-teal mb-4" />
+                    <h3 className="text-2xl font-bold mb-2">Automatique</h3>
+                    <p className="text-foreground/70">Diffusion instantanée</p>
+                  </div>
+                  <div className="p-8 bg-gradient-to-br from-orange/20 to-coral/20 rounded-2xl backdrop-blur border border-orange/30">
+                    <BarChart3 className="h-16 w-16 text-orange mb-4" />
+                    <h3 className="text-2xl font-bold mb-2">Analytics</h3>
+                    <p className="text-foreground/70">ROI mesurable</p>
+                  </div>
+                  <div className="p-8 bg-gradient-to-br from-coral/20 to-yellow/20 rounded-2xl backdrop-blur border border-coral/30">
+                    <Target className="h-16 w-16 text-coral mb-4" />
+                    <h3 className="text-2xl font-bold mb-2">Ciblage</h3>
+                    <p className="text-foreground/70">Local précis</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -267,35 +280,25 @@ export default function Landing() {
       </section>
 
       {/* Dashboard Section */}
-      <section className="py-24">
-        <div className="container mx-auto px-6">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="relative order-2 lg:order-1 animate-fade-in">
-              <div className="absolute -inset-4 bg-gradient-to-r from-yellow/20 via-orange/20 to-coral/20 rounded-3xl blur-2xl" />
-              <img 
-                src={discoverImage} 
-                alt="Découvrir PromoJour" 
-                className="relative w-full rounded-3xl shadow-2xl hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-            
-            <div className="space-y-6 order-1 lg:order-2 animate-fade-in">
-              <h2 className="text-5xl font-bold leading-tight">
-                Un seul tableau de bord pour{" "}
-                <span className="bg-gradient-to-r from-primary to-orange bg-clip-text text-transparent">
-                  toutes vos promos
-                </span>
-              </h2>
-              <p className="text-xl text-foreground/80 leading-relaxed">
-                La force de PromoJour est de <span className="font-semibold text-foreground">réunir en un seul endroit</span> tout votre contenu promotionnel. 
-                Créez, gérez et diffusez directement vos promotions sur vos réseaux sociaux.
+      <section className="py-24 relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-orange/5 via-background to-coral/5" />
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="max-w-4xl mx-auto text-center space-y-12 animate-fade-in">
+            <h2 className="text-5xl font-bold leading-tight">
+              Un seul tableau de bord pour{" "}
+              <span className="bg-gradient-to-r from-primary to-orange bg-clip-text text-transparent">
+                toutes vos promos
+              </span>
+            </h2>
+            <p className="text-2xl text-foreground/80 leading-relaxed">
+              La force de PromoJour est de <span className="font-semibold text-foreground">réunir en un seul endroit</span> tout votre contenu promotionnel. 
+              Créez, gérez et diffusez directement vos promotions sur vos réseaux sociaux.
+            </p>
+            <Card className="p-12 bg-gradient-to-br from-primary/10 via-orange/10 to-coral/10 backdrop-blur border-2 border-primary/20 hover:shadow-2xl transition-all duration-300">
+              <p className="text-4xl font-bold bg-gradient-to-r from-primary via-orange to-coral bg-clip-text text-transparent">
+                💰 Divisez vos coûts par 100 !
               </p>
-              <div className="p-6 bg-gradient-to-r from-primary/10 via-orange/10 to-coral/10 rounded-2xl border-2 border-primary/20">
-                <p className="text-2xl font-bold text-primary">
-                  💰 Divisez vos coûts par 100 !
-                </p>
-              </div>
-            </div>
+            </Card>
           </div>
         </div>
       </section>
@@ -337,35 +340,31 @@ export default function Landing() {
 
       {/* Benefits Section */}
       <section className="py-24">
-        <div className="container mx-auto px-6 space-y-32">
-          {benefits.map((benefit, index) => (
-            <div 
-              key={index} 
-              className={`grid lg:grid-cols-2 gap-16 items-center animate-fade-in ${
-                index % 2 === 1 ? 'lg:flex-row-reverse' : ''
-              }`}
-            >
-              <div className={`space-y-8 ${index % 2 === 1 ? 'lg:order-2' : ''}`}>
-                <div className="inline-flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-primary/10 to-orange/10 rounded-full border border-primary/20">
-                  <benefit.icon className="h-6 w-6 text-primary" />
-                  <span className="font-bold text-primary text-lg">Avantage clé</span>
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-20 animate-fade-in">
+            <h2 className="text-5xl font-bold mb-6">Avantages clés</h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Tout ce dont vous avez besoin pour réussir votre communication locale
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            {benefits.map((benefit, index) => (
+              <Card 
+                key={index} 
+                className="p-12 hover:shadow-2xl transition-all border-2 hover:border-primary/30 hover:-translate-y-2 duration-300 group bg-gradient-to-br from-background to-muted/30 animate-fade-in"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <div className="flex flex-col items-center text-center space-y-6">
+                  <div className={`p-6 bg-${benefit.color}/10 rounded-3xl group-hover:scale-110 transition-transform border-2 border-${benefit.color}/20`}>
+                    <benefit.icon className={`h-16 w-16 text-${benefit.color}`} />
+                  </div>
+                  <h3 className="font-bold text-3xl">{benefit.title}</h3>
+                  <p className="text-foreground/70 text-lg leading-relaxed">{benefit.description}</p>
                 </div>
-                <h2 className="text-5xl font-bold leading-tight">{benefit.title}</h2>
-                <p className="text-xl text-foreground/80 leading-relaxed">
-                  {benefit.description}
-                </p>
-              </div>
-              
-              <div className={`relative group ${index % 2 === 1 ? 'lg:order-1' : ''}`}>
-                <div className="absolute -inset-6 bg-gradient-to-br from-primary/20 via-orange/20 to-coral/20 rounded-3xl blur-2xl group-hover:blur-3xl transition-all" />
-                <img 
-                  src={benefit.image} 
-                  alt={benefit.title} 
-                  className="relative w-full rounded-3xl shadow-2xl group-hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-            </div>
-          ))}
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
 
