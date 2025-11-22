@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.facebook-oauth-callback]
 verify_jwt = false
+
+[functions.publish-social-reel]
+verify_jwt = false
