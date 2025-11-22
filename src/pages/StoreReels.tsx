@@ -20,14 +20,14 @@ export default function StoreReels() {
       try {
         // Fetch store info
         const { data: storeData, error: storeError } = await supabase
-          .from("stores")
+          .from("stores_public")
           .select("*")
           .eq("id", storeId)
-          .eq("is_active", true)
           .single();
 
         if (storeError) throw storeError;
-        setStore(storeData);
+        // stores_public view doesn't include phone/email for privacy
+        setStore({ ...storeData, phone: null, email: null });
 
         // Fetch active promotions for this store
         // Include ALL active promotions from the organization (visible on all stores)

@@ -20,14 +20,14 @@ export default function StoreFrontend() {
     const fetchStore = async () => {
       try {
         const { data: storeData, error: storeError } = await supabase
-          .from("stores")
+          .from("stores_public")
           .select("*")
           .eq("id", storeId)
-          .eq("is_active", true)
           .single();
 
         if (storeError) throw storeError;
-        setStore(storeData);
+        // stores_public view doesn't include phone/email for privacy
+        setStore({ ...storeData, phone: null, email: null });
 
         // Fetch organization logo
         if (storeData.organization_id) {
