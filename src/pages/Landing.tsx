@@ -130,8 +130,16 @@ export default function Landing() {
       <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <img src={logoPromoJour} alt="PromoJour" className="h-8" />
+            <img 
+              src={logoPromoJour} 
+              alt="PromoJour" 
+              className="h-8 cursor-pointer" 
+              onClick={() => navigate("/")}
+            />
             <div className="flex gap-3">
+              <Button variant="ghost" onClick={() => navigate("/pricing")}>
+                Tarifs
+              </Button>
               {profile ? (
                 <>
                   <Button variant="ghost" onClick={() => navigate("/dashboard")}>
