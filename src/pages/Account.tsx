@@ -4,8 +4,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard, User, Gift, Shield } from "lucide-react";
+import { useSubscription } from "@/hooks/use-subscription";
+import { useToast } from "@/hooks/use-toast";
 
 const Account = () => {
+  const { subscription, loading, createCheckoutSession, openCustomerPortal, tiers } = useSubscription();
+  const { toast } = useToast();
+
+  const getCurrentPlanName = () => {
+    switch (subscription.tier) {
+      case "magasin_pro":
+        return "Magasin Pro";
+      case "centrale":
+        return "Centrale";
+      default:
+        return "Free";
+    }
+  };
+
+  const handleUpgrade = (priceId: string) => {
+    createCheckoutSession(priceId);
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -120,27 +140,120 @@ const Account = () => {
               <CardTitle className="text-white">Plan actuel</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <div className="text-4xl font-bold mb-2">Free</div>
-                <Badge variant="secondary" className="mb-4 rounded-xl">Gratuit</Badge>
-              </div>
-              <div className="space-y-3 text-sm opacity-95">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-white shadow-glow"></div>
-                  <span>1 magasin</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-white shadow-glow"></div>
-                  <span>7 promos / 7 jours</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-white shadow-glow"></div>
-                  <span>Stats limitées</span>
-                </div>
-              </div>
-              <Button variant="secondary" className="w-full rounded-xl hover:shadow-md transition-smooth">
-                Passer à Pro
-              </Button>
+              {loading ? (
+                <div className="text-sm opacity-90">Chargement...</div>
+              ) : (
+                <>
+                  <div>
+                    <div className="text-4xl font-bold mb-2">{getCurrentPlanName()}</div>
+                    <Badge variant="secondary" className="mb-4 rounded-xl">
+                      {subscription.tier === "free" && "Gratuit"}
+                      {subscription.tier === "magasin_pro" && "49€/mois"}
+                      {subscription.tier === "centrale" && "180€/mois"}
+                    </Badge>
+                  </div>
+                  <div className="space-y-3 text-sm opacity-95">
+                    {subscription.tier === "free" && (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-white shadow-glow"></div>
+                          <span>1 magasin</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-white shadow-glow"></div>
+                          <span>7 promos / 7 jours</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-white shadow-glow"></div>
+                          <span>Stats limitées</span>
+                        </div>
+                      </>
+                    )}
+                    {subscription.tier === "magasin_pro" && (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-white shadow-glow"></div>
+                          <span>5 magasins max</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-white shadow-glow"></div>
+                          <span>Promotions illimitées</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-white shadow-glow"></div>
+                          <span>Stats complètes</span>
+                        </div>
+                      </>
+                    )}
+                    {subscription.tier === "centrale" && (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-white shadow-glow"></div>
+                          <span>Magasins illimités</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-white shadow-glow"></div>
+                          <span>Utilisateurs illimités</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-white shadow-glow"></div>
+                          <span>Contrôle total</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {subscription.subscribed && subscription.subscription_end && (
+                    <p className="text-xs opacity-80">
+                      Renouvellement le {new Date(subscription.subscription_end).toLocaleDateString("fr-FR")}
+                    </p>
+                  )}
+                  {!subscription.subscribed && (
+                    <div className="space-y-2">
+                      <Button 
+                        variant="secondary" 
+                        className="w-full rounded-xl hover:shadow-md transition-smooth"
+                        onClick={() => handleUpgrade(tiers.magasin_pro.price_id)}
+                      >
+                        Passer à Pro (49€/mois)
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full rounded-xl hover:shadow-md transition-smooth text-white border-white/30 hover:bg-white/10"
+                        onClick={() => handleUpgrade(tiers.centrale.price_id)}
+                      >
+                        Passer à Centrale (180€/mois)
+                      </Button>
+                    </div>
+                  )}
+                  {subscription.subscribed && subscription.tier === "magasin_pro" && (
+                    <div className="space-y-2">
+                      <Button 
+                        variant="secondary" 
+                        className="w-full rounded-xl hover:shadow-md transition-smooth"
+                        onClick={() => handleUpgrade(tiers.centrale.price_id)}
+                      >
+                        Passer à Centrale
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full rounded-xl hover:shadow-md transition-smooth text-white border-white/30 hover:bg-white/10"
+                        onClick={openCustomerPortal}
+                      >
+                        Gérer mon abonnement
+                      </Button>
+                    </div>
+                  )}
+                  {subscription.subscribed && subscription.tier === "centrale" && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full rounded-xl hover:shadow-md transition-smooth text-white border-white/30 hover:bg-white/10"
+                      onClick={openCustomerPortal}
+                    >
+                      Gérer mon abonnement
+                    </Button>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
 
