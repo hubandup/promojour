@@ -1,12 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { useUserData } from "@/hooks/use-user-data";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 import { useParallax } from "@/hooks/use-parallax";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { 
   ArrowRight,
   Check,
@@ -16,9 +22,18 @@ import {
   QrCode,
   Facebook,
   Instagram,
-  Quote
+  Quote,
+  Send
 } from "lucide-react";
 import logoPromoJour from "@/assets/logo-promojour.png";
+
+const contactFormSchema = z.object({
+  name: z.string().trim().min(2, "Le nom doit contenir au moins 2 caractères").max(100, "Le nom est trop long"),
+  email: z.string().trim().email("Email invalide").max(255, "L'email est trop long"),
+  message: z.string().trim().min(10, "Le message doit contenir au moins 10 caractères").max(1000, "Le message est trop long"),
+});
+
+type ContactFormValues = z.infer<typeof contactFormSchema>;
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -35,7 +50,38 @@ export default function Landing() {
   const featuresAnimation = useScrollAnimation();
   const pricingAnimation = useScrollAnimation();
   const testimonialsAnimation = useScrollAnimation();
+  const contactAnimation = useScrollAnimation();
   const ctaAnimation = useScrollAnimation();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ContactFormValues>({
+    resolver: zodResolver(contactFormSchema),
+  });
+
+  const onSubmitContact = async (data: ContactFormValues) => {
+    try {
+      // Here you would typically send the email via an edge function
+      // For now, we'll just show a success toast
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
+      
+      toast({
+        title: "Message envoyé !",
+        description: "Nous vous répondrons dans les plus brefs délais.",
+      });
+      
+      reset();
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible d'envoyer le message. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const testimonials = [
     {
@@ -513,8 +559,88 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* Contact Section */}
       <section 
+        ref={contactAnimation.ref as React.RefObject<HTMLElement>}
+        className={`py-20 px-4 sm:px-6 lg:px-8 transition-all duration-700 ${
+          contactAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
+        <div className="container mx-auto max-w-3xl">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl sm:text-5xl font-bold mb-4">Une question ?</h2>
+            <p className="text-xl text-muted-foreground">
+              Notre équipe est à votre écoute pour répondre à vos questions
+            </p>
+          </div>
+
+          <Card className="border-2 border-border/50 bg-background/50 backdrop-blur-xl">
+            <CardContent className="p-8">
+              <form onSubmit={handleSubmit(onSubmitContact)} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nom complet</Label>
+                  <Input
+                    id="name"
+                    placeholder="Votre nom"
+                    {...register("name")}
+                    className="bg-background/50"
+                  />
+                  {errors.name && (
+                    <p className="text-sm text-destructive">{errors.name.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="votre@email.com"
+                    {...register("email")}
+                    className="bg-background/50"
+                  />
+                  {errors.email && (
+                    <p className="text-sm text-destructive">{errors.email.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="message">Message</Label>
+                  <Textarea
+                    id="message"
+                    placeholder="Décrivez votre besoin ou posez votre question..."
+                    rows={5}
+                    {...register("message")}
+                    className="bg-background/50 resize-none"
+                  />
+                  {errors.message && (
+                    <p className="text-sm text-destructive">{errors.message.message}</p>
+                  )}
+                </div>
+
+                <Button 
+                  type="submit" 
+                  size="lg" 
+                  className="w-full bg-primary hover:bg-primary/90"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    "Envoi en cours..."
+                  ) : (
+                    <>
+                      Envoyer le message
+                      <Send className="ml-2 h-5 w-5" />
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section
         ref={ctaAnimation.ref as React.RefObject<HTMLElement>}
         className={`py-20 px-4 sm:px-6 lg:px-8 transition-all duration-700 ${
           ctaAnimation.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
