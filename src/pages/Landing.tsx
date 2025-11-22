@@ -6,6 +6,7 @@ import { useUserData } from "@/hooks/use-user-data";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
+import { useParallax } from "@/hooks/use-parallax";
 import { 
   ArrowRight,
   Check,
@@ -23,6 +24,11 @@ export default function Landing() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { profile } = useUserData();
+  
+  const parallaxTitle = useParallax(0.3);
+  const parallaxSubtitle = useParallax(0.5);
+  const parallaxCta = useParallax(0.4);
+  const parallaxSocial = useParallax(0.6);
   
   const statsAnimation = useScrollAnimation();
   const dashboardAnimation = useScrollAnimation();
@@ -109,18 +115,27 @@ export default function Landing() {
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background" />
         <div className="container mx-auto max-w-6xl relative">
           <div className="text-center space-y-8 animate-fade-in">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight">
+            <h1 
+              className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight transition-transform"
+              style={{ transform: `translateY(-${parallaxTitle}px)` }}
+            >
               Créez, gérez et diffusez<br />
               <span className="bg-gradient-to-r from-primary via-orange to-coral bg-clip-text text-transparent">
                 vos promos en ligne
               </span>
             </h1>
             
-            <p className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto">
+            <p 
+              className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto transition-transform"
+              style={{ transform: `translateY(-${parallaxSubtitle}px)` }}
+            >
               La fin du prospectus approche. Diffusez vos promotions simplement et en temps réel sur Facebook, Instagram et Google.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+            <div 
+              className="flex flex-col sm:flex-row gap-4 justify-center pt-4 transition-transform"
+              style={{ transform: `translateY(-${parallaxCta}px)` }}
+            >
               <Button 
                 size="lg" 
                 onClick={() => navigate("/auth")}
@@ -131,13 +146,19 @@ export default function Landing() {
               </Button>
             </div>
 
-            <p className="text-sm text-muted-foreground">
+            <p 
+              className="text-sm text-muted-foreground transition-transform"
+              style={{ transform: `translateY(-${parallaxCta}px)` }}
+            >
               Dès <span className="text-2xl font-bold text-primary">0€/mois</span>
             </p>
           </div>
 
           {/* Social Icons */}
-          <div className="flex justify-center gap-8 mt-16 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+          <div 
+            className="flex justify-center gap-8 mt-16 animate-fade-in transition-transform" 
+            style={{ animationDelay: "0.2s", transform: `translateY(-${parallaxSocial}px)` }}
+          >
             <div className="flex items-center gap-3 px-6 py-3 rounded-full bg-muted/50 backdrop-blur">
               <Facebook className="h-6 w-6 text-[#1877F2]" />
               <span className="text-sm font-medium">Facebook</span>
