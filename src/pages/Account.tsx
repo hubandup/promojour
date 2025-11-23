@@ -244,8 +244,7 @@ const Account = () => {
                         <div className="flex items-center gap-3">
                           <Button
                             size="icon"
-                            variant="outline"
-                            className="rounded-xl text-white border-white/30 hover:bg-white/10"
+                            className="rounded-xl bg-white/20 text-white hover:bg-white/30 border border-white/40"
                             onClick={() => setStoreCount(Math.max(1, storeCount - 1))}
                           >
                             <Minus className="w-4 h-4" />
@@ -256,8 +255,7 @@ const Account = () => {
                           </div>
                           <Button
                             size="icon"
-                            variant="outline"
-                            className="rounded-xl text-white border-white/30 hover:bg-white/10"
+                            className="rounded-xl bg-white/20 text-white hover:bg-white/30 border border-white/40"
                             onClick={() => setStoreCount(storeCount + 1)}
                           >
                             <Plus className="w-4 h-4" />
@@ -319,8 +317,7 @@ const Account = () => {
                         <div className="flex items-center gap-3">
                           <Button
                             size="icon"
-                            variant="outline"
-                            className="rounded-xl text-white border-white/30 hover:bg-white/10"
+                            className="rounded-xl bg-white/20 text-white hover:bg-white/30 border border-white/40"
                             onClick={() => setStoreCount(Math.max(1, storeCount - 1))}
                           >
                             <Minus className="w-4 h-4" />
@@ -331,8 +328,7 @@ const Account = () => {
                           </div>
                           <Button
                             size="icon"
-                            variant="outline"
-                            className="rounded-xl text-white border-white/30 hover:bg-white/10"
+                            className="rounded-xl bg-white/20 text-white hover:bg-white/30 border border-white/40"
                             onClick={() => setStoreCount(storeCount + 1)}
                           >
                             <Plus className="w-4 h-4" />
