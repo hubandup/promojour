@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CreditCard, User, Gift, Shield, FileText, Download } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +15,7 @@ import { useUserData } from "@/hooks/use-user-data";
 const Account = () => {
   const { subscription, loading, createCheckoutSession, openCustomerPortal, tiers } = useSubscription();
   const { toast } = useToast();
-  const { profile, organization } = useUserData();
+  const { profile, organization, isSuperAdmin, userRole, refetch } = useUserData();
   const [storeCount, setStoreCount] = useState(1);
   const [showCentraleConfig, setShowCentraleConfig] = useState(false);
   const [firstName, setFirstName] = useState("");
@@ -26,6 +27,11 @@ const Account = () => {
   const [loadingPayment, setLoadingPayment] = useState(false);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [switchingProfile, setSwitchingProfile] = useState(false);
+  const [selectedAccountType, setSelectedAccountType] = useState<string>("");
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'editor' | 'viewer' | 'super_admin' | 'store_manager' | "">("");
+  const [availableOrgs, setAvailableOrgs] = useState<any[]>([]);
+  const [selectedOrg, setSelectedOrg] = useState<string>("");
 
   useEffect(() => {
     const fetchUserEmail = async () => {
@@ -44,6 +50,26 @@ const Account = () => {
       setPhone(profile.phone || "");
     }
   }, [profile]);
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      fetchOrganizations();
+    }
+  }, [isSuperAdmin]);
+
+  const fetchOrganizations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('id, name, account_type')
+        .order('name');
+      
+      if (error) throw error;
+      setAvailableOrgs(data || []);
+    } catch (error) {
+      console.error("Error fetching organizations:", error);
+    }
+  };
 
   useEffect(() => {
     if (subscription.subscribed) {
@@ -135,6 +161,82 @@ const Account = () => {
     return 180 + (storeCount * 19);
   };
 
+  const handleSwitchProfile = async () => {
+    if (!selectedOrg || !selectedRole) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner une organisation et un rôle.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSwitchingProfile(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      // Mettre à jour le profil avec la nouvelle organisation
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ organization_id: selectedOrg })
+        .eq("id", user.id);
+
+      if (profileError) throw profileError;
+
+      // Vérifier si l'utilisateur a déjà un rôle dans cette organisation
+      const { data: existingRole } = await supabase
+        .from("user_roles")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("organization_id", selectedOrg)
+        .single();
+
+      if (existingRole) {
+        // Mettre à jour le rôle existant
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .update({ role: selectedRole })
+          .eq("user_id", user.id)
+          .eq("organization_id", selectedOrg);
+
+        if (roleError) throw roleError;
+      } else {
+        // Créer un nouveau rôle
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert([{
+            user_id: user.id,
+            organization_id: selectedOrg,
+            role: selectedRole as any,
+          }]);
+
+        if (roleError) throw roleError;
+      }
+
+      toast({
+        title: "Profil changé",
+        description: "Vous avez changé de profil avec succès.",
+      });
+
+      // Rafraîchir les données
+      await refetch();
+      
+      // Reset selections
+      setSelectedOrg("");
+      setSelectedRole("");
+    } catch (error) {
+      console.error("Error switching profile:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de changer de profil.",
+        variant: "destructive",
+      });
+    } finally {
+      setSwitchingProfile(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -208,6 +310,103 @@ const Account = () => {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Super Admin Tools */}
+          {isSuperAdmin && (
+            <Card className="glass-card border-border/50 border-2 border-primary/30">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center shadow-md">
+                    <Shield className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      Super Admin Tools
+                      <Badge variant="outline" className="bg-primary/10">Admin</Badge>
+                    </CardTitle>
+                    <CardDescription>Switcher entre les profils et organisations</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                    <Shield className="w-4 h-4" />
+                    Profil actuel
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Organisation</p>
+                      <p className="font-semibold">{organization?.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Type de compte</p>
+                      <Badge variant="secondary">
+                        {organization?.account_type === 'free' && 'Free'}
+                        {organization?.account_type === 'store' && 'Magasin Pro'}
+                        {organization?.account_type === 'central' && 'Centrale'}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Rôle</p>
+                      <Badge variant="outline">
+                        {userRole?.role === 'super_admin' && 'Super Admin'}
+                        {userRole?.role === 'admin' && 'Admin'}
+                        {userRole?.role === 'editor' && 'Éditeur'}
+                        {userRole?.role === 'viewer' && 'Lecteur'}
+                        {userRole?.role === 'store_manager' && 'Responsable Magasin'}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t">
+                  <h4 className="font-semibold">Changer de profil</h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <Label>Organisation</Label>
+                      <Select value={selectedOrg} onValueChange={setSelectedOrg}>
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="Sélectionner une organisation" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableOrgs.map((org) => (
+                            <SelectItem key={org.id} value={org.id}>
+                              {org.name} ({org.account_type === 'free' ? 'Free' : org.account_type === 'store' ? 'Magasin Pro' : 'Centrale'})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Rôle</Label>
+                      <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as any)}>
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="Sélectionner un rôle" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="editor">Éditeur</SelectItem>
+                          <SelectItem value="viewer">Lecteur</SelectItem>
+                          <SelectItem value="store_manager">Responsable Magasin</SelectItem>
+                          <SelectItem value="super_admin">Super Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <Button 
+                    onClick={handleSwitchProfile}
+                    disabled={switchingProfile || !selectedOrg || !selectedRole}
+                    className="w-full rounded-xl hover:shadow-md transition-smooth"
+                  >
+                    {switchingProfile ? "Changement en cours..." : "Changer de profil"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Billing */}
           <Card className="glass-card border-border/50">

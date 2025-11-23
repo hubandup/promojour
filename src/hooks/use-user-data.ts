@@ -24,8 +24,9 @@ export interface Organization {
 }
 
 export interface UserRole {
-  role: 'admin' | 'editor' | 'viewer' | 'super_admin';
+  role: 'admin' | 'editor' | 'viewer' | 'super_admin' | 'store_manager';
   organization_id: string;
+  store_id?: string | null;
 }
 
 export function useUserData() {
@@ -65,10 +66,10 @@ export function useUserData() {
         if (orgError) throw orgError;
         setOrganization(orgData);
 
-        // Fetch user role
+      // Fetch user role
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
-          .select('role, organization_id')
+          .select('role, organization_id, store_id')
           .eq('user_id', user.id)
           .eq('organization_id', profileData.organization_id)
           .single();
@@ -91,6 +92,7 @@ export function useUserData() {
   const isSuperAdmin = userRole?.role === 'super_admin';
   const isAdmin = userRole?.role === 'admin' || isSuperAdmin;
   const isEditor = userRole?.role === 'editor' || isAdmin;
+  const isStoreManager = userRole?.role === 'store_manager';
   const isCentral = organization?.account_type === 'central';
   const isStore = organization?.account_type === 'store';
   const isFree = organization?.account_type === 'free';
@@ -103,6 +105,7 @@ export function useUserData() {
     isSuperAdmin,
     isAdmin,
     isEditor,
+    isStoreManager,
     isCentral,
     isStore,
     isFree,

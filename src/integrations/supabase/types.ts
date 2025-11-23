@@ -623,6 +623,7 @@ export type Database = {
           id: string
           organization_id: string
           role: Database["public"]["Enums"]["app_role"]
+          store_id: string | null
           user_id: string
         }
         Insert: {
@@ -630,6 +631,7 @@ export type Database = {
           id?: string
           organization_id: string
           role?: Database["public"]["Enums"]["app_role"]
+          store_id?: string | null
           user_id: string
         }
         Update: {
@@ -637,6 +639,7 @@ export type Database = {
           id?: string
           organization_id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          store_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -645,6 +648,20 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
             referencedColumns: ["id"]
           },
         ]
@@ -765,6 +782,16 @@ export type Database = {
       }
     }
     Functions: {
+      count_promotions_last_7_days: {
+        Args: { _organization_id: string }
+        Returns: number
+      }
+      get_store_manager_stores: {
+        Args: { _user_id: string }
+        Returns: {
+          store_id: string
+        }[]
+      }
       get_user_organization: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -773,11 +800,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_store_manager: {
+        Args: { _store_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       account_type: "free" | "store" | "central"
-      app_role: "admin" | "editor" | "viewer" | "super_admin"
+      app_role: "admin" | "editor" | "viewer" | "super_admin" | "store_manager"
       campaign_status:
         | "draft"
         | "scheduled"
@@ -919,7 +950,7 @@ export const Constants = {
   public: {
     Enums: {
       account_type: ["free", "store", "central"],
-      app_role: ["admin", "editor", "viewer", "super_admin"],
+      app_role: ["admin", "editor", "viewer", "super_admin", "store_manager"],
       campaign_status: [
         "draft",
         "scheduled",
