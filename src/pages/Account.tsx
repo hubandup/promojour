@@ -6,14 +6,94 @@ import { Badge } from "@/components/ui/badge";
 import { CreditCard, User, Gift, Shield } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Minus, Plus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useUserData } from "@/hooks/use-user-data";
 
 const Account = () => {
   const { subscription, loading, createCheckoutSession, openCustomerPortal, tiers } = useSubscription();
   const { toast } = useToast();
+  const { profile, organization } = useUserData();
   const [storeCount, setStoreCount] = useState(1);
   const [showCentraleConfig, setShowCentraleConfig] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<any>(null);
+  const [loadingPayment, setLoadingPayment] = useState(false);
+
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        setEmail(user.email);
+      }
+    };
+    fetchUserEmail();
+  }, []);
+
+  useEffect(() => {
+    if (profile) {
+      setFirstName(profile.first_name || "");
+      setLastName(profile.last_name || "");
+      setPhone(profile.phone || "");
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    if (subscription.subscribed) {
+      fetchPaymentMethod();
+    }
+  }, [subscription.subscribed]);
+
+  const fetchPaymentMethod = async () => {
+    setLoadingPayment(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-payment-method');
+      if (error) throw error;
+      setPaymentMethod(data?.paymentMethod);
+    } catch (error) {
+      console.error("Error fetching payment method:", error);
+    } finally {
+      setLoadingPayment(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          first_name: firstName,
+          last_name: lastName,
+          phone: phone,
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Profil mis à jour",
+        description: "Vos informations ont été enregistrées avec succès.",
+      });
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder vos informations.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const getCurrentPlanName = () => {
     switch (subscription.tier) {
@@ -68,22 +148,48 @@ const Account = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Prénom</Label>
-                  <Input placeholder="Jean" className="rounded-xl border-border/50 bg-background/50 focus:shadow-md transition-smooth" />
+                  <Input 
+                    value={firstName} 
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Jean" 
+                    className="rounded-xl border-border/50 bg-background/50 focus:shadow-md transition-smooth" 
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Nom</Label>
-                  <Input placeholder="Dupont" className="rounded-xl border-border/50 bg-background/50 focus:shadow-md transition-smooth" />
+                  <Input 
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Dupont" 
+                    className="rounded-xl border-border/50 bg-background/50 focus:shadow-md transition-smooth" 
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Email</Label>
-                <Input type="email" placeholder="jean.dupont@email.com" className="rounded-xl border-border/50 bg-background/50 focus:shadow-md transition-smooth" />
+                <Input 
+                  type="email" 
+                  value={email}
+                  disabled
+                  className="rounded-xl border-border/50 bg-background/50 opacity-60 cursor-not-allowed" 
+                />
               </div>
               <div className="space-y-2">
                 <Label>Téléphone</Label>
-                <Input placeholder="+33 6 12 34 56 78" className="rounded-xl border-border/50 bg-background/50 focus:shadow-md transition-smooth" />
+                <Input 
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+33 6 12 34 56 78" 
+                  className="rounded-xl border-border/50 bg-background/50 focus:shadow-md transition-smooth" 
+                />
               </div>
-              <Button className="rounded-xl hover:shadow-md transition-smooth">Enregistrer les modifications</Button>
+              <Button 
+                onClick={handleSaveProfile}
+                disabled={isSaving}
+                className="rounded-xl hover:shadow-md transition-smooth"
+              >
+                {isSaving ? "Enregistrement..." : "Enregistrer les modifications"}
+              </Button>
             </CardContent>
           </Card>
 
@@ -101,19 +207,46 @@ const Account = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-5 border border-border/50 rounded-xl flex items-center justify-between bg-card/50 hover:shadow-md transition-smooth">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-10 bg-gradient-to-r from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-md">
-                    VISA
+              {loadingPayment ? (
+                <div className="text-sm text-muted-foreground">Chargement...</div>
+              ) : subscription.subscribed && paymentMethod ? (
+                <div className="p-5 border border-border/50 rounded-xl flex items-center justify-between bg-card/50 hover:shadow-md transition-smooth">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-10 bg-gradient-to-r from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-md">
+                      {paymentMethod.brand?.toUpperCase() || "CARD"}
+                    </div>
+                    <div>
+                      <p className="font-semibold">•••• {paymentMethod.last4}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Expire {paymentMethod.exp_month}/{paymentMethod.exp_year}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold">•••• 4242</p>
-                    <p className="text-sm text-muted-foreground">Expire 12/25</p>
-                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="rounded-xl"
+                    onClick={openCustomerPortal}
+                  >
+                    Modifier
+                  </Button>
                 </div>
-                <Button variant="outline" size="sm" className="rounded-xl">Modifier</Button>
-              </div>
-              <Button variant="outline" className="w-full rounded-xl hover:shadow-md transition-smooth">Ajouter une carte</Button>
+              ) : subscription.subscribed ? (
+                <div className="text-sm text-muted-foreground">Aucune méthode de paiement configurée</div>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  Souscrivez à un abonnement pour gérer vos moyens de paiement
+                </div>
+              )}
+              {subscription.subscribed && (
+                <Button 
+                  variant="outline" 
+                  className="w-full rounded-xl hover:shadow-md transition-smooth"
+                  onClick={openCustomerPortal}
+                >
+                  Gérer mes moyens de paiement
+                </Button>
+              )}
             </CardContent>
           </Card>
 
