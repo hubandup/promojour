@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import { ProfileBadge } from "@/components/ProfileBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoPromoJour from "@/assets/logo-promojour.png";
@@ -98,6 +99,9 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
+        <div className="px-2 pb-2">
+          <ProfileBadge variant="detailed" />
+        </div>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout}>
