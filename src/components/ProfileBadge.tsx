@@ -41,7 +41,12 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
         .order('name');
       
       if (error) throw error;
-      setAvailableOrgs(data || []);
+      
+      // Filtrer pour n'afficher que les organisations de démonstration
+      const demoOrgs = (data || []).filter(org => 
+        org.name.includes('Demo') || org.name.includes('Chausselandia')
+      );
+      setAvailableOrgs(demoOrgs);
     } catch (error) {
       console.error("Error fetching organizations:", error);
     }
@@ -202,15 +207,17 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
                   </h4>
                   
                   <div className="space-y-2">
-                    <Label className="text-xs">Organisation</Label>
+                    <Label className="text-xs">Profil de démonstration</Label>
                     <Select value={selectedOrg} onValueChange={setSelectedOrg}>
                       <SelectTrigger className="h-8 text-xs">
-                        <SelectValue placeholder="Sélectionner" />
+                        <SelectValue placeholder="Sélectionner un profil" />
                       </SelectTrigger>
                       <SelectContent>
                         {availableOrgs.map((org) => (
                           <SelectItem key={org.id} value={org.id}>
-                            {org.name} ({org.account_type === 'free' ? 'Free' : org.account_type === 'store' ? 'Pro' : 'Centrale'})
+                            {org.account_type === 'free' && '🆓 Free'}
+                            {org.account_type === 'store' && '🏪 Magasin Pro'}
+                            {org.account_type === 'central' && '🏢 Centrale'}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -218,17 +225,17 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs">Rôle</Label>
+                    <Label className="text-xs">Vue</Label>
                     <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as any)}>
                       <SelectTrigger className="h-8 text-xs">
-                        <SelectValue placeholder="Sélectionner" />
+                        <SelectValue placeholder="Sélectionner une vue" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="editor">Éditeur</SelectItem>
-                        <SelectItem value="viewer">Lecteur</SelectItem>
-                        <SelectItem value="store_manager">Responsable Magasin</SelectItem>
-                        <SelectItem value="super_admin">Super Admin</SelectItem>
+                        <SelectItem value="super_admin">👑 Super Admin (vue complète)</SelectItem>
+                        <SelectItem value="admin">👤 Admin</SelectItem>
+                        <SelectItem value="store_manager">🛒 Responsable Magasin</SelectItem>
+                        <SelectItem value="editor">✏️ Éditeur</SelectItem>
+                        <SelectItem value="viewer">👁️ Lecteur</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
