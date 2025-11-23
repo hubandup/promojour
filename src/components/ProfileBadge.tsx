@@ -258,22 +258,24 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
   }
 
   return (
-    <Card className={cn("p-4 space-y-3 glass-card border-border/50", className)}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shadow-md", config.color)}>
-            <Icon className="w-4 h-4 text-white" />
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Card className={cn("p-4 space-y-3 glass-card border-border/50 cursor-pointer hover:bg-accent/50 transition-colors", className)}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shadow-md", config.color)}>
+                <Icon className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Profil actuel</p>
+                <p className="text-xs text-muted-foreground">{organization?.name}</p>
+              </div>
+            </div>
+            <Badge variant={config.badgeVariant} className="gap-1.5">
+              <Icon className="w-3 h-3" />
+              {config.name}
+            </Badge>
           </div>
-          <div>
-            <p className="text-sm font-medium">Profil actuel</p>
-            <p className="text-xs text-muted-foreground">{organization?.name}</p>
-          </div>
-        </div>
-        <Badge variant={config.badgeVariant} className="gap-1.5">
-          <Icon className="w-3 h-3" />
-          {config.name}
-        </Badge>
-      </div>
 
       {isFree && !loading && limits.remainingPromotions !== null && (
         <div className="pt-3 border-t space-y-2">
@@ -309,22 +311,100 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
         </div>
       )}
 
-      {(isStore || isCentral) && (
-        <div className="pt-3 border-t">
-          <div className="flex items-center gap-2 text-sm">
-            <div className="flex-1">
-              <p className="text-muted-foreground">Magasins</p>
-              <p className="font-semibold">
-                {isStore ? `${organization?.max_stores || 5} max` : "Illimité"}
-              </p>
+          {(isStore || isCentral) && (
+            <div className="pt-3 border-t">
+              <div className="flex items-center gap-2 text-sm">
+                <div className="flex-1">
+                  <p className="text-muted-foreground">Magasins</p>
+                  <p className="font-semibold">
+                    {isStore ? `${organization?.max_stores || 5} max` : "Illimité"}
+                  </p>
+                </div>
+                <div className="flex-1">
+                  <p className="text-muted-foreground">Promotions</p>
+                  <p className="font-semibold">Illimitées</p>
+                </div>
+              </div>
             </div>
-            <div className="flex-1">
-              <p className="text-muted-foreground">Promotions</p>
-              <p className="font-semibold">Illimitées</p>
+          )}
+        </Card>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 z-[100]" align="start" side="top">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <h4 className="font-semibold leading-none flex items-center gap-2">
+              <Icon className="w-4 h-4" />
+              Profil actuel
+            </h4>
+            <p className="text-sm text-muted-foreground">
+              {organization?.name}
+            </p>
+            <div className="flex items-center gap-2 text-xs">
+              <Badge variant="outline">
+                {userRole?.role === 'super_admin' && 'Super Admin'}
+                {userRole?.role === 'admin' && 'Admin'}
+                {userRole?.role === 'editor' && 'Éditeur'}
+                {userRole?.role === 'viewer' && 'Lecteur'}
+                {userRole?.role === 'store_manager' && 'Responsable Magasin'}
+              </Badge>
             </div>
           </div>
+
+          {isSuperAdmin && (
+            <>
+              <div className="border-t pt-4 space-y-3">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Changer de profil
+                </h4>
+                
+                <div className="space-y-2">
+                  <Label className="text-xs">Profil de démonstration</Label>
+                  <Select value={selectedOrg} onValueChange={setSelectedOrg}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Sélectionner un profil" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableOrgs.map((org) => (
+                        <SelectItem key={org.id} value={org.id}>
+                          {org.account_type === 'free' && '🆓 Free'}
+                          {org.account_type === 'store' && '🏪 Magasin Pro'}
+                          {org.account_type === 'central' && '🏢 Centrale'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">Vue</Label>
+                  <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as any)}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Sélectionner une vue" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="super_admin">👑 Super Admin (vue complète)</SelectItem>
+                      <SelectItem value="admin">👤 Admin</SelectItem>
+                      <SelectItem value="store_manager">🛒 Responsable Magasin</SelectItem>
+                      <SelectItem value="editor">✏️ Éditeur</SelectItem>
+                      <SelectItem value="viewer">👁️ Lecteur</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button 
+                  size="sm"
+                  className="w-full"
+                  onClick={handleSwitchProfile}
+                  disabled={switchingProfile || !selectedOrg || !selectedRole}
+                >
+                  {switchingProfile ? "Changement..." : "Changer"}
+                </Button>
+              </div>
+            </>
+          )}
         </div>
-      )}
-    </Card>
+      </PopoverContent>
+    </Popover>
   );
 };
