@@ -280,15 +280,13 @@ const Account = () => {
                       </div>
                       <div className="flex gap-2">
                         <Button 
-                          variant="outline" 
-                          className="flex-1 rounded-xl hover:shadow-md transition-smooth text-white border-white/30 hover:bg-white/10"
+                          className="flex-1 rounded-xl hover:shadow-md transition-smooth bg-white/20 text-white hover:bg-white/30 border border-white/40"
                           onClick={() => setShowCentraleConfig(false)}
                         >
                           Annuler
                         </Button>
                         <Button 
-                          variant="secondary" 
-                          className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                          className="flex-1 rounded-xl hover:shadow-md transition-smooth bg-white text-primary hover:bg-white/90"
                           onClick={handleCentraleUpgrade}
                         >
                           Confirmer
@@ -357,15 +355,13 @@ const Account = () => {
                       </div>
                       <div className="flex gap-2">
                         <Button 
-                          variant="outline" 
-                          className="flex-1 rounded-xl hover:shadow-md transition-smooth text-white border-white/30 hover:bg-white/10"
+                          className="flex-1 rounded-xl hover:shadow-md transition-smooth bg-white/20 text-white hover:bg-white/30 border border-white/40"
                           onClick={() => setShowCentraleConfig(false)}
                         >
                           Annuler
                         </Button>
                         <Button 
-                          variant="secondary" 
-                          className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                          className="flex-1 rounded-xl hover:shadow-md transition-smooth bg-white text-primary hover:bg-white/90"
                           onClick={handleCentraleUpgrade}
                         >
                           Confirmer
