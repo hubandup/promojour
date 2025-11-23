@@ -12,17 +12,10 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { ProfileBadge } from "@/components/ProfileBadge";
+import { useUserData } from "@/hooks/use-user-data";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoPromoJour from "@/assets/logo-promojour.png";
-
-const menuItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Promotions", url: "/promotions", icon: Tag },
-  { title: "Campagnes", url: "/campaigns", icon: CalendarDays },
-  { title: "Statistiques", url: "/stats", icon: BarChart3 },
-  { title: "Mes Magasins", url: "/stores", icon: Store },
-];
 
 const settingsItems = [
   { title: "Réglages", url: "/settings", icon: Settings },
@@ -31,6 +24,7 @@ const settingsItems = [
 
 export function AppSidebar() {
   const navigate = useNavigate();
+  const { isFree, isStore, isCentral, isSuperAdmin, isStoreManager } = useUserData();
 
   const handleLogout = async () => {
     try {
@@ -40,6 +34,33 @@ export function AppSidebar() {
     } catch (error) {
       toast.error("Erreur lors de la déconnexion");
     }
+  };
+
+  // Adapter les éléments du menu selon le profil
+  const getMenuItems = () => {
+    const items = [
+      { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+      { title: "Promotions", url: "/promotions", icon: Tag },
+    ];
+
+    // Campagnes : pas visible pour Free
+    if (!isFree || isSuperAdmin) {
+      items.push({ title: "Campagnes", url: "/campaigns", icon: CalendarDays });
+    }
+
+    items.push({ title: "Statistiques", url: "/stats", icon: BarChart3 });
+
+    // Mes Magasins : visible seulement pour Pro/Centrale (pas Free)
+    if ((isStore || isCentral) && !isFree) {
+      items.push({ title: "Mes Magasins", url: "/stores", icon: Store });
+    }
+
+    // Mon Magasin : visible pour Free et store_manager
+    if (isFree || isStoreManager) {
+      items.push({ title: "Mon Magasin", url: "/stores", icon: Store });
+    }
+
+    return items;
   };
 
   return (
@@ -55,7 +76,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Menu principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {getMenuItems().map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
