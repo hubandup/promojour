@@ -80,10 +80,10 @@ export const useSubscription = () => {
     }
   };
 
-  const createCheckoutSession = async (priceId: string) => {
+  const createCheckoutSession = async (priceId: string, quantity: number = 1) => {
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { priceId },
+        body: { priceId, quantity },
       });
 
       if (error) throw error;
