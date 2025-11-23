@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, User, Gift, Shield } from "lucide-react";
+import { CreditCard, User, Gift, Shield, FileText, Download } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
@@ -24,6 +24,8 @@ const Account = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<any>(null);
   const [loadingPayment, setLoadingPayment] = useState(false);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
 
   useEffect(() => {
     const fetchUserEmail = async () => {
@@ -46,6 +48,7 @@ const Account = () => {
   useEffect(() => {
     if (subscription.subscribed) {
       fetchPaymentMethod();
+      fetchInvoices();
     }
   }, [subscription.subscribed]);
 
@@ -59,6 +62,19 @@ const Account = () => {
       console.error("Error fetching payment method:", error);
     } finally {
       setLoadingPayment(false);
+    }
+  };
+
+  const fetchInvoices = async () => {
+    setLoadingInvoices(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-invoices');
+      if (error) throw error;
+      setInvoices(data?.invoices || []);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+    } finally {
+      setLoadingInvoices(false);
     }
   };
 
@@ -206,46 +222,98 @@ const Account = () => {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {loadingPayment ? (
-                <div className="text-sm text-muted-foreground">Chargement...</div>
-              ) : subscription.subscribed && paymentMethod ? (
-                <div className="p-5 border border-border/50 rounded-xl flex items-center justify-between bg-card/50 hover:shadow-md transition-smooth">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-10 bg-gradient-to-r from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-md">
-                      {paymentMethod.brand?.toUpperCase() || "CARD"}
+            <CardContent className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Méthode de paiement</h3>
+                {loadingPayment ? (
+                  <div className="text-sm text-muted-foreground">Chargement...</div>
+                ) : subscription.subscribed && paymentMethod ? (
+                  <div className="p-5 border border-border/50 rounded-xl flex items-center justify-between bg-card/50 hover:shadow-md transition-smooth">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-10 bg-gradient-to-r from-blue-600 to-blue-400 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-md">
+                        {paymentMethod.brand?.toUpperCase() || "CARD"}
+                      </div>
+                      <div>
+                        <p className="font-semibold">•••• {paymentMethod.last4}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Expire {paymentMethod.exp_month}/{paymentMethod.exp_year}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold">•••• {paymentMethod.last4}</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="rounded-xl"
+                      onClick={openCustomerPortal}
+                    >
+                      Modifier
+                    </Button>
+                  </div>
+                ) : subscription.subscribed ? (
+                  <div className="text-sm text-muted-foreground">Aucune méthode de paiement configurée</div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    Souscrivez à un abonnement pour gérer vos moyens de paiement
+                  </div>
+                )}
+              </div>
+
+              {subscription.subscribed && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Historique de facturation</h3>
+                  {loadingInvoices ? (
+                    <div className="text-sm text-muted-foreground">Chargement...</div>
+                  ) : invoices.length > 0 ? (
+                    <div className="space-y-2">
+                      {invoices.map((invoice) => (
+                        <div
+                          key={invoice.id}
+                          className="flex items-center justify-between p-4 bg-card/50 rounded-xl border border-border/50 hover:bg-accent/10 transition-smooth"
+                        >
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-5 w-5 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">
+                                {invoice.number || `Facture ${invoice.id.substring(0, 8)}`}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(invoice.created * 1000).toLocaleDateString('fr-FR', {
+                                  day: 'numeric',
+                                  month: 'long',
+                                  year: 'numeric'
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <p className="font-semibold">
+                                {invoice.amount.toFixed(2)} {invoice.currency}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {invoice.paid ? 'Payée' : 'En attente'}
+                              </p>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="rounded-xl"
+                              onClick={() => window.open(invoice.invoice_pdf || invoice.hosted_invoice_url, '_blank')}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-card/50 rounded-xl border border-border/50">
                       <p className="text-sm text-muted-foreground">
-                        Expire {paymentMethod.exp_month}/{paymentMethod.exp_year}
+                        Aucune facture disponible
                       </p>
                     </div>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="rounded-xl"
-                    onClick={openCustomerPortal}
-                  >
-                    Modifier
-                  </Button>
+                  )}
                 </div>
-              ) : subscription.subscribed ? (
-                <div className="text-sm text-muted-foreground">Aucune méthode de paiement configurée</div>
-              ) : (
-                <div className="text-sm text-muted-foreground">
-                  Souscrivez à un abonnement pour gérer vos moyens de paiement
-                </div>
-              )}
-              {subscription.subscribed && (
-                <Button 
-                  variant="outline" 
-                  className="w-full rounded-xl hover:shadow-md transition-smooth"
-                  onClick={openCustomerPortal}
-                >
-                  Gérer mes moyens de paiement
-                </Button>
               )}
             </CardContent>
           </Card>
