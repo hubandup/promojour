@@ -32,6 +32,7 @@ import { EditPromotionDialog } from "@/components/EditPromotionDialog";
 import { ReelPreviewDialog } from "@/components/ReelPreviewDialog";
 import { BulkImportPromotionsDialog } from "@/components/BulkImportPromotionsDialog";
 import { PromotionsCalendar } from "@/components/PromotionsCalendar";
+import { ProfileBadge } from "@/components/ProfileBadge";
 import { usePromotions } from "@/hooks/use-promotions";
 import { useUserData } from "@/hooks/use-user-data";
 import { useStores } from "@/hooks/use-stores";
@@ -225,12 +226,15 @@ const Promotions = () => {
     <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Promotions</h1>
-          <p className="text-muted-foreground">
-            {loading ? "Chargement..." : `${filteredPromotions.length} promotion${filteredPromotions.length > 1 ? 's' : ''}`}
-            {selectedIds.size > 0 && ` · ${selectedIds.size} sélectionnée(s)`}
-          </p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-3xl font-bold">Promotions</h1>
+            <p className="text-muted-foreground">
+              {loading ? "Chargement..." : `${filteredPromotions.length} promotion${filteredPromotions.length > 1 ? 's' : ''}`}
+              {selectedIds.size > 0 && ` · ${selectedIds.size} sélectionnée(s)`}
+            </p>
+          </div>
+          <ProfileBadge variant="compact" />
         </div>
         <div className="flex gap-2">
           <div className="flex gap-1 bg-muted/50 p-1 rounded-xl">
