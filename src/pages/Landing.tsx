@@ -154,7 +154,7 @@ export default function Landing() {
                   <Button variant="ghost" onClick={() => navigate("/auth")}>
                     Connexion
                   </Button>
-                  <Button onClick={() => navigate("/auth")} className="bg-primary hover:bg-primary/90">
+                  <Button onClick={() => navigate("/auth?tab=signup")} className="bg-primary hover:bg-primary/90">
                     Démarrer
                   </Button>
                 </>
@@ -192,7 +192,7 @@ export default function Landing() {
             >
               <Button 
                 size="lg" 
-                onClick={() => navigate("/auth")}
+                onClick={() => navigate("/auth?tab=signup")}
                 className="text-lg px-8 h-14 bg-primary hover:bg-primary/90"
               >
                 Démarrer gratuitement
@@ -466,7 +466,7 @@ export default function Landing() {
                   </li>
                 </ul>
 
-                <Button className="w-full bg-primary hover:bg-primary/90" onClick={() => navigate("/auth")}>
+                <Button className="w-full bg-primary hover:bg-primary/90" onClick={() => navigate("/auth?tab=signup")}>
                   Démarrer l'essai gratuit
                 </Button>
               </div>
@@ -511,7 +511,7 @@ export default function Landing() {
                   </li>
                 </ul>
 
-                <Button variant="outline" className="w-full" onClick={() => navigate("/auth")}>
+                <Button variant="outline" className="w-full" onClick={() => navigate("/auth?tab=signup")}>
                   Nous contacter
                 </Button>
               </div>
@@ -670,7 +670,7 @@ export default function Landing() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                 <Button 
                   size="lg" 
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/auth?tab=signup")}
                   className="text-lg px-8 h-14 bg-primary hover:bg-primary/90"
                 >
                   Commencer gratuitement
