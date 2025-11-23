@@ -230,8 +230,7 @@ const Account = () => {
                         Souscrire à Pro - 49€/mois
                       </Button>
                       <Button 
-                        variant="outline" 
-                        className="w-full rounded-xl hover:shadow-md transition-smooth text-white border-white/30 hover:bg-white/10"
+                        className="w-full rounded-xl hover:shadow-md transition-smooth bg-white/20 text-white hover:bg-white/30 border border-white/40"
                         onClick={() => setShowCentraleConfig(true)}
                       >
                         Souscrire à Centrale
