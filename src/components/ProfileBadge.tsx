@@ -212,7 +212,7 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
                       <SelectTrigger className="h-8 text-xs">
                         <SelectValue placeholder="Sélectionner un profil" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[150]">
                         {availableOrgs.map((org) => (
                           <SelectItem key={org.id} value={org.id}>
                             {org.account_type === 'free' && '🆓 Free'}
@@ -230,7 +230,7 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
                       <SelectTrigger className="h-8 text-xs">
                         <SelectValue placeholder="Sélectionner une vue" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[150]">
                         <SelectItem value="super_admin">👑 Super Admin (vue complète)</SelectItem>
                         <SelectItem value="admin">👤 Admin</SelectItem>
                         <SelectItem value="store_manager">🛒 Responsable Magasin</SelectItem>
@@ -364,7 +364,7 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="Sélectionner un profil" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[150]">
                       {availableOrgs.map((org) => (
                         <SelectItem key={org.id} value={org.id}>
                           {org.account_type === 'free' && '🆓 Free'}
@@ -382,7 +382,7 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="Sélectionner une vue" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[150]">
                       <SelectItem value="super_admin">👑 Super Admin (vue complète)</SelectItem>
                       <SelectItem value="admin">👤 Admin</SelectItem>
                       <SelectItem value="store_manager">🛒 Responsable Magasin</SelectItem>
