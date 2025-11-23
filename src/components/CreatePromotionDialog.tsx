@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { usePromotionalMechanics } from "@/hooks/use-promotional-mechanics";
+import { usePromotionLimits } from "@/hooks/use-promotion-limits";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const promotionSchema = z.object({
   title: z.string().min(3, "Le titre doit contenir au moins 3 caractères").max(100),
@@ -48,6 +50,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
   const [uploading, setUploading] = useState(false);
   
   const { mechanics } = usePromotionalMechanics();
+  const { limits, validatePromotionDates, checkLimits } = usePromotionLimits();
 
   const {
     register,
@@ -155,6 +158,21 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
     try {
       setUploading(true);
       
+      // Vérifier les limites avant de créer la promotion
+      if (!limits.canCreatePromotion) {
+        toast.error(limits.reason || "Vous avez atteint la limite de promotions");
+        setUploading(false);
+        return;
+      }
+
+      // Valider les dates pour le profil Free
+      const dateValidation = validatePromotionDates(data.startDate, data.endDate);
+      if (!dateValidation.valid) {
+        toast.error(dateValidation.error || "Dates invalides");
+        setUploading(false);
+        return;
+      }
+      
       // Get user organization
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
@@ -236,6 +254,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
       reset();
       setImages([]);
       setImagePreviews([]);
+      await checkLimits(); // Rafraîchir les limites
       onOpenChange(false);
       onSuccess?.();
     } catch (error: any) {
@@ -255,6 +274,24 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
             Créez une nouvelle promotion pour votre magasin
           </DialogDescription>
         </DialogHeader>
+
+        {/* Afficher les limites pour le profil Free */}
+        {limits.remainingPromotions !== null && (
+          <Alert className={limits.canCreatePromotion ? "border-primary/30 bg-primary/5" : "border-destructive/30 bg-destructive/5"}>
+            <AlertDescription>
+              {limits.canCreatePromotion ? (
+                <>
+                  <strong>Profil Free :</strong> Il vous reste {limits.remainingPromotions} promotion(s) cette semaine.
+                  {limits.maxPlanningDays && (
+                    <> Planification max : {limits.maxPlanningDays} jours. Validité max : {limits.maxValidityDays} jours.</>
+                  )}
+                </>
+              ) : (
+                <strong className="text-destructive">{limits.reason}</strong>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Informations générales */}
