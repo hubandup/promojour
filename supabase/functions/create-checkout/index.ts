@@ -24,7 +24,7 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
 
-    const { priceId } = await req.json();
+    const { priceId, quantity = 1 } = await req.json();
     if (!priceId) throw new Error("Price ID is required");
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
@@ -43,7 +43,7 @@ serve(async (req) => {
       line_items: [
         {
           price: priceId,
-          quantity: 1,
+          quantity: quantity,
         },
       ],
       mode: "subscription",

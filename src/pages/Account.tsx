@@ -6,10 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { CreditCard, User, Gift, Shield } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { Minus, Plus } from "lucide-react";
 
 const Account = () => {
   const { subscription, loading, createCheckoutSession, openCustomerPortal, tiers } = useSubscription();
   const { toast } = useToast();
+  const [storeCount, setStoreCount] = useState(1);
+  const [showCentraleConfig, setShowCentraleConfig] = useState(false);
 
   const getCurrentPlanName = () => {
     switch (subscription.tier) {
@@ -22,8 +26,17 @@ const Account = () => {
     }
   };
 
-  const handleUpgrade = (priceId: string) => {
-    createCheckoutSession(priceId);
+  const handleUpgrade = (priceId: string, quantity?: number) => {
+    createCheckoutSession(priceId, quantity);
+  };
+
+  const handleCentraleUpgrade = () => {
+    handleUpgrade(tiers.centrale.price_id, storeCount);
+    setShowCentraleConfig(false);
+  };
+
+  const calculateCentralePrice = () => {
+    return 180 + (storeCount * 19);
   };
 
   return (
@@ -207,30 +220,89 @@ const Account = () => {
                       Renouvellement le {new Date(subscription.subscription_end).toLocaleDateString("fr-FR")}
                     </p>
                   )}
-                  {!subscription.subscribed && (
+                  {!subscription.subscribed && !showCentraleConfig && (
                     <div className="space-y-2">
                       <Button 
                         variant="secondary" 
                         className="w-full rounded-xl hover:shadow-md transition-smooth"
                         onClick={() => handleUpgrade(tiers.magasin_pro.price_id)}
                       >
-                        Passer à Pro (49€/mois)
+                        Souscrire à Pro - 49€/mois
                       </Button>
                       <Button 
                         variant="outline" 
                         className="w-full rounded-xl hover:shadow-md transition-smooth text-white border-white/30 hover:bg-white/10"
-                        onClick={() => handleUpgrade(tiers.centrale.price_id)}
+                        onClick={() => setShowCentraleConfig(true)}
                       >
-                        Passer à Centrale (180€/mois)
+                        Souscrire à Centrale
                       </Button>
                     </div>
                   )}
-                  {subscription.subscribed && subscription.tier === "magasin_pro" && (
+                  {!subscription.subscribed && showCentraleConfig && (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-white text-sm">Nombre de magasins</Label>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="rounded-xl text-white border-white/30 hover:bg-white/10"
+                            onClick={() => setStoreCount(Math.max(1, storeCount - 1))}
+                          >
+                            <Minus className="w-4 h-4" />
+                          </Button>
+                          <div className="flex-1 text-center">
+                            <div className="text-3xl font-bold text-white">{storeCount}</div>
+                            <div className="text-xs text-white/70">magasin{storeCount > 1 ? 's' : ''}</div>
+                          </div>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="rounded-xl text-white border-white/30 hover:bg-white/10"
+                            onClick={() => setStoreCount(storeCount + 1)}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="text-xs text-white/80 space-y-1 mt-3">
+                          <div className="flex justify-between">
+                            <span>Base Centrale:</span>
+                            <span className="font-semibold">180€/mois</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>{storeCount} magasin{storeCount > 1 ? 's' : ''} × 19€:</span>
+                            <span className="font-semibold">{storeCount * 19}€/mois</span>
+                          </div>
+                          <div className="flex justify-between pt-2 border-t border-white/20 text-base">
+                            <span className="font-bold">Total:</span>
+                            <span className="font-bold">{calculateCentralePrice()}€/mois</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          className="flex-1 rounded-xl hover:shadow-md transition-smooth text-white border-white/30 hover:bg-white/10"
+                          onClick={() => setShowCentraleConfig(false)}
+                        >
+                          Annuler
+                        </Button>
+                        <Button 
+                          variant="secondary" 
+                          className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                          onClick={handleCentraleUpgrade}
+                        >
+                          Confirmer
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {subscription.subscribed && subscription.tier === "magasin_pro" && !showCentraleConfig && (
                     <div className="space-y-2">
                       <Button 
                         variant="secondary" 
                         className="w-full rounded-xl hover:shadow-md transition-smooth"
-                        onClick={() => handleUpgrade(tiers.centrale.price_id)}
+                        onClick={() => setShowCentraleConfig(true)}
                       >
                         Passer à Centrale
                       </Button>
@@ -241,6 +313,65 @@ const Account = () => {
                       >
                         Gérer mon abonnement
                       </Button>
+                    </div>
+                  )}
+                  {subscription.subscribed && subscription.tier === "magasin_pro" && showCentraleConfig && (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-white text-sm">Nombre de magasins</Label>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="rounded-xl text-white border-white/30 hover:bg-white/10"
+                            onClick={() => setStoreCount(Math.max(1, storeCount - 1))}
+                          >
+                            <Minus className="w-4 h-4" />
+                          </Button>
+                          <div className="flex-1 text-center">
+                            <div className="text-3xl font-bold text-white">{storeCount}</div>
+                            <div className="text-xs text-white/70">magasin{storeCount > 1 ? 's' : ''}</div>
+                          </div>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="rounded-xl text-white border-white/30 hover:bg-white/10"
+                            onClick={() => setStoreCount(storeCount + 1)}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="text-xs text-white/80 space-y-1 mt-3">
+                          <div className="flex justify-between">
+                            <span>Base Centrale:</span>
+                            <span className="font-semibold">180€/mois</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>{storeCount} magasin{storeCount > 1 ? 's' : ''} × 19€:</span>
+                            <span className="font-semibold">{storeCount * 19}€/mois</span>
+                          </div>
+                          <div className="flex justify-between pt-2 border-t border-white/20 text-base">
+                            <span className="font-bold">Total:</span>
+                            <span className="font-bold">{calculateCentralePrice()}€/mois</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          className="flex-1 rounded-xl hover:shadow-md transition-smooth text-white border-white/30 hover:bg-white/10"
+                          onClick={() => setShowCentraleConfig(false)}
+                        >
+                          Annuler
+                        </Button>
+                        <Button 
+                          variant="secondary" 
+                          className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                          onClick={handleCentraleUpgrade}
+                        >
+                          Confirmer
+                        </Button>
+                      </div>
                     </div>
                   )}
                   {subscription.subscribed && subscription.tier === "centrale" && (
