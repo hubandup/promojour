@@ -13,7 +13,7 @@ export default function Pricing() {
 
   const handleSelectPlan = (priceId: string) => {
     if (!profile) {
-      navigate("/auth");
+      navigate("/auth?tab=signup");
       return;
     }
     createCheckoutSession(priceId);
@@ -101,7 +101,7 @@ export default function Pricing() {
                   <Button variant="ghost" onClick={() => navigate("/auth")}>
                     Connexion
                   </Button>
-                  <Button onClick={() => navigate("/auth")} className="bg-primary hover:bg-primary/90">
+                  <Button onClick={() => navigate("/auth?tab=signup")} className="bg-primary hover:bg-primary/90">
                     Démarrer
                   </Button>
                 </>
@@ -183,7 +183,7 @@ export default function Pricing() {
                   <Button
                     variant={tier.variant}
                     className="w-full"
-                    onClick={() => tier.priceId ? handleSelectPlan(tier.priceId) : navigate("/auth")}
+                    onClick={() => tier.priceId ? handleSelectPlan(tier.priceId) : navigate("/auth?tab=signup")}
                   >
                     {tier.cta}
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -268,7 +268,7 @@ export default function Pricing() {
             </p>
             <Button 
               size="lg" 
-              onClick={() => navigate("/auth")}
+              onClick={() => navigate("/auth?tab=signup")}
               className="text-lg px-8 h-14 bg-primary hover:bg-primary/90"
             >
               Démarrer gratuitement
