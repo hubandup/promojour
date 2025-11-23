@@ -72,7 +72,7 @@ export function useUserData() {
           .select('role, organization_id, store_id')
           .eq('user_id', user.id)
           .eq('organization_id', profileData.organization_id)
-          .single();
+          .maybeSingle();
 
         if (roleError) throw roleError;
         setUserRole(roleData);
