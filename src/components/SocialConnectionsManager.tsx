@@ -65,6 +65,11 @@ export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerPr
     }
   };
 
+  // Vérifier si la connexion est vraiment active (is_connected ET access_token présent)
+  const isReallyConnected = (connection: any) => {
+    return connection?.is_connected && connection?.access_token;
+  };
+
   const facebookConnection = connections.find(c => c.platform === 'facebook');
   const instagramConnection = connections.find(c => c.platform === 'instagram');
   const gmbConnection = connections.find(c => c.platform === 'google_business');
@@ -86,7 +91,7 @@ export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerPr
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {facebookConnection?.is_connected ? (
+          {isReallyConnected(facebookConnection) ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Badge variant="default">Connecté</Badge>
@@ -123,7 +128,7 @@ export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerPr
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {instagramConnection?.is_connected ? (
+          {isReallyConnected(instagramConnection) ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Badge variant="default">Connecté</Badge>
@@ -147,7 +152,7 @@ export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerPr
             </div>
           ) : (
             <div>
-              {facebookConnection?.is_connected ? (
+              {isReallyConnected(facebookConnection) ? (
                 <p className="text-sm text-muted-foreground">
                   Instagram se connecte automatiquement avec Facebook.
                   {!instagramConnection && " Aucun compte Instagram Business trouvé sur cette page Facebook."}
@@ -174,7 +179,7 @@ export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerPr
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {gmbConnection?.is_connected ? (
+          {isReallyConnected(gmbConnection) ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Badge variant="default">Connecté</Badge>
