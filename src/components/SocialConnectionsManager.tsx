@@ -3,8 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { supabase } from "@/integrations/supabase/client";
 import { useSocialConnections } from "@/hooks/use-social-connections";
 import { useToast } from "@/hooks/use-toast";
-import { Facebook, Instagram, MapPin } from "lucide-react";
+import { Facebook, Instagram, MapPin, AlertCircle, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useState } from "react";
 
 interface SocialConnectionsManagerProps {
   storeId: string;
@@ -13,6 +15,9 @@ interface SocialConnectionsManagerProps {
 export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerProps) {
   const { connections, loading, refetch } = useSocialConnections(storeId);
   const { toast } = useToast();
+  const [showConfigGuide, setShowConfigGuide] = useState(false);
+  
+  const redirectUri = "https://rrcrfwhblesarezabsfo.supabase.co/functions/v1/facebook-oauth-callback";
 
   const handleConnectFacebook = async () => {
     try {
@@ -80,6 +85,72 @@ export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerPr
 
   return (
     <div className="space-y-4">
+      {showConfigGuide && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Configuration requise - Meta Developer Console</AlertTitle>
+          <AlertDescription className="space-y-3 mt-2">
+            <p className="text-sm">
+              Pour connecter Facebook, configurez votre application dans la{" "}
+              <a
+                href="https://developers.facebook.com/apps"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline inline-flex items-center gap-1"
+              >
+                Console Meta Developer
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </p>
+            
+            <div className="space-y-2 text-sm">
+              <div>
+                <strong>1. Facebook Login → Settings :</strong>
+                <div className="ml-4 mt-1 p-2 bg-muted rounded-md font-mono text-xs break-all">
+                  Valid OAuth Redirect URIs: {redirectUri}
+                </div>
+              </div>
+              
+              <div>
+                <strong>2. Settings → Basic :</strong>
+                <div className="ml-4 mt-1">
+                  <div className="p-2 bg-muted rounded-md font-mono text-xs">
+                    App Domains: supabase.co
+                  </div>
+                  <div className="p-2 bg-muted rounded-md font-mono text-xs mt-1">
+                    App Domains: lovableproject.com
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <strong>3. Mode de l'application :</strong>
+                <div className="ml-4 mt-1 text-muted-foreground">
+                  • Si en mode <strong>Development</strong> : ajoutez-vous comme testeur<br />
+                  • Ou passez l'app en mode <strong>Live</strong>
+                </div>
+              </div>
+              
+              <div>
+                <strong>4. App Review → Permissions :</strong>
+                <div className="ml-4 mt-1 text-muted-foreground">
+                  Activez : pages_show_list, pages_read_engagement, instagram_basic, instagram_content_publish, business_management
+                </div>
+              </div>
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={() => setShowConfigGuide(false)}
+            >
+              J'ai configuré mon application
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -109,10 +180,23 @@ export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerPr
               </Button>
             </div>
           ) : (
-            <Button onClick={handleConnectFacebook}>
-              <Facebook className="mr-2 h-4 w-4" />
-              Connecter Facebook
-            </Button>
+            <div className="space-y-3">
+              {!showConfigGuide && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowConfigGuide(true)}
+                  className="mb-2"
+                >
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  Voir le guide de configuration
+                </Button>
+              )}
+              <Button onClick={handleConnectFacebook}>
+                <Facebook className="mr-2 h-4 w-4" />
+                Connecter Facebook
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
