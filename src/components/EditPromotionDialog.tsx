@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { usePromotionalMechanics } from "@/hooks/use-promotional-mechanics";
+import { useAutoPublishPromotion } from "@/hooks/use-auto-publish-promotion";
 
 const promotionSchema = z.object({
   title: z.string().min(3, "Le titre doit contenir au moins 3 caractères").max(100),
@@ -49,8 +50,11 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [previousStatus, setPreviousStatus] = useState<string>("");
+  const [storeId, setStoreId] = useState<string>("");
   
   const { mechanics } = usePromotionalMechanics();
+  const { tryAutoPublish } = useAutoPublishPromotion();
 
   const {
     register,
@@ -120,6 +124,8 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
         setValue('description', data.description || "");
         setValue('category', data.category || "mode");
         setValue('status', data.status);
+        setPreviousStatus(data.status); // Store the current status
+        setStoreId(data.store_id || ""); // Store the store_id
         setValue('startDate', new Date(data.start_date));
         setValue('endDate', new Date(data.end_date));
         
@@ -304,6 +310,13 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
       }
 
       console.log('[EditPromotion] Promotion updated successfully:', updatedData);
+      
+      // Check if status changed to active and trigger auto-publish if needed
+      const wasActivated = previousStatus !== "active" && data.status === "active";
+      if (wasActivated && storeId) {
+        console.log('[EditPromotion] Promotion activated, checking for auto-publish...');
+        tryAutoPublish(promotionId, storeId);
+      }
       
       toast.success("Promotion modifiée avec succès !");
       setImages([]);

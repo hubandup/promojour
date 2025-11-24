@@ -492,6 +492,8 @@ export type Database = {
       store_settings: {
         Row: {
           alert_email_enabled: boolean | null
+          auto_publish_facebook: boolean | null
+          auto_publish_instagram: boolean | null
           created_at: string
           custom_attributes: Json | null
           id: string
@@ -503,6 +505,8 @@ export type Database = {
         }
         Insert: {
           alert_email_enabled?: boolean | null
+          auto_publish_facebook?: boolean | null
+          auto_publish_instagram?: boolean | null
           created_at?: string
           custom_attributes?: Json | null
           id?: string
@@ -514,6 +518,8 @@ export type Database = {
         }
         Update: {
           alert_email_enabled?: boolean | null
+          auto_publish_facebook?: boolean | null
+          auto_publish_instagram?: boolean | null
           created_at?: string
           custom_attributes?: Json | null
           id?: string
