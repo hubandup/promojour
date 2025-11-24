@@ -11,7 +11,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { ProfileBadge } from "@/components/ProfileBadge";
+
 import { useUserData } from "@/hooks/use-user-data";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -50,8 +50,8 @@ export function AppSidebar() {
 
     items.push({ title: "Statistiques", url: "/stats", icon: BarChart3 });
 
-    // Mes Magasins : visible seulement pour Pro/Centrale (pas Free)
-    if ((isStore || isCentral) && !isFree) {
+    // Mes Magasins : visible seulement pour Pro/Centrale (pas Free) ou super admin
+    if (isSuperAdmin || ((isStore || isCentral) && !isFree)) {
       items.push({ title: "Mes Magasins", url: "/stores", icon: Store });
     }
 
@@ -120,9 +120,6 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="px-2 pb-2">
-          <ProfileBadge variant="detailed" />
-        </div>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout}>
