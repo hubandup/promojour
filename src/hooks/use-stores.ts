@@ -35,9 +35,30 @@ export function useStores() {
 
   const fetchStores = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setStores([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get user's organization_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (!profile?.organization_id) {
+        setStores([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('stores')
         .select('*')
+        .eq('organization_id', profile.organization_id)
         .eq('is_active', true)
         .order('name');
 
