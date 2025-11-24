@@ -43,20 +43,19 @@ export function AppSidebar() {
       { title: "Promotions", url: "/promotions", icon: Tag },
     ];
 
-    // Campagnes : pas visible pour Free
-    if (!isFree || isSuperAdmin) {
+    // Campagnes : visible pour super admin ou si pas Free
+    if (isSuperAdmin || !isFree) {
       items.push({ title: "Campagnes", url: "/campaigns", icon: CalendarDays });
     }
 
     items.push({ title: "Statistiques", url: "/stats", icon: BarChart3 });
 
-    // Mes Magasins : visible seulement pour Pro/Centrale (pas Free) ou super admin
+    // Mes Magasins : visible pour super admin ou Pro/Centrale
     if (isSuperAdmin || ((isStore || isCentral) && !isFree)) {
       items.push({ title: "Mes Magasins", url: "/stores", icon: Store });
     }
-
-    // Mon Magasin : visible pour Free et store_manager
-    if (isFree || isStoreManager) {
+    // Mon Magasin : visible seulement pour Free et store_manager, mais PAS pour super admin
+    else if (!isSuperAdmin && (isFree || isStoreManager)) {
       items.push({ title: "Mon Magasin", url: "/stores", icon: Store });
     }
 
