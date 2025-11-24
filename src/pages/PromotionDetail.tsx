@@ -3,10 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Eye, MousePointer, Share2, Calendar, TrendingUp, MapPin } from "lucide-react";
+import { ArrowLeft, Eye, MousePointer, Share2, Calendar, TrendingUp } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import { EditPromotionDialog } from "@/components/EditPromotionDialog";
+import { PublicationHistory } from "@/components/PublicationHistory";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -58,13 +59,6 @@ const PromotionDetail = () => {
     { platform: "Instagram", impressions: 234 },
     { platform: "Facebook", impressions: 189 },
     { platform: "Google", impressions: 100 },
-  ];
-
-  const historyEvents = [
-    { date: "07/01/2025 14:30", action: "Modification", user: "Marie Dubois", description: "Mise à jour de l'image" },
-    { date: "05/01/2025 10:15", action: "Publication", user: "Jean Martin", description: "Publiée sur Instagram" },
-    { date: "03/01/2025 09:00", action: "Publication", user: "Jean Martin", description: "Publiée sur Facebook" },
-    { date: "01/01/2025 08:00", action: "Activation", user: "Marie Dubois", description: "Promotion activée" },
   ];
 
   const getStatusBadge = (status: string) => {
@@ -305,35 +299,8 @@ const PromotionDetail = () => {
             </CardContent>
           </Card>
 
-          {/* History */}
-          <Card className="glass-card border-border/50">
-            <CardHeader>
-              <CardTitle>Historique</CardTitle>
-              <CardDescription>Toutes les actions sur cette promotion</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {historyEvents.map((event, idx) => (
-                  <div
-                    key={idx}
-                    className="flex gap-4 p-4 rounded-xl border border-border/50 bg-card/50 hover:shadow-md transition-smooth"
-                  >
-                    <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                      <MapPin className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-semibold text-sm">{event.action}</h4>
-                        <span className="text-xs text-muted-foreground">{event.date}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{event.description}</p>
-                      <p className="text-xs text-muted-foreground mt-1">Par {event.user}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Publication History */}
+          <PublicationHistory promotionId={id || ""} />
         </div>
       </div>
 

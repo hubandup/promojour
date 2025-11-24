@@ -79,6 +79,18 @@ serve(async (req) => {
           );
         }
 
+        // Enregistrer dans l'historique en cas de succès
+        const postId = result?.id || result?.video_id || null;
+        await supabase
+          .from('publication_history')
+          .insert({
+            promotion_id: promotionId,
+            store_id: storeId,
+            platform: connection.platform,
+            status: 'success',
+            post_id: postId,
+          });
+
         results.push({
           platform: connection.platform,
           success: true,
@@ -88,10 +100,23 @@ serve(async (req) => {
         console.log(`Successfully published to ${connection.platform}`);
       } catch (error) {
         console.error(`Error publishing to ${connection.platform}:`, error);
+        
+        // Enregistrer dans l'historique en cas d'erreur
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        await supabase
+          .from('publication_history')
+          .insert({
+            promotion_id: promotionId,
+            store_id: storeId,
+            platform: connection.platform,
+            status: 'error',
+            error_message: errorMessage,
+          });
+
         results.push({
           platform: connection.platform,
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: errorMessage
         });
       }
     }
