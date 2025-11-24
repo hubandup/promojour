@@ -81,7 +81,7 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
         .select("*")
         .eq("user_id", user.id)
         .eq("organization_id", selectedOrg)
-        .single();
+        .maybeSingle();
 
       if (existingRole) {
         // Mettre à jour le rôle existant
@@ -96,11 +96,11 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
         // Créer un nouveau rôle
         const { error: roleError } = await supabase
           .from("user_roles")
-          .insert([{
+          .insert({
             user_id: user.id,
             organization_id: selectedOrg,
-            role: selectedRole as any,
-          }]);
+            role: selectedRole,
+          });
 
         if (roleError) throw roleError;
       }
