@@ -426,6 +426,64 @@ export type Database = {
           },
         ]
       }
+      publication_history: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          platform: string
+          post_id: string | null
+          promotion_id: string
+          published_at: string
+          status: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          platform: string
+          post_id?: string | null
+          promotion_id: string
+          published_at?: string
+          status: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          platform?: string
+          post_id?: string | null
+          promotion_id?: string
+          published_at?: string
+          status?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "publication_history_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "publication_history_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "publication_history_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_connections: {
         Row: {
           access_token: string | null
