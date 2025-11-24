@@ -66,7 +66,7 @@ export function useUserData() {
         if (orgError) throw orgError;
         setOrganization(orgData);
 
-      // Fetch user role for current organization
+      // Fetch user role
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
           .select('role, organization_id, store_id')
@@ -75,21 +75,7 @@ export function useUserData() {
           .maybeSingle();
 
         if (roleError) throw roleError;
-        
-        // Check if user is super admin in any organization
-        const { data: superAdminData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'super_admin')
-          .maybeSingle();
-
-        // If user is super admin anywhere, use that role
-        if (superAdminData) {
-          setUserRole({ ...roleData, role: 'super_admin' } as UserRole);
-        } else {
-          setUserRole(roleData);
-        }
+        setUserRole(roleData);
       }
     } catch (error) {
       console.error('Error fetching user data:', error);

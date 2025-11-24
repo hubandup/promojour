@@ -23,52 +23,39 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [switchingProfile, setSwitchingProfile] = useState(false);
-  const [selectedProfile, setSelectedProfile] = useState<string>("");
+  const [selectedOrg, setSelectedOrg] = useState<string>("");
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'editor' | 'viewer' | 'super_admin' | 'store_manager' | "">("");
+  const [availableOrgs, setAvailableOrgs] = useState<any[]>([]);
 
-  // Profils prédéfinis
-  const profiles = [
-    {
-      id: 'super_admin',
-      label: 'Super Admin',
-      orgId: 'e1234567-89ab-cdef-0123-456789abcdef', // Chausselandia comme org de base
-      role: 'super_admin' as const,
-      storeId: null,
-    },
-    {
-      id: 'central_admin',
-      label: 'Responsable de Central',
-      orgId: 'e1234567-89ab-cdef-0123-456789abcdef', // Chausselandia
-      role: 'admin' as const,
-      storeId: null,
-    },
-    {
-      id: 'store_manager_central',
-      label: 'Responsable de magasin Central',
-      orgId: 'e1234567-89ab-cdef-0123-456789abcdef', // Chausselandia
-      role: 'store_manager' as const,
-      storeId: '82c4c2bd-a0e8-41ee-a9fd-b35f6a34c692', // Chausselandia Paris 1er
-    },
-    {
-      id: 'store_manager_free',
-      label: 'Responsable de magasin Free',
-      orgId: '00000000-0000-0000-0000-000000000001', // Demo Free
-      role: 'store_manager' as const,
-      storeId: '00000000-0000-0000-0000-000000000011', // Magasin Demo Free
-    },
-  ];
+  useEffect(() => {
+    if (isSuperAdmin && open) {
+      fetchOrganizations();
+    }
+  }, [isSuperAdmin, open]);
+
+  const fetchOrganizations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('id, name, account_type')
+        .order('name');
+      
+      if (error) throw error;
+      setAvailableOrgs(data || []);
+    } catch (error) {
+      console.error("Error fetching organizations:", error);
+    }
+  };
 
   const handleSwitchProfile = async () => {
-    if (!selectedProfile) {
+    if (!selectedOrg || !selectedRole) {
       toast({
         title: "Erreur",
-        description: "Veuillez sélectionner un profil.",
+        description: "Veuillez sélectionner une organisation et un rôle.",
         variant: "destructive",
       });
       return;
     }
-
-    const profile = profiles.find(p => p.id === selectedProfile);
-    if (!profile) return;
 
     setSwitchingProfile(true);
     try {
@@ -78,7 +65,7 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
       // Mettre à jour le profil avec la nouvelle organisation
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({ organization_id: profile.orgId })
+        .update({ organization_id: selectedOrg })
         .eq("id", user.id);
 
       if (profileError) throw profileError;
@@ -88,48 +75,43 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
         .from("user_roles")
         .select("*")
         .eq("user_id", user.id)
-        .eq("organization_id", profile.orgId)
-        .maybeSingle();
+        .eq("organization_id", selectedOrg)
+        .single();
 
       if (existingRole) {
         // Mettre à jour le rôle existant
         const { error: roleError } = await supabase
           .from("user_roles")
-          .update({ 
-            role: profile.role,
-            store_id: profile.storeId 
-          })
+          .update({ role: selectedRole })
           .eq("user_id", user.id)
-          .eq("organization_id", profile.orgId);
+          .eq("organization_id", selectedOrg);
 
         if (roleError) throw roleError;
       } else {
         // Créer un nouveau rôle
         const { error: roleError } = await supabase
           .from("user_roles")
-          .insert({
+          .insert([{
             user_id: user.id,
-            organization_id: profile.orgId,
-            role: profile.role,
-            store_id: profile.storeId,
-          });
+            organization_id: selectedOrg,
+            role: selectedRole as any,
+          }]);
 
         if (roleError) throw roleError;
       }
 
       toast({
         title: "Profil changé",
-        description: `Vous êtes maintenant : ${profile.label}`,
+        description: "Vous avez changé de profil avec succès.",
       });
 
       // Rafraîchir les données
       await refetch();
       
-      // Fermer le popover
+      // Reset selections et fermer le popover
+      setSelectedOrg("");
+      setSelectedRole("");
       setOpen(false);
-      
-      // Rafraîchir la page pour recharger toutes les données
-      window.location.reload();
     } catch (error) {
       console.error("Error switching profile:", error);
       toast({
@@ -220,17 +202,33 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
                   </h4>
                   
                   <div className="space-y-2">
-                    <Label className="text-xs">Profil de démonstration</Label>
-                    <Select value={selectedProfile} onValueChange={setSelectedProfile}>
+                    <Label className="text-xs">Organisation</Label>
+                    <Select value={selectedOrg} onValueChange={setSelectedOrg}>
                       <SelectTrigger className="h-8 text-xs">
-                        <SelectValue placeholder="Sélectionner un profil" />
+                        <SelectValue placeholder="Sélectionner" />
                       </SelectTrigger>
-                      <SelectContent className="z-[150]">
-                        {profiles.map((profile) => (
-                          <SelectItem key={profile.id} value={profile.id}>
-                            {profile.label}
+                      <SelectContent>
+                        {availableOrgs.map((org) => (
+                          <SelectItem key={org.id} value={org.id}>
+                            {org.name} ({org.account_type === 'free' ? 'Free' : org.account_type === 'store' ? 'Pro' : 'Centrale'})
                           </SelectItem>
                         ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs">Rôle</Label>
+                    <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as any)}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Sélectionner" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="editor">Éditeur</SelectItem>
+                        <SelectItem value="viewer">Lecteur</SelectItem>
+                        <SelectItem value="store_manager">Responsable Magasin</SelectItem>
+                        <SelectItem value="super_admin">Super Admin</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -239,7 +237,7 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
                     size="sm"
                     className="w-full"
                     onClick={handleSwitchProfile}
-                    disabled={switchingProfile || !selectedProfile}
+                    disabled={switchingProfile || !selectedOrg || !selectedRole}
                   >
                     {switchingProfile ? "Changement..." : "Changer"}
                   </Button>
@@ -253,24 +251,22 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Card className={cn("p-4 space-y-3 glass-card border-border/50 cursor-pointer hover:bg-accent/50 transition-colors", className)}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shadow-md", config.color)}>
-                <Icon className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">Profil actuel</p>
-                <p className="text-xs text-muted-foreground">{organization?.name}</p>
-              </div>
-            </div>
-            <Badge variant={config.badgeVariant} className="gap-1.5">
-              <Icon className="w-3 h-3" />
-              {config.name}
-            </Badge>
+    <Card className={cn("p-4 space-y-3 glass-card border-border/50", className)}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shadow-md", config.color)}>
+            <Icon className="w-4 h-4 text-white" />
           </div>
+          <div>
+            <p className="text-sm font-medium">Profil actuel</p>
+            <p className="text-xs text-muted-foreground">{organization?.name}</p>
+          </div>
+        </div>
+        <Badge variant={config.badgeVariant} className="gap-1.5">
+          <Icon className="w-3 h-3" />
+          {config.name}
+        </Badge>
+      </div>
 
       {isFree && !loading && limits.remainingPromotions !== null && (
         <div className="pt-3 border-t space-y-2">
@@ -306,82 +302,22 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
         </div>
       )}
 
-          {(isStore || isCentral) && (
-            <div className="pt-3 border-t">
-              <div className="flex items-center gap-2 text-sm">
-                <div className="flex-1">
-                  <p className="text-muted-foreground">Magasins</p>
-                  <p className="font-semibold">
-                    {isStore ? `${organization?.max_stores || 5} max` : "Illimité"}
-                  </p>
-                </div>
-                <div className="flex-1">
-                  <p className="text-muted-foreground">Promotions</p>
-                  <p className="font-semibold">Illimitées</p>
-                </div>
-              </div>
+      {(isStore || isCentral) && (
+        <div className="pt-3 border-t">
+          <div className="flex items-center gap-2 text-sm">
+            <div className="flex-1">
+              <p className="text-muted-foreground">Magasins</p>
+              <p className="font-semibold">
+                {isStore ? `${organization?.max_stores || 5} max` : "Illimité"}
+              </p>
             </div>
-          )}
-        </Card>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 z-[100]" align="start" side="top">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <h4 className="font-semibold leading-none flex items-center gap-2">
-              <Icon className="w-4 h-4" />
-              Profil actuel
-            </h4>
-            <p className="text-sm text-muted-foreground">
-              {organization?.name}
-            </p>
-            <div className="flex items-center gap-2 text-xs">
-              <Badge variant="outline">
-                {userRole?.role === 'super_admin' && 'Super Admin'}
-                {userRole?.role === 'admin' && 'Admin'}
-                {userRole?.role === 'editor' && 'Éditeur'}
-                {userRole?.role === 'viewer' && 'Lecteur'}
-                {userRole?.role === 'store_manager' && 'Responsable Magasin'}
-              </Badge>
+            <div className="flex-1">
+              <p className="text-muted-foreground">Promotions</p>
+              <p className="font-semibold">Illimitées</p>
             </div>
           </div>
-
-          {isSuperAdmin && (
-            <>
-              <div className="border-t pt-4 space-y-3">
-                <h4 className="text-sm font-semibold flex items-center gap-2">
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  Changer de profil
-                </h4>
-                
-                <div className="space-y-2">
-                  <Label className="text-xs">Profil de démonstration</Label>
-                  <Select value={selectedProfile} onValueChange={setSelectedProfile}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="Sélectionner un profil" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[150]">
-                      {profiles.map((profile) => (
-                        <SelectItem key={profile.id} value={profile.id}>
-                          {profile.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button 
-                  size="sm"
-                  className="w-full"
-                  onClick={handleSwitchProfile}
-                  disabled={switchingProfile || !selectedProfile}
-                >
-                  {switchingProfile ? "Changement..." : "Changer"}
-                </Button>
-              </div>
-            </>
-          )}
         </div>
-      </PopoverContent>
-    </Popover>
+      )}
+    </Card>
   );
 };

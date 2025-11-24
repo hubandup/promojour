@@ -11,11 +11,18 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-
-import { useUserData } from "@/hooks/use-user-data";
+import { ProfileBadge } from "@/components/ProfileBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoPromoJour from "@/assets/logo-promojour.png";
+
+const menuItems = [
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Promotions", url: "/promotions", icon: Tag },
+  { title: "Campagnes", url: "/campaigns", icon: CalendarDays },
+  { title: "Statistiques", url: "/stats", icon: BarChart3 },
+  { title: "Mes Magasins", url: "/stores", icon: Store },
+];
 
 const settingsItems = [
   { title: "Réglages", url: "/settings", icon: Settings },
@@ -24,7 +31,6 @@ const settingsItems = [
 
 export function AppSidebar() {
   const navigate = useNavigate();
-  const { isFree, isStore, isCentral, isSuperAdmin, isStoreManager } = useUserData();
 
   const handleLogout = async () => {
     try {
@@ -34,32 +40,6 @@ export function AppSidebar() {
     } catch (error) {
       toast.error("Erreur lors de la déconnexion");
     }
-  };
-
-  // Adapter les éléments du menu selon le profil
-  const getMenuItems = () => {
-    const items = [
-      { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-      { title: "Promotions", url: "/promotions", icon: Tag },
-    ];
-
-    // Campagnes : visible pour super admin ou si pas Free
-    if (isSuperAdmin || !isFree) {
-      items.push({ title: "Campagnes", url: "/campaigns", icon: CalendarDays });
-    }
-
-    items.push({ title: "Statistiques", url: "/stats", icon: BarChart3 });
-
-    // Mes Magasins : visible pour super admin ou Pro/Centrale
-    if (isSuperAdmin || ((isStore || isCentral) && !isFree)) {
-      items.push({ title: "Mes Magasins", url: "/stores", icon: Store });
-    }
-    // Mon Magasin : visible seulement pour Free et store_manager, mais PAS pour super admin
-    else if (!isSuperAdmin && (isFree || isStoreManager)) {
-      items.push({ title: "Mon Magasin", url: "/stores", icon: Store });
-    }
-
-    return items;
   };
 
   return (
@@ -75,7 +55,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Menu principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {getMenuItems().map((item) => (
+              {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
@@ -119,6 +99,9 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
+        <div className="px-2 pb-2">
+          <ProfileBadge variant="detailed" />
+        </div>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout}>
