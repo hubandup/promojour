@@ -23,44 +23,52 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [switchingProfile, setSwitchingProfile] = useState(false);
-  const [selectedOrg, setSelectedOrg] = useState<string>("");
-  const [selectedRole, setSelectedRole] = useState<'admin' | 'editor' | 'viewer' | 'super_admin' | 'store_manager' | "">("");
-  const [availableOrgs, setAvailableOrgs] = useState<any[]>([]);
+  const [selectedProfile, setSelectedProfile] = useState<string>("");
 
-  useEffect(() => {
-    if (isSuperAdmin && open) {
-      fetchOrganizations();
-    }
-  }, [isSuperAdmin, open]);
-
-  const fetchOrganizations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('organizations')
-        .select('id, name, account_type')
-        .order('name');
-      
-      if (error) throw error;
-      
-      // Filtrer pour n'afficher que les organisations de démonstration
-      const demoOrgs = (data || []).filter(org => 
-        org.name.includes('Demo') || org.name.includes('Chausselandia')
-      );
-      setAvailableOrgs(demoOrgs);
-    } catch (error) {
-      console.error("Error fetching organizations:", error);
-    }
-  };
+  // Profils prédéfinis
+  const profiles = [
+    {
+      id: 'super_admin',
+      label: 'Super Admin',
+      orgId: 'e1234567-89ab-cdef-0123-456789abcdef', // Chausselandia comme org de base
+      role: 'super_admin' as const,
+      storeId: null,
+    },
+    {
+      id: 'central_admin',
+      label: 'Responsable de Central',
+      orgId: 'e1234567-89ab-cdef-0123-456789abcdef', // Chausselandia
+      role: 'admin' as const,
+      storeId: null,
+    },
+    {
+      id: 'store_manager_central',
+      label: 'Responsable de magasin Central',
+      orgId: 'e1234567-89ab-cdef-0123-456789abcdef', // Chausselandia
+      role: 'store_manager' as const,
+      storeId: '82c4c2bd-a0e8-41ee-a9fd-b35f6a34c692', // Chausselandia Paris 1er
+    },
+    {
+      id: 'store_manager_free',
+      label: 'Responsable de magasin Free',
+      orgId: '00000000-0000-0000-0000-000000000001', // Demo Free
+      role: 'store_manager' as const,
+      storeId: '00000000-0000-0000-0000-000000000011', // Magasin Demo Free
+    },
+  ];
 
   const handleSwitchProfile = async () => {
-    if (!selectedOrg || !selectedRole) {
+    if (!selectedProfile) {
       toast({
         title: "Erreur",
-        description: "Veuillez sélectionner une organisation et un rôle.",
+        description: "Veuillez sélectionner un profil.",
         variant: "destructive",
       });
       return;
     }
+
+    const profile = profiles.find(p => p.id === selectedProfile);
+    if (!profile) return;
 
     setSwitchingProfile(true);
     try {
@@ -70,7 +78,7 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
       // Mettre à jour le profil avec la nouvelle organisation
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({ organization_id: selectedOrg })
+        .update({ organization_id: profile.orgId })
         .eq("id", user.id);
 
       if (profileError) throw profileError;
@@ -80,16 +88,19 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
         .from("user_roles")
         .select("*")
         .eq("user_id", user.id)
-        .eq("organization_id", selectedOrg)
+        .eq("organization_id", profile.orgId)
         .maybeSingle();
 
       if (existingRole) {
         // Mettre à jour le rôle existant
         const { error: roleError } = await supabase
           .from("user_roles")
-          .update({ role: selectedRole })
+          .update({ 
+            role: profile.role,
+            store_id: profile.storeId 
+          })
           .eq("user_id", user.id)
-          .eq("organization_id", selectedOrg);
+          .eq("organization_id", profile.orgId);
 
         if (roleError) throw roleError;
       } else {
@@ -98,8 +109,9 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
           .from("user_roles")
           .insert({
             user_id: user.id,
-            organization_id: selectedOrg,
-            role: selectedRole,
+            organization_id: profile.orgId,
+            role: profile.role,
+            store_id: profile.storeId,
           });
 
         if (roleError) throw roleError;
@@ -107,16 +119,17 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
 
       toast({
         title: "Profil changé",
-        description: "Vous avez changé de profil avec succès.",
+        description: `Vous êtes maintenant : ${profile.label}`,
       });
 
       // Rafraîchir les données
       await refetch();
       
-      // Reset selections et fermer le popover
-      setSelectedOrg("");
-      setSelectedRole("");
+      // Fermer le popover
       setOpen(false);
+      
+      // Rafraîchir la page pour recharger toutes les données
+      window.location.reload();
     } catch (error) {
       console.error("Error switching profile:", error);
       toast({
@@ -208,34 +221,16 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
                   
                   <div className="space-y-2">
                     <Label className="text-xs">Profil de démonstration</Label>
-                    <Select value={selectedOrg} onValueChange={setSelectedOrg}>
+                    <Select value={selectedProfile} onValueChange={setSelectedProfile}>
                       <SelectTrigger className="h-8 text-xs">
                         <SelectValue placeholder="Sélectionner un profil" />
                       </SelectTrigger>
                       <SelectContent className="z-[150]">
-                        {availableOrgs.map((org) => (
-                          <SelectItem key={org.id} value={org.id}>
-                            {org.account_type === 'free' && '🆓 Free'}
-                            {org.account_type === 'store' && '🏪 Magasin Pro'}
-                            {org.account_type === 'central' && '🏢 Centrale'}
+                        {profiles.map((profile) => (
+                          <SelectItem key={profile.id} value={profile.id}>
+                            {profile.label}
                           </SelectItem>
                         ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-xs">Vue</Label>
-                    <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as any)}>
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue placeholder="Sélectionner une vue" />
-                      </SelectTrigger>
-                      <SelectContent className="z-[150]">
-                        <SelectItem value="super_admin">👑 Super Admin (vue complète)</SelectItem>
-                        <SelectItem value="admin">👤 Admin</SelectItem>
-                        <SelectItem value="store_manager">🛒 Responsable Magasin</SelectItem>
-                        <SelectItem value="editor">✏️ Éditeur</SelectItem>
-                        <SelectItem value="viewer">👁️ Lecteur</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -244,7 +239,7 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
                     size="sm"
                     className="w-full"
                     onClick={handleSwitchProfile}
-                    disabled={switchingProfile || !selectedOrg || !selectedRole}
+                    disabled={switchingProfile || !selectedProfile}
                   >
                     {switchingProfile ? "Changement..." : "Changer"}
                   </Button>
@@ -360,34 +355,16 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
                 
                 <div className="space-y-2">
                   <Label className="text-xs">Profil de démonstration</Label>
-                  <Select value={selectedOrg} onValueChange={setSelectedOrg}>
+                  <Select value={selectedProfile} onValueChange={setSelectedProfile}>
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="Sélectionner un profil" />
                     </SelectTrigger>
                     <SelectContent className="z-[150]">
-                      {availableOrgs.map((org) => (
-                        <SelectItem key={org.id} value={org.id}>
-                          {org.account_type === 'free' && '🆓 Free'}
-                          {org.account_type === 'store' && '🏪 Magasin Pro'}
-                          {org.account_type === 'central' && '🏢 Centrale'}
+                      {profiles.map((profile) => (
+                        <SelectItem key={profile.id} value={profile.id}>
+                          {profile.label}
                         </SelectItem>
                       ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-xs">Vue</Label>
-                  <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as any)}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="Sélectionner une vue" />
-                    </SelectTrigger>
-                    <SelectContent className="z-[150]">
-                      <SelectItem value="super_admin">👑 Super Admin (vue complète)</SelectItem>
-                      <SelectItem value="admin">👤 Admin</SelectItem>
-                      <SelectItem value="store_manager">🛒 Responsable Magasin</SelectItem>
-                      <SelectItem value="editor">✏️ Éditeur</SelectItem>
-                      <SelectItem value="viewer">👁️ Lecteur</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -396,7 +373,7 @@ export const ProfileBadge = ({ variant = "compact", className }: ProfileBadgePro
                   size="sm"
                   className="w-full"
                   onClick={handleSwitchProfile}
-                  disabled={switchingProfile || !selectedOrg || !selectedRole}
+                  disabled={switchingProfile || !selectedProfile}
                 >
                   {switchingProfile ? "Changement..." : "Changer"}
                 </Button>
