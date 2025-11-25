@@ -180,23 +180,10 @@ export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerPr
               </Button>
             </div>
           ) : (
-            <div className="space-y-3">
-              {!showConfigGuide && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowConfigGuide(true)}
-                  className="mb-2"
-                >
-                  <AlertCircle className="mr-2 h-4 w-4" />
-                  Voir le guide de configuration
-                </Button>
-              )}
-              <Button onClick={handleConnectFacebook}>
-                <Facebook className="mr-2 h-4 w-4" />
-                Connecter Facebook
-              </Button>
-            </div>
+            <Button onClick={handleConnectFacebook}>
+              <Facebook className="mr-2 h-4 w-4" />
+              Connecter Facebook
+            </Button>
           )}
         </CardContent>
       </Card>

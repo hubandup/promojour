@@ -64,6 +64,7 @@ const StoreDetail = () => {
   const [orgLogo, setOrgLogo] = useState<string | null>(null);
   const [promotions, setPromotions] = useState<any[]>([]);
   const [loadingPromotions, setLoadingPromotions] = useState(true);
+  const [activeTab, setActiveTab] = useState("info");
 
   // Horaires par défaut
   const defaultHours = {
@@ -389,7 +390,7 @@ const StoreDetail = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-6">
-          <Tabs defaultValue="info" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-5 rounded-xl">
               <TabsTrigger value="info" className="rounded-xl">Informations</TabsTrigger>
               <TabsTrigger value="hours" className="rounded-xl">Horaires</TabsTrigger>
@@ -846,7 +847,11 @@ const StoreDetail = () => {
                 </Badge>
               </div>
 
-              <Button variant="outline" className="w-full rounded-xl hover:shadow-md transition-smooth mt-2">
+              <Button 
+                variant="outline" 
+                className="w-full rounded-xl hover:shadow-md transition-smooth mt-2"
+                onClick={() => setActiveTab("social")}
+              >
                 Gérer les connexions
               </Button>
             </CardContent>
