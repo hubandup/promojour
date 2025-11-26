@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Calendar, TrendingUp, Pencil } from "lucide-react";
+import { Plus, Calendar, TrendingUp, Pencil, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useCampaigns } from "@/hooks/use-campaigns";
 import { CreateCampaignDialog } from "@/components/CreateCampaignDialog";
@@ -10,6 +11,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 const Campaigns = () => {
+  const navigate = useNavigate();
   const { campaigns, loading, refetch } = useCampaigns();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -179,13 +181,19 @@ const Campaigns = () => {
                       variant="outline" 
                       size="sm" 
                       className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                      onClick={() => navigate(`/campaigns/${campaign.id}`)}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Voir détail
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 rounded-xl hover:shadow-md transition-smooth"
                       onClick={() => handleEditClick(campaign)}
                     >
                       <Pencil className="w-4 h-4 mr-2" />
                       Modifier
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1 rounded-xl hover:shadow-md transition-smooth">
-                      Statistiques
                     </Button>
                   </div>
                 </div>
