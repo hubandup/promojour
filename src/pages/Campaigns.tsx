@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Calendar, TrendingUp, Pencil, Eye } from "lucide-react";
+import { Plus, Calendar, TrendingUp, Pencil, Eye, BarChart2, Copy, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useCampaigns } from "@/hooks/use-campaigns";
 import { CreateCampaignDialog } from "@/components/CreateCampaignDialog";
@@ -20,6 +20,18 @@ const Campaigns = () => {
   const handleEditClick = (campaign: any) => {
     setSelectedCampaign(campaign);
     setEditDialogOpen(true);
+  };
+
+  const handleDuplicate = async (campaign: any) => {
+    // TODO: Implement campaign duplication
+    console.log("Duplicating campaign:", campaign.id);
+  };
+
+  const handleDelete = async (campaign: any) => {
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer la campagne "${campaign.name}" ?`)) {
+      // TODO: Implement campaign deletion
+      console.log("Deleting campaign:", campaign.id);
+    }
   };
 
   const mockCampaigns = [
@@ -176,24 +188,51 @@ const Campaigns = () => {
                       <div className="text-sm text-muted-foreground mt-2 font-medium">Total promotions</div>
                     </div>
                   </div>
-                  <div className="flex gap-3 pt-2">
+                  <div className="flex gap-2 pt-2">
                     <Button 
                       variant="outline" 
-                      size="sm" 
-                      className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                      size="icon" 
+                      className="rounded-xl hover:shadow-md transition-smooth"
                       onClick={() => navigate(`/campaigns/${campaign.id}`)}
+                      title="Voir détail"
                     >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Voir détail
+                      <Eye className="w-4 h-4" />
                     </Button>
                     <Button 
                       variant="outline" 
-                      size="sm" 
-                      className="flex-1 rounded-xl hover:shadow-md transition-smooth"
-                      onClick={() => handleEditClick(campaign)}
+                      size="icon" 
+                      className="rounded-xl hover:shadow-md transition-smooth"
+                      onClick={() => navigate(`/campaigns/${campaign.id}?tab=stats`)}
+                      title="Voir statistiques"
                     >
-                      <Pencil className="w-4 h-4 mr-2" />
-                      Modifier
+                      <BarChart2 className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="rounded-xl hover:shadow-md transition-smooth"
+                      onClick={() => handleEditClick(campaign)}
+                      title="Modifier"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="rounded-xl hover:shadow-md transition-smooth"
+                      onClick={() => handleDuplicate(campaign)}
+                      title="Dupliquer"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="rounded-xl hover:shadow-md transition-smooth hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+                      onClick={() => handleDelete(campaign)}
+                      title="Supprimer"
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
