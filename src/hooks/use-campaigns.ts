@@ -69,5 +69,95 @@ export function useCampaigns() {
     }
   };
 
-  return { campaigns, loading, refetch: fetchCampaigns };
+  const duplicateCampaign = async (campaignId: string) => {
+    try {
+      // Fetch the original campaign
+      const { data: originalCampaign, error: fetchError } = await supabase
+        .from('campaigns')
+        .select('*')
+        .eq('id', campaignId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Create new campaign with duplicated data (without promotions)
+      const { data: newCampaign, error: createError } = await supabase
+        .from('campaigns')
+        .insert({
+          organization_id: originalCampaign.organization_id,
+          store_id: originalCampaign.store_id,
+          name: `${originalCampaign.name} (copie)`,
+          description: originalCampaign.description,
+          start_date: originalCampaign.start_date,
+          end_date: originalCampaign.end_date,
+          status: 'draft', // Set to draft by default
+          daily_promotion_count: originalCampaign.daily_promotion_count,
+          random_order: originalCampaign.random_order,
+          canva_template_url: originalCampaign.canva_template_url,
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+
+      toast({
+        title: "Campagne dupliquée",
+        description: `"${originalCampaign.name}" a été dupliquée. Ajoutez des promotions pour l'activer.`,
+      });
+
+      await fetchCampaigns();
+      return newCampaign;
+    } catch (error) {
+      console.error('Error duplicating campaign:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de dupliquer la campagne",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const deleteCampaign = async (campaignId: string) => {
+    try {
+      // First, unlink promotions from this campaign
+      const { error: unlinkError } = await supabase
+        .from('promotions')
+        .update({ campaign_id: null })
+        .eq('campaign_id', campaignId);
+
+      if (unlinkError) throw unlinkError;
+
+      // Then delete the campaign
+      const { error: deleteError } = await supabase
+        .from('campaigns')
+        .delete()
+        .eq('id', campaignId);
+
+      if (deleteError) throw deleteError;
+
+      toast({
+        title: "Campagne supprimée",
+        description: "La campagne a été supprimée avec succès",
+      });
+
+      await fetchCampaigns();
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer la campagne",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  return { 
+    campaigns, 
+    loading, 
+    refetch: fetchCampaigns,
+    duplicateCampaign,
+    deleteCampaign,
+  };
 }

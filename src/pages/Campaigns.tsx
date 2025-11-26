@@ -12,7 +12,7 @@ import { fr } from "date-fns/locale";
 
 const Campaigns = () => {
   const navigate = useNavigate();
-  const { campaigns, loading, refetch } = useCampaigns();
+  const { campaigns, loading, refetch, duplicateCampaign, deleteCampaign } = useCampaigns();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
@@ -23,14 +23,20 @@ const Campaigns = () => {
   };
 
   const handleDuplicate = async (campaign: any) => {
-    // TODO: Implement campaign duplication
-    console.log("Duplicating campaign:", campaign.id);
+    try {
+      await duplicateCampaign(campaign.id);
+    } catch (error) {
+      // Error handled in hook
+    }
   };
 
   const handleDelete = async (campaign: any) => {
-    if (window.confirm(`Êtes-vous sûr de vouloir supprimer la campagne "${campaign.name}" ?`)) {
-      // TODO: Implement campaign deletion
-      console.log("Deleting campaign:", campaign.id);
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer la campagne "${campaign.name}" ?\n\nLes promotions associées ne seront pas supprimées, mais déliées de cette campagne.`)) {
+      try {
+        await deleteCampaign(campaign.id);
+      } catch (error) {
+        // Error handled in hook
+      }
     }
   };
 
