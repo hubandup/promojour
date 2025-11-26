@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import Promotions from "./pages/Promotions";
 import PromotionDetail from "./pages/PromotionDetail";
 import Campaigns from "./pages/Campaigns";
+import CampaignDetail from "./pages/CampaignDetail";
 import Stats from "./pages/Stats";
 import Store from "./pages/Store";
 import Stores from "./pages/Stores";
@@ -91,6 +92,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <Campaigns />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/campaigns/:id"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <CampaignDetail />
                 </AppLayout>
               </ProtectedRoute>
             }
