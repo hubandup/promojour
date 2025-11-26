@@ -66,7 +66,7 @@ const StoreDetail = () => {
   const [promotions, setPromotions] = useState<any[]>([]);
   const [loadingPromotions, setLoadingPromotions] = useState(true);
   const [activeTab, setActiveTab] = useState("info");
-  const { connections, loading: connectionsLoading } = useSocialConnections(id);
+  const { connections = [], loading: connectionsLoading } = useSocialConnections(id);
 
   // Horaires par défaut
   const defaultHours = {

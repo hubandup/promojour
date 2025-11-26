@@ -54,7 +54,7 @@ export function useSocialConnections(storeId?: string) {
   const connectedCount = connections.filter(c => c.is_connected).length;
 
   return {
-    connections,
+    connections: connections || [],
     loading,
     getConnection,
     connectedCount,
