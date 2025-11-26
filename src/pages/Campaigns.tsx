@@ -133,6 +133,33 @@ const Campaigns = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
+                  {/* Promotion Images Preview */}
+                  {"promotions" in campaign && campaign.promotions && campaign.promotions.length > 0 && (
+                    <div className="mb-4">
+                      <div className="text-xs font-medium text-muted-foreground mb-2">Promotions associées</div>
+                      <div className="grid grid-cols-6 gap-2">
+                        {campaign.promotions.slice(0, 6).map((promo) => (
+                          <div 
+                            key={promo.id}
+                            className="aspect-square rounded-lg border border-border/50 bg-muted/30 overflow-hidden hover:border-primary/50 transition-smooth"
+                          >
+                            {promo.image_url ? (
+                              <img 
+                                src={promo.image_url} 
+                                alt={promo.title}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-muted-foreground/50">
+                                <Calendar className="w-4 h-4" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-5 bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl border border-border/50 transition-smooth hover:shadow-md">
                       <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -142,7 +169,7 @@ const Campaigns = () => {
                     </div>
                     <div className="p-5 bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl border border-border/50 transition-smooth hover:shadow-md">
                       <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                        {"totalPromos" in campaign ? campaign.totalPromos : 0}
+                        {"promotions" in campaign && campaign.promotions ? campaign.promotions.length : ("totalPromos" in campaign ? campaign.totalPromos : 0)}
                       </div>
                       <div className="text-sm text-muted-foreground mt-2 font-medium">Total promotions</div>
                     </div>

@@ -15,6 +15,11 @@ export interface Campaign {
   random_order: boolean;
   canva_template_url: string | null;
   created_at: string;
+  promotions?: Array<{
+    id: string;
+    title: string;
+    image_url: string | null;
+  }>;
 }
 
 export function useCampaigns() {
@@ -28,13 +33,30 @@ export function useCampaigns() {
 
   const fetchCampaigns = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: campaignsData, error: campaignsError } = await supabase
         .from('campaigns')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setCampaigns(data || []);
+      if (campaignsError) throw campaignsError;
+
+      // Fetch promotions for each campaign
+      const campaignsWithPromos = await Promise.all(
+        (campaignsData || []).map(async (campaign) => {
+          const { data: promotions } = await supabase
+            .from('promotions')
+            .select('id, title, image_url')
+            .eq('campaign_id', campaign.id)
+            .limit(6);
+
+          return {
+            ...campaign,
+            promotions: promotions || [],
+          };
+        })
+      );
+
+      setCampaigns(campaignsWithPromos);
     } catch (error) {
       console.error('Error fetching campaigns:', error);
       toast({
