@@ -749,9 +749,10 @@ const StoreDetail = () => {
             </TabsContent>
 
             <TabsContent value="social" className="space-y-6">
-              <SocialConnectionsManager storeId={store.id} />
               {/* Temporairement désactivé pour debug */}
+              {/* <SocialConnectionsManager storeId={store.id} /> */}
               {/* <AutoPublishSettings storeId={store.id} /> */}
+              <p className="text-sm text-muted-foreground">Connexions sociales temporairement désactivées pour debug</p>
             </TabsContent>
 
             <TabsContent value="stats" className="space-y-6">
