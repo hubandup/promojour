@@ -248,18 +248,19 @@ const Campaigns = () => {
         </div>
       )}
 
-      <CreateCampaignDialog 
+      {/* Temporairement désactivé pour debug */}
+      {false && <CreateCampaignDialog 
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onSuccess={refetch}
-      />
+      />}
 
-      <EditCampaignDialog
+      {false && <EditCampaignDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         onSuccess={refetch}
         campaign={selectedCampaign}
-      />
+      />}
     </div>
   );
 };
