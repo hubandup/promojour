@@ -42,11 +42,13 @@ serve(async (req) => {
     }
 
     // Facebook OAuth scopes for Instagram and Facebook Pages
+    // Note: instagram_basic and instagram_content_publish are deprecated
+    // Use pages_* permissions and instagram_manage_content for Instagram Business Accounts
     const scopes = [
       'pages_show_list',
       'pages_read_engagement',
-      'instagram_basic',
-      'instagram_content_publish',
+      'pages_manage_posts',
+      'instagram_manage_content',
       'business_management',
     ].join(',');
 
