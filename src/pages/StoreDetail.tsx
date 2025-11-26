@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SocialConnectionsManager } from "@/components/SocialConnectionsManager";
-import { AutoPublishSettings } from "@/components/AutoPublishSettings";
+// import { AutoPublishSettings } from "@/components/AutoPublishSettings"; // Temporairement désactivé
 import { useSocialConnections } from "@/hooks/use-social-connections";
 import {
   MapPin,
