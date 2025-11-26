@@ -611,7 +611,11 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
             >
               Annuler
             </Button>
-            <Button type="submit" className="gradient-primary text-white shadow-glow" disabled={uploading}>
+            <Button 
+              type="submit" 
+              className="gradient-primary text-white shadow-glow" 
+              disabled={uploading || !limits.canCreatePromotion}
+            >
               {uploading ? "Création en cours..." : "Créer la promotion"}
             </Button>
           </div>

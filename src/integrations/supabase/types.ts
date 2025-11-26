@@ -846,8 +846,16 @@ export type Database = {
       }
     }
     Functions: {
+      can_create_promotion: {
+        Args: { _end_date: string; _start_date: string; _user_id: string }
+        Returns: boolean
+      }
       count_promotions_last_7_days: {
         Args: { _organization_id: string }
+        Returns: number
+      }
+      count_promotions_last_7_days_by_org: {
+        Args: { org_id: string }
         Returns: number
       }
       get_store_manager_stores: {
