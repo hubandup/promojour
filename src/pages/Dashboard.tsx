@@ -124,9 +124,9 @@ const Dashboard = () => {
 
       {/* Warning Alert */}
       {showWarning && (
-        <Alert className="glass-card border-orange-500/50 bg-orange-500/5">
-          <AlertTriangle className="h-5 w-5 text-orange-500" />
-          <AlertDescription className="text-orange-600 dark:text-orange-400">
+        <Alert className="border-0 bg-[hsl(167,100%,60%)] shadow-lg">
+          <AlertTriangle className="h-6 w-6 text-black" />
+          <AlertDescription className="text-black font-medium text-base">
             {activePromotions.length < MIN_ACTIVE_PROMOTIONS && 
               `Vous avez moins de ${MIN_ACTIVE_PROMOTIONS} promotions actives. `}
             {scheduledPromotions.length < MIN_UPCOMING_PROMOTIONS && 
