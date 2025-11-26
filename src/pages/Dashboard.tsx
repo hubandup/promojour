@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TrendingUp, Tag, Eye, Users, Plus, Instagram, Facebook, AlertTriangle, Store as StoreIcon, MousePointerClick, CheckCircle2, XCircle } from "lucide-react";
 import { CreatePromotionDialog } from "@/components/CreatePromotionDialog";
-import { ProfileBadge } from "@/components/ProfileBadge";
 import { useUserData } from "@/hooks/use-user-data";
 import { usePromotions } from "@/hooks/use-promotions";
 import { useStores } from "@/hooks/use-stores";
@@ -122,9 +121,6 @@ const Dashboard = () => {
           Nouvelle promotion
         </Button>
       </div>
-
-      {/* Profile Badge */}
-      <ProfileBadge variant="detailed" />
 
       {/* Warning Alert */}
       {showWarning && (
