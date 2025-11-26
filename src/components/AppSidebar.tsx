@@ -14,14 +14,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoPromoJour from "@/assets/logo-promojour.png";
-
-const menuItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Promotions", url: "/promotions", icon: Tag },
-  { title: "Campagnes", url: "/campaigns", icon: CalendarDays },
-  { title: "Statistiques", url: "/stats", icon: BarChart3 },
-  { title: "Mes Magasins", url: "/stores", icon: Store },
-];
+import { useUserData } from "@/hooks/use-user-data";
 
 const settingsItems = [
   { title: "Réglages", url: "/settings", icon: Settings },
@@ -30,6 +23,19 @@ const settingsItems = [
 
 export function AppSidebar() {
   const navigate = useNavigate();
+  const { isStoreManager, loading: userLoading } = useUserData();
+
+  const menuItems = [
+    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+    { title: "Promotions", url: "/promotions", icon: Tag },
+    { title: "Campagnes", url: "/campaigns", icon: CalendarDays },
+    { title: "Statistiques", url: "/stats", icon: BarChart3 },
+    { 
+      title: isStoreManager ? "Mon magasin" : "Mes Magasins", 
+      url: isStoreManager ? "/mon-magasin" : "/stores", 
+      icon: Store 
+    },
+  ];
 
   const handleLogout = async () => {
     try {
