@@ -1,16 +1,24 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Calendar, TrendingUp } from "lucide-react";
+import { Plus, Calendar, TrendingUp, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useCampaigns } from "@/hooks/use-campaigns";
 import { CreateCampaignDialog } from "@/components/CreateCampaignDialog";
+import { EditCampaignDialog } from "@/components/EditCampaignDialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 const Campaigns = () => {
   const { campaigns, loading, refetch } = useCampaigns();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
+
+  const handleEditClick = (campaign: any) => {
+    setSelectedCampaign(campaign);
+    setEditDialogOpen(true);
+  };
 
   const mockCampaigns = [
     {
@@ -140,7 +148,13 @@ const Campaigns = () => {
                     </div>
                   </div>
                   <div className="flex gap-3 pt-2">
-                    <Button variant="outline" size="sm" className="flex-1 rounded-xl hover:shadow-md transition-smooth">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 rounded-xl hover:shadow-md transition-smooth"
+                      onClick={() => handleEditClick(campaign)}
+                    >
+                      <Pencil className="w-4 h-4 mr-2" />
                       Modifier
                     </Button>
                     <Button variant="outline" size="sm" className="flex-1 rounded-xl hover:shadow-md transition-smooth">
@@ -158,6 +172,13 @@ const Campaigns = () => {
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onSuccess={refetch}
+      />
+
+      <EditCampaignDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={refetch}
+        campaign={selectedCampaign}
       />
     </div>
   );
