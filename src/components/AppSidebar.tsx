@@ -36,8 +36,8 @@ export function AppSidebar() {
   const menuItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Promotions", url: "/promotions", icon: Tag },
-    // Campagnes masqué pour Free
-    ...(!isFree ? [{ title: "Campagnes", url: "/campaigns", icon: CalendarDays }] : []),
+    // Campagnes temporairement désactivé pour debug
+    // ...(!isFree ? [{ title: "Campagnes", url: "/campaigns", icon: CalendarDays }] : []),
     { title: "Statistiques", url: "/stats", icon: BarChart3 },
     { 
       title: showSingleStore ? "Mon magasin" : "Mes Magasins", 

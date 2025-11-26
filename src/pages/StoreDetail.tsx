@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SocialConnectionsManager } from "@/components/SocialConnectionsManager";
-// import { AutoPublishSettings } from "@/components/AutoPublishSettings"; // Temporairement désactivé
+import { AutoPublishSettings } from "@/components/AutoPublishSettings";
 import { useSocialConnections } from "@/hooks/use-social-connections";
 import {
   MapPin,
@@ -749,10 +749,8 @@ const StoreDetail = () => {
             </TabsContent>
 
             <TabsContent value="social" className="space-y-6">
-              {/* Temporairement désactivé pour debug */}
-              {/* <SocialConnectionsManager storeId={store.id} /> */}
-              {/* <AutoPublishSettings storeId={store.id} /> */}
-              <p className="text-sm text-muted-foreground">Connexions sociales temporairement désactivées pour debug</p>
+              <SocialConnectionsManager storeId={store.id} />
+              <AutoPublishSettings storeId={store.id} />
             </TabsContent>
 
             <TabsContent value="stats" className="space-y-6">
