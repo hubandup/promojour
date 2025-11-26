@@ -66,7 +66,7 @@ const StoreDetail = () => {
   const [promotions, setPromotions] = useState<any[]>([]);
   const [loadingPromotions, setLoadingPromotions] = useState(true);
   const [activeTab, setActiveTab] = useState("info");
-  const { connections } = useSocialConnections(id);
+  const { connections, loading: connectionsLoading } = useSocialConnections(id);
 
   // Horaires par défaut
   const defaultHours = {
@@ -819,71 +819,87 @@ const StoreDetail = () => {
               <CardDescription>Connexions actives</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {/* Instagram */}
-              <div className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card/50 hover:shadow-md transition-smooth">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500/10 to-pink-500/5 flex items-center justify-center">
-                    <Instagram className="w-5 h-5 text-pink-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Instagram</p>
-                    {connections.find(c => c.platform === 'instagram' && c.is_connected) ? (
-                      <p className="text-xs text-muted-foreground">
-                        {connections.find(c => c.platform === 'instagram')?.followers_count || 0} abonnés
-                      </p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">Non connecté</p>
-                    )}
-                  </div>
-                </div>
-                {connections.find(c => c.platform === 'instagram' && c.is_connected) ? (
-                  <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20">
-                    Connecté
-                  </Badge>
-                ) : (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-8"
-                    onClick={() => setActiveTab("social")}
-                  >
-                    Connecter
-                  </Button>
-                )}
-              </div>
+              {connectionsLoading ? (
+                <p className="text-sm text-muted-foreground">Chargement...</p>
+              ) : (
+                <>
+                  {/* Instagram */}
+                  {(() => {
+                    const instagramConnection = connections.find(c => c.platform === 'instagram' && c.is_connected);
+                    return (
+                      <div className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card/50 hover:shadow-md transition-smooth">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500/10 to-pink-500/5 flex items-center justify-center">
+                            <Instagram className="w-5 h-5 text-pink-500" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">Instagram</p>
+                            {instagramConnection ? (
+                              <p className="text-xs text-muted-foreground">
+                                {instagramConnection.followers_count || 0} abonnés
+                              </p>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">Non connecté</p>
+                            )}
+                          </div>
+                        </div>
+                        {instagramConnection ? (
+                          <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20">
+                            Connecté
+                          </Badge>
+                        ) : (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8"
+                            onClick={() => setActiveTab("social")}
+                          >
+                            Connecter
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })()}
 
-              {/* Facebook */}
-              <div className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card/50 hover:shadow-md transition-smooth">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600/10 to-blue-600/5 flex items-center justify-center">
-                    <Facebook className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Facebook</p>
-                    {connections.find(c => c.platform === 'facebook' && c.is_connected) ? (
-                      <p className="text-xs text-muted-foreground">
-                        {connections.find(c => c.platform === 'facebook')?.account_name || 'Connecté'}
-                      </p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">Non connecté</p>
-                    )}
-                  </div>
-                </div>
-                {connections.find(c => c.platform === 'facebook' && c.is_connected) ? (
-                  <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20">
-                    Connecté
-                  </Badge>
-                ) : (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-8"
-                    onClick={() => setActiveTab("social")}
-                  >
-                    Connecter
-                  </Button>
-                )}
-              </div>
+                  {/* Facebook */}
+                  {(() => {
+                    const facebookConnection = connections.find(c => c.platform === 'facebook' && c.is_connected);
+                    return (
+                      <div className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card/50 hover:shadow-md transition-smooth">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600/10 to-blue-600/5 flex items-center justify-center">
+                            <Facebook className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">Facebook</p>
+                            {facebookConnection ? (
+                              <p className="text-xs text-muted-foreground">
+                                {facebookConnection.account_name || 'Connecté'}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">Non connecté</p>
+                            )}
+                          </div>
+                        </div>
+                        {facebookConnection ? (
+                          <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20">
+                            Connecté
+                          </Badge>
+                        ) : (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8"
+                            onClick={() => setActiveTab("social")}
+                          >
+                            Connecter
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
 
               <Button 
                 variant="outline" 
