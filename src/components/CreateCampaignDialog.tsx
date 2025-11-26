@@ -34,7 +34,7 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
   const [dailyPromotionCount, setDailyPromotionCount] = useState("3");
   const [randomOrder, setRandomOrder] = useState(true);
   const [allOrganization, setAllOrganization] = useState(true);
-  const [selectedStoreId, setSelectedStoreId] = useState<string>("");
+  const [selectedStoreIds, setSelectedStoreIds] = useState<string[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,18 +60,37 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
     setLoading(true);
 
     try {
-      const { error } = await supabase.from("campaigns").insert({
-        organization_id: organization.id,
-        store_id: allOrganization ? null : selectedStoreId || null,
-        name,
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
-        daily_promotion_count: parseInt(dailyPromotionCount),
-        random_order: randomOrder,
-        status: "draft",
-      });
+      // Si toute l'organisation est sélectionnée, créer une seule campagne
+      if (allOrganization) {
+        const { error } = await supabase.from("campaigns").insert({
+          organization_id: organization.id,
+          store_id: null,
+          name,
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
+          daily_promotion_count: parseInt(dailyPromotionCount),
+          random_order: randomOrder,
+          status: "draft" as const,
+        });
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        // Sinon, créer une campagne pour chaque magasin sélectionné
+        const campaignsToInsert = selectedStoreIds.map(storeId => ({
+          organization_id: organization.id,
+          store_id: storeId,
+          name,
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
+          daily_promotion_count: parseInt(dailyPromotionCount),
+          random_order: randomOrder,
+          status: "draft" as const,
+        }));
+
+        const { error } = await supabase.from("campaigns").insert(campaignsToInsert);
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Succès",
@@ -88,7 +107,7 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
       setDailyPromotionCount("3");
       setRandomOrder(true);
       setAllOrganization(true);
-      setSelectedStoreId("");
+      setSelectedStoreIds([]);
     } catch (error) {
       console.error("Error creating campaign:", error);
       toast({
@@ -134,7 +153,7 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
                 checked={allOrganization}
                 onCheckedChange={(checked) => {
                   setAllOrganization(checked as boolean);
-                  if (checked) setSelectedStoreId("");
+                  if (checked) setSelectedStoreIds([]);
                 }}
               />
               <label
@@ -146,19 +165,19 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
             </div>
 
             {stores.length > 0 && (
-              <div className="space-y-2 pl-6">
+              <div className="grid grid-cols-2 gap-2 pl-6">
                 {stores.map((store) => (
                   <div key={store.id} className="flex items-center space-x-2">
                     <Checkbox
                       id={store.id}
-                      checked={!allOrganization && selectedStoreId === store.id}
+                      checked={!allOrganization && selectedStoreIds.includes(store.id)}
                       disabled={allOrganization}
                       onCheckedChange={(checked) => {
                         if (checked) {
                           setAllOrganization(false);
-                          setSelectedStoreId(store.id);
+                          setSelectedStoreIds([...selectedStoreIds, store.id]);
                         } else {
-                          setSelectedStoreId("");
+                          setSelectedStoreIds(selectedStoreIds.filter(id => id !== store.id));
                         }
                       }}
                     />
@@ -176,9 +195,9 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
             <p className="text-sm text-muted-foreground">
               {allOrganization
                 ? "La campagne s'appliquera à tous vos magasins"
-                : selectedStoreId
-                ? "La campagne s'appliquera uniquement au magasin sélectionné"
-                : "Sélectionnez un magasin"}
+                : selectedStoreIds.length > 0
+                ? `La campagne sera créée pour ${selectedStoreIds.length} magasin${selectedStoreIds.length > 1 ? 's' : ''}`
+                : "Sélectionnez un ou plusieurs magasins"}
             </p>
           </div>
 
