@@ -17,6 +17,7 @@ import Stats from "./pages/Stats";
 import Store from "./pages/Store";
 import Stores from "./pages/Stores";
 import StoreDetail from "./pages/StoreDetail";
+import MyStore from "./pages/MyStore";
 import StoreReels from "./pages/StoreReels";
 import StoreFrontend from "./pages/StoreFrontend";
 import Settings from "./pages/Settings";
@@ -129,6 +130,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <StoreDetail />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mon-magasin"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <MyStore />
                 </AppLayout>
               </ProtectedRoute>
             }
