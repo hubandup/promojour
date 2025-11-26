@@ -17,6 +17,10 @@ export function AutoPublishSettings({ storeId }: AutoPublishSettingsProps) {
   const facebookConnected = connections.some(c => c.platform === 'facebook' && c.is_connected);
   const instagramConnected = connections.some(c => c.platform === 'instagram' && c.is_connected);
 
+  // Protection robuste contre les valeurs undefined
+  const autoPublishFacebook = settings?.auto_publish_facebook ?? false;
+  const autoPublishInstagram = settings?.auto_publish_instagram ?? false;
+
   if (loading || connectionsLoading || !settings) {
     return <div>Chargement...</div>;
   }
@@ -56,7 +60,7 @@ export function AutoPublishSettings({ storeId }: AutoPublishSettingsProps) {
             </div>
             <Switch
               id="auto-facebook"
-              checked={settings?.auto_publish_facebook ?? false}
+              checked={autoPublishFacebook}
               disabled={!facebookConnected}
               onCheckedChange={(checked) => 
                 updateSettings({ auto_publish_facebook: checked })
@@ -78,7 +82,7 @@ export function AutoPublishSettings({ storeId }: AutoPublishSettingsProps) {
             </div>
             <Switch
               id="auto-instagram"
-              checked={settings?.auto_publish_instagram ?? false}
+              checked={autoPublishInstagram}
               disabled={!instagramConnected}
               onCheckedChange={(checked) => 
                 updateSettings({ auto_publish_instagram: checked })
