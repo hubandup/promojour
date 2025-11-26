@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { TrendingUp, Tag, Eye, Users, Plus, Instagram, Facebook, AlertTriangle, Store as StoreIcon, MousePointerClick, CheckCircle2, XCircle, X } from "lucide-react";
+import { TrendingUp, Tag, Eye, Users, Plus, Instagram, Facebook, Store as StoreIcon, MousePointerClick } from "lucide-react";
 import { CreatePromotionDialog } from "@/components/CreatePromotionDialog";
+import { InfoAlert } from "@/components/InfoAlert";
 import { useUserData } from "@/hooks/use-user-data";
 import { usePromotions } from "@/hooks/use-promotions";
 import { useStores } from "@/hooks/use-stores";
@@ -12,7 +12,6 @@ import { useSocialConnections } from "@/hooks/use-social-connections";
 
 const Dashboard = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [alertVisible, setAlertVisible] = useState(true);
   const { organization, isCentral, loading: userLoading } = useUserData();
   const { promotions, activePromotions, scheduledPromotions, topPromotions, loading: promosLoading } = usePromotions();
   const { stores, loading: storesLoading } = useStores();
@@ -124,27 +123,11 @@ const Dashboard = () => {
       </div>
 
       {/* Warning Alert */}
-      {showWarning && alertVisible && (
-        <Alert className="border-0 bg-[hsl(167,100%,60%)] shadow-lg relative">
-          <div className="flex items-start gap-4 pr-8">
-            <AlertTriangle className="h-7 w-7 text-black flex-shrink-0 mt-0.5" />
-            <AlertDescription className="text-black font-medium text-base flex-1">
-              {activePromotions.length < MIN_ACTIVE_PROMOTIONS && 
-                `Vous avez moins de ${MIN_ACTIVE_PROMOTIONS} promotions actives. `}
-              {scheduledPromotions.length < MIN_UPCOMING_PROMOTIONS && 
-                `Vous avez moins de ${MIN_UPCOMING_PROMOTIONS} promotions à venir. `}
-              Pensez à ajouter de nouvelles promotions pour maintenir votre visibilité.
-            </AlertDescription>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-3 right-3 h-6 w-6 text-black hover:bg-black/10 hover:text-black"
-              onClick={() => setAlertVisible(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </Alert>
+      {showWarning && (
+        <InfoAlert
+          type="warning"
+          message={`${activePromotions.length < MIN_ACTIVE_PROMOTIONS ? `Vous avez moins de ${MIN_ACTIVE_PROMOTIONS} promotions actives. ` : ''}${scheduledPromotions.length < MIN_UPCOMING_PROMOTIONS ? `Vous avez moins de ${MIN_UPCOMING_PROMOTIONS} promotions à venir. ` : ''}Pensez à ajouter de nouvelles promotions pour maintenir votre visibilité.`}
+        />
       )}
 
       {/* Stats Cards */}
