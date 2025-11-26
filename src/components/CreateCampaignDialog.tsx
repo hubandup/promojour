@@ -6,8 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -29,13 +29,12 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
   const [loading, setLoading] = useState(false);
 
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [dailyPromotionCount, setDailyPromotionCount] = useState("3");
   const [randomOrder, setRandomOrder] = useState(true);
-  const [canvaTemplateUrl, setCanvaTemplateUrl] = useState("");
-  const [storeId, setStoreId] = useState<string>("all");
+  const [allOrganization, setAllOrganization] = useState(true);
+  const [selectedStoreId, setSelectedStoreId] = useState<string>("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,14 +62,12 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
     try {
       const { error } = await supabase.from("campaigns").insert({
         organization_id: organization.id,
-        store_id: storeId === "all" ? null : storeId,
+        store_id: allOrganization ? null : selectedStoreId || null,
         name,
-        description: description || null,
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
         daily_promotion_count: parseInt(dailyPromotionCount),
         random_order: randomOrder,
-        canva_template_url: canvaTemplateUrl || null,
         status: "draft",
       });
 
@@ -86,13 +83,12 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
       
       // Reset form
       setName("");
-      setDescription("");
       setStartDate(undefined);
       setEndDate(undefined);
       setDailyPromotionCount("3");
       setRandomOrder(true);
-      setCanvaTemplateUrl("");
-      setStoreId("all");
+      setAllOrganization(true);
+      setSelectedStoreId("");
     } catch (error) {
       console.error("Error creating campaign:", error);
       toast({
@@ -128,38 +124,61 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
             />
           </div>
 
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Décrivez votre campagne..."
-              rows={3}
-            />
-          </div>
-
           {/* Portée de la campagne */}
-          <div className="space-y-2">
-            <Label htmlFor="store">Portée de la campagne *</Label>
-            <Select value={storeId} onValueChange={setStoreId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionnez la portée" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toute l'organisation</SelectItem>
+          <div className="space-y-3">
+            <Label>Portée de la campagne *</Label>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="all-org"
+                checked={allOrganization}
+                onCheckedChange={(checked) => {
+                  setAllOrganization(checked as boolean);
+                  if (checked) setSelectedStoreId("");
+                }}
+              />
+              <label
+                htmlFor="all-org"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Toute l'organisation
+              </label>
+            </div>
+
+            {stores.length > 0 && (
+              <div className="space-y-2 pl-6">
                 {stores.map((store) => (
-                  <SelectItem key={store.id} value={store.id}>
-                    {store.name}
-                  </SelectItem>
+                  <div key={store.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={store.id}
+                      checked={!allOrganization && selectedStoreId === store.id}
+                      disabled={allOrganization}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setAllOrganization(false);
+                          setSelectedStoreId(store.id);
+                        } else {
+                          setSelectedStoreId("");
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor={store.id}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {store.name}
+                    </label>
+                  </div>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+            )}
+
             <p className="text-sm text-muted-foreground">
-              {storeId === "all" 
-                ? "La campagne s'appliquera à tous vos magasins" 
-                : "La campagne s'appliquera uniquement au magasin sélectionné"}
+              {allOrganization
+                ? "La campagne s'appliquera à tous vos magasins"
+                : selectedStoreId
+                ? "La campagne s'appliquera uniquement au magasin sélectionné"
+                : "Sélectionnez un magasin"}
             </p>
           </div>
 
@@ -241,21 +260,6 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
               checked={randomOrder}
               onCheckedChange={setRandomOrder}
             />
-          </div>
-
-          {/* Template Canva */}
-          <div className="space-y-2">
-            <Label htmlFor="canva">URL du template Canva (optionnel)</Label>
-            <Input
-              id="canva"
-              type="url"
-              value={canvaTemplateUrl}
-              onChange={(e) => setCanvaTemplateUrl(e.target.value)}
-              placeholder="https://www.canva.com/..."
-            />
-            <p className="text-sm text-muted-foreground">
-              Template pour harmoniser le design de vos visuels
-            </p>
           </div>
 
           {/* Actions */}
