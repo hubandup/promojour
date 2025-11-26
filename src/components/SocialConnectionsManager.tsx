@@ -213,12 +213,12 @@ export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerPr
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Badge variant="default">Connecté</Badge>
-                {instagramConnection.account_name && (
+                {instagramConnection?.account_name && (
                   <span className="text-sm text-muted-foreground">
                     @{instagramConnection.account_name}
                   </span>
                 )}
-                {instagramConnection.followers_count > 0 && (
+                {instagramConnection?.followers_count && instagramConnection.followers_count > 0 && (
                   <span className="text-sm text-muted-foreground">
                     • {instagramConnection.followers_count} abonnés
                   </span>
