@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { promotionId, storeId, platforms } = await req.json();
+    const { promotionId, storeId, platforms, campaignId } = await req.json();
 
     if (!promotionId || !storeId || !platforms || !Array.isArray(platforms)) {
       throw new Error('Missing required parameters: promotionId, storeId, and platforms');
@@ -89,6 +89,7 @@ serve(async (req) => {
             platform: connection.platform,
             status: 'success',
             post_id: postId,
+            campaign_id: campaignId || null,
           });
 
         results.push({
@@ -111,6 +112,7 @@ serve(async (req) => {
             platform: connection.platform,
             status: 'error',
             error_message: errorMessage,
+            campaign_id: campaignId || null,
           });
 
         results.push({
