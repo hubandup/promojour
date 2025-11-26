@@ -65,15 +65,17 @@ async function getPromotionsDistributedToday(campaignId: string): Promise<string
     .select('promotion_id')
     .gte('published_at', `${today}T00:00:00`)
     .lte('published_at', `${today}T23:59:59`)
-    .eq('status', 'success')
-    .contains('error_message', `campaign:${campaignId}`); // Store campaign ID in error_message for tracking
+    .eq('campaign_id', campaignId)
+    .eq('status', 'success');
 
   if (error) {
     console.error('Error fetching distributed promotions:', error);
     return [];
   }
 
-  return data?.map(d => d.promotion_id) || [];
+  // Get unique promotion IDs
+  const uniquePromoIds = [...new Set(data?.map(d => d.promotion_id) || [])];
+  return uniquePromoIds;
 }
 
 async function getStoresForCampaign(campaign: Campaign): Promise<string[]> {
@@ -121,7 +123,12 @@ async function publishPromotionToSocial(promotion: Promotion, storeId: string, c
 
   const settings = await getStoreAutoPublishSettings(storeId);
   
-  if (!settings.auto_publish_facebook && !settings.auto_publish_instagram) {
+  // Build platforms array based on auto-publish settings
+  const platforms: string[] = [];
+  if (settings.auto_publish_facebook) platforms.push('facebook');
+  if (settings.auto_publish_instagram) platforms.push('instagram');
+  
+  if (platforms.length === 0) {
     console.log(`Skipping promotion ${promotion.id}: auto-publish disabled for store ${storeId}`);
     return;
   }
@@ -132,14 +139,15 @@ async function publishPromotionToSocial(promotion: Promotion, storeId: string, c
       body: {
         promotionId: promotion.id,
         storeId: storeId,
-        campaignId: campaignId, // Pass campaign ID for tracking
+        platforms: platforms,
+        campaignId: campaignId,
       }
     });
 
     if (error) {
       console.error(`Error publishing promotion ${promotion.id}:`, error);
     } else {
-      console.log(`Successfully published promotion ${promotion.id} to store ${storeId}`);
+      console.log(`Successfully published promotion ${promotion.id} to store ${storeId} on platforms: ${platforms.join(', ')}`);
     }
   } catch (error) {
     console.error(`Exception publishing promotion ${promotion.id}:`, error);

@@ -428,6 +428,7 @@ export type Database = {
       }
       publication_history: {
         Row: {
+          campaign_id: string | null
           created_at: string
           error_message: string | null
           id: string
@@ -439,6 +440,7 @@ export type Database = {
           store_id: string
         }
         Insert: {
+          campaign_id?: string | null
           created_at?: string
           error_message?: string | null
           id?: string
@@ -450,6 +452,7 @@ export type Database = {
           store_id: string
         }
         Update: {
+          campaign_id?: string | null
           created_at?: string
           error_message?: string | null
           id?: string
@@ -461,6 +464,13 @@ export type Database = {
           store_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "publication_history_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "publication_history_promotion_id_fkey"
             columns: ["promotion_id"]
