@@ -18,6 +18,7 @@ import Store from "./pages/Store";
 import Stores from "./pages/Stores";
 import StoreDetail from "./pages/StoreDetail";
 import MyStore from "./pages/MyStore";
+import MyStoreFree from "./pages/MyStoreFree";
 import StoreReels from "./pages/StoreReels";
 import StoreFrontend from "./pages/StoreFrontend";
 import Settings from "./pages/Settings";
@@ -140,6 +141,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <MyStore />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mon-magasin-free"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <MyStoreFree />
                 </AppLayout>
               </ProtectedRoute>
             }

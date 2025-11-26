@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoPromoJour from "@/assets/logo-promojour.png";
 import { useUserData } from "@/hooks/use-user-data";
+import { useStores } from "@/hooks/use-stores";
 
 const settingsItems = [
   { title: "Réglages", url: "/settings", icon: Settings },
@@ -23,16 +24,24 @@ const settingsItems = [
 
 export function AppSidebar() {
   const navigate = useNavigate();
-  const { isStoreManager, loading: userLoading } = useUserData();
+  const { isStoreManager, isFree, loading: userLoading } = useUserData();
+  const { stores, loading: storesLoading } = useStores();
+
+  // Déterminer si on affiche "Mon magasin" ou "Mes Magasins"
+  const showSingleStore = isStoreManager || (isFree && stores.length === 1);
+  const storeUrl = isFree && stores.length === 1 ? "/mon-magasin-free" : 
+                   isStoreManager ? "/mon-magasin" : 
+                   "/stores";
 
   const menuItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Promotions", url: "/promotions", icon: Tag },
-    { title: "Campagnes", url: "/campaigns", icon: CalendarDays },
+    // Campagnes masqué pour Free
+    ...(!isFree ? [{ title: "Campagnes", url: "/campaigns", icon: CalendarDays }] : []),
     { title: "Statistiques", url: "/stats", icon: BarChart3 },
     { 
-      title: isStoreManager ? "Mon magasin" : "Mes Magasins", 
-      url: isStoreManager ? "/mon-magasin" : "/stores", 
+      title: showSingleStore ? "Mon magasin" : "Mes Magasins", 
+      url: storeUrl, 
       icon: Store 
     },
   ];
