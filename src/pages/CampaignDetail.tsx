@@ -5,10 +5,21 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar as CalendarIcon, TrendingUp, Image } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, TrendingUp, Image, Eye, BarChart3, Pencil, Copy, Trash2 } from "lucide-react";
 import { format, eachDayOfInterval, startOfDay, isSameDay, addDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EditCampaignDialog } from "@/components/EditCampaignDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { Campaign } from "@/hooks/use-campaigns";
 import type { Promotion } from "@/hooks/use-promotions";
 
@@ -23,6 +34,9 @@ export default function CampaignDetail() {
   const [campaign, setCampaign] = useState<CampaignWithPromotions | null>(null);
   const [loading, setLoading] = useState(true);
   const [distributionSchedule, setDistributionSchedule] = useState<Record<string, Promotion[]>>({});
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [showStats, setShowStats] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -122,6 +136,94 @@ export default function CampaignDetail() {
     }
   };
 
+  const handleDuplicate = async () => {
+    if (!campaign) return;
+
+    try {
+      const { data: newCampaign, error } = await supabase
+        .from('campaigns')
+        .insert({
+          name: `${campaign.name} (copie)`,
+          organization_id: campaign.organization_id,
+          store_id: campaign.store_id,
+          start_date: campaign.start_date,
+          end_date: campaign.end_date,
+          status: 'draft',
+          daily_promotion_count: campaign.daily_promotion_count,
+          random_order: campaign.random_order,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Copy promotion associations
+      if (campaign.promotions.length > 0) {
+        const updates = campaign.promotions.map(promo => ({
+          id: promo.id,
+          campaign_id: newCampaign.id,
+        }));
+
+        await Promise.all(
+          updates.map(update =>
+            supabase
+              .from('promotions')
+              .update({ campaign_id: update.campaign_id })
+              .eq('id', update.id)
+          )
+        );
+      }
+
+      toast({
+        title: "Succès",
+        description: "Campagne dupliquée avec succès",
+      });
+
+      navigate(`/campaigns/${newCampaign.id}`);
+    } catch (error) {
+      console.error('Error duplicating campaign:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de dupliquer la campagne",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!campaign) return;
+
+    try {
+      // Unassociate promotions first
+      await supabase
+        .from('promotions')
+        .update({ campaign_id: null })
+        .eq('campaign_id', campaign.id);
+
+      // Delete campaign
+      const { error } = await supabase
+        .from('campaigns')
+        .delete()
+        .eq('id', campaign.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Succès",
+        description: "Campagne supprimée avec succès",
+      });
+
+      navigate('/campaigns');
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer la campagne",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6 p-8">
@@ -169,6 +271,50 @@ export default function CampaignDetail() {
           <p className="text-muted-foreground">
             {format(new Date(campaign.start_date), 'dd MMMM yyyy', { locale: fr })} - {format(new Date(campaign.end_date), 'dd MMMM yyyy', { locale: fr })}
           </p>
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-2xl w-12 h-12 hover:bg-accent/10 transition-smooth"
+            onClick={() => navigate('/campaigns')}
+          >
+            <Eye className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-2xl w-12 h-12 hover:bg-accent/10 transition-smooth"
+            onClick={() => setShowStats(!showStats)}
+          >
+            <BarChart3 className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-2xl w-12 h-12 hover:bg-accent/10 transition-smooth"
+            onClick={() => setEditDialogOpen(true)}
+          >
+            <Pencil className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-2xl w-12 h-12 hover:bg-accent/10 transition-smooth"
+            onClick={handleDuplicate}
+          >
+            <Copy className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-2xl w-12 h-12 hover:bg-destructive/10 hover:text-destructive transition-smooth"
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            <Trash2 className="h-5 w-5" />
+          </Button>
         </div>
       </div>
 
@@ -290,6 +436,35 @@ export default function CampaignDetail() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <EditCampaignDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={() => {
+          fetchCampaignDetail();
+          setEditDialogOpen(false);
+        }}
+        campaign={campaign}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer la campagne ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. La campagne sera supprimée, mais les promotions associées seront conservées.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
