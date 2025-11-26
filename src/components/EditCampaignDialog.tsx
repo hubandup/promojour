@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,19 +13,28 @@ import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useStores } from "@/hooks/use-stores";
-import { useUserData } from "@/hooks/use-user-data";
 import { usePromotions } from "@/hooks/use-promotions";
 
-interface CreateCampaignDialogProps {
+interface Campaign {
+  id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  daily_promotion_count: number;
+  random_order: boolean;
+  store_id: string | null;
+}
+
+interface EditCampaignDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  campaign: Campaign | null;
 }
 
-export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCampaignDialogProps) {
+export function EditCampaignDialog({ open, onOpenChange, onSuccess, campaign }: EditCampaignDialogProps) {
   const { toast } = useToast();
   const { stores } = useStores();
-  const { organization } = useUserData();
   const { promotions, loading: promotionsLoading } = usePromotions();
   const [loading, setLoading] = useState(false);
 
@@ -38,10 +47,41 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
   const [selectedStoreIds, setSelectedStoreIds] = useState<string[]>([]);
   const [selectedPromotionIds, setSelectedPromotionIds] = useState<string[]>([]);
 
+  useEffect(() => {
+    if (campaign && open) {
+      setName(campaign.name);
+      setStartDate(new Date(campaign.start_date));
+      setEndDate(new Date(campaign.end_date));
+      setDailyPromotionCount(campaign.daily_promotion_count?.toString() || "3");
+      setRandomOrder(campaign.random_order ?? true);
+      setAllOrganization(!campaign.store_id);
+      setSelectedStoreIds(campaign.store_id ? [campaign.store_id] : []);
+      
+      // Charger les promotions associées
+      loadCampaignPromotions();
+    }
+  }, [campaign, open]);
+
+  const loadCampaignPromotions = async () => {
+    if (!campaign) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('promotions')
+        .select('id')
+        .eq('campaign_id', campaign.id);
+
+      if (error) throw error;
+      setSelectedPromotionIds(data?.map(p => p.id) || []);
+    } catch (error) {
+      console.error("Error loading campaign promotions:", error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !startDate || !endDate) {
+    if (!campaign || !name || !startDate || !endDate) {
       toast({
         title: "Erreur",
         description: "Veuillez remplir tous les champs obligatoires",
@@ -62,72 +102,47 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
     setLoading(true);
 
     try {
-      let campaignId: string;
-
-      // Si toute l'organisation est sélectionnée, créer une seule campagne
-      if (allOrganization) {
-        const { data, error } = await supabase.from("campaigns").insert({
-          organization_id: organization.id,
-          store_id: null,
+      // Mettre à jour la campagne
+      const { error: updateError } = await supabase
+        .from("campaigns")
+        .update({
           name,
           start_date: startDate.toISOString(),
           end_date: endDate.toISOString(),
           daily_promotion_count: parseInt(dailyPromotionCount),
           random_order: randomOrder,
-          status: "draft" as const,
-        }).select().single();
+          store_id: allOrganization ? null : (selectedStoreIds[0] || null),
+        })
+        .eq('id', campaign.id);
 
-        if (error) throw error;
-        campaignId = data.id;
-      } else {
-        // Sinon, créer une campagne pour le premier magasin sélectionné
-        const { data, error } = await supabase.from("campaigns").insert({
-          organization_id: organization.id,
-          store_id: selectedStoreIds[0] || null,
-          name,
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
-          daily_promotion_count: parseInt(dailyPromotionCount),
-          random_order: randomOrder,
-          status: "draft" as const,
-        }).select().single();
+      if (updateError) throw updateError;
 
-        if (error) throw error;
-        campaignId = data.id;
-      }
+      // Désassocier toutes les anciennes promotions
+      await supabase
+        .from('promotions')
+        .update({ campaign_id: null })
+        .eq('campaign_id', campaign.id);
 
-      // Associer les promotions sélectionnées à la campagne
+      // Associer les nouvelles promotions sélectionnées
       if (selectedPromotionIds.length > 0) {
-        const { error: promoError } = await supabase
+        await supabase
           .from('promotions')
-          .update({ campaign_id: campaignId })
+          .update({ campaign_id: campaign.id })
           .in('id', selectedPromotionIds);
-
-        if (promoError) throw promoError;
       }
 
       toast({
         title: "Succès",
-        description: "Campagne créée avec succès",
+        description: "Campagne modifiée avec succès",
       });
 
       onSuccess();
       onOpenChange(false);
-      
-      // Reset form
-      setName("");
-      setStartDate(undefined);
-      setEndDate(undefined);
-      setDailyPromotionCount("3");
-      setRandomOrder(true);
-      setAllOrganization(true);
-      setSelectedStoreIds([]);
-      setSelectedPromotionIds([]);
     } catch (error) {
-      console.error("Error creating campaign:", error);
+      console.error("Error updating campaign:", error);
       toast({
         title: "Erreur",
-        description: "Impossible de créer la campagne",
+        description: "Impossible de modifier la campagne",
         variant: "destructive",
       });
     } finally {
@@ -137,11 +152,11 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Créer une nouvelle campagne</DialogTitle>
+          <DialogTitle>Modifier la campagne</DialogTitle>
           <DialogDescription>
-            Planifiez la diffusion automatique de vos promotions sur une période définie
+            Modifiez les paramètres de votre campagne et sélectionnez les promotions à diffuser
           </DialogDescription>
         </DialogHeader>
 
@@ -206,14 +221,6 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
                 ))}
               </div>
             )}
-
-            <p className="text-sm text-muted-foreground">
-              {allOrganization
-                ? "La campagne s'appliquera à tous vos magasins"
-                : selectedStoreIds.length > 0
-                ? `La campagne sera créée pour ${selectedStoreIds.length} magasin${selectedStoreIds.length > 1 ? 's' : ''}`
-                : "Sélectionnez un ou plusieurs magasins"}
-            </p>
           </div>
 
           {/* Dates */}
@@ -249,7 +256,7 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
                     variant="outline"
                     className="w-full justify-start text-left font-normal"
                   >
-                    <CalendarIcon className="mr-2 h-4 h-4" />
+                    <CalendarIcon className="mr-2 h-4 w-4" />
                     {endDate ? format(endDate, "PPP", { locale: fr }) : "Sélectionner"}
                   </Button>
                 </PopoverTrigger>
@@ -277,9 +284,6 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
               value={dailyPromotionCount}
               onChange={(e) => setDailyPromotionCount(e.target.value)}
             />
-            <p className="text-sm text-muted-foreground">
-              Nombre de promotions à publier automatiquement chaque jour
-            </p>
           </div>
 
           {/* Ordre aléatoire */}
@@ -356,10 +360,10 @@ export function CreateCampaignDialog({ open, onOpenChange, onSuccess }: CreateCa
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Création...
+                  Modification...
                 </>
               ) : (
-                "Créer la campagne"
+                "Enregistrer les modifications"
               )}
             </Button>
           </div>
