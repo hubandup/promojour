@@ -28,17 +28,9 @@ export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerPr
       if (error) throw error;
 
       if (data?.authUrl) {
-        // Ouvrir dans une nouvelle fenêtre pour éviter les problèmes d'iframe
-        const width = 600;
-        const height = 700;
-        const left = window.screen.width / 2 - width / 2;
-        const top = window.screen.height / 2 - height / 2;
-        
-        window.open(
-          data.authUrl,
-          'facebook-oauth',
-          `width=${width},height=${height},left=${left},top=${top},toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes`
-        );
+        // Redirection directe vers Facebook OAuth au lieu d'une popup
+        // Cela évite les problèmes de blocage ERR_BLOCKED_BY_RESPONSE
+        window.location.href = data.authUrl;
       }
     } catch (error) {
       console.error('Error initiating Facebook OAuth:', error);
