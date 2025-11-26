@@ -28,7 +28,17 @@ export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerPr
       if (error) throw error;
 
       if (data?.authUrl) {
-        window.location.href = data.authUrl;
+        // Ouvrir dans une nouvelle fenêtre pour éviter les problèmes d'iframe
+        const width = 600;
+        const height = 700;
+        const left = window.screen.width / 2 - width / 2;
+        const top = window.screen.height / 2 - height / 2;
+        
+        window.open(
+          data.authUrl,
+          'facebook-oauth',
+          `width=${width},height=${height},left=${left},top=${top},toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes`
+        );
       }
     } catch (error) {
       console.error('Error initiating Facebook OAuth:', error);
