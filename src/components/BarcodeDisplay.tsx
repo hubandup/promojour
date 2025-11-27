@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { getBarcodeFromCache } from "@/hooks/use-barcode-preload";
 
 // @ts-ignore - bwip-js doesn't have TypeScript declarations
 import bwipjs from "bwip-js";
@@ -40,12 +41,24 @@ export function BarcodeDisplay({ eanCode, size = "medium", showText = true }: Ba
   useEffect(() => {
     if (!isVisible || !canvasRef.current || !eanCode) return;
 
-    // Petit délai pour s'assurer que le canvas est complètement rendu
-    const timer = setTimeout(() => {
+    const generateBarcode = () => {
       if (!canvasRef.current) return;
 
+      // Vérifier d'abord le cache
+      const cachedCanvas = getBarcodeFromCache(eanCode);
+      if (cachedCanvas) {
+        // Copier le canvas mis en cache
+        const ctx = canvasRef.current.getContext('2d');
+        if (ctx) {
+          canvasRef.current.width = cachedCanvas.width;
+          canvasRef.current.height = cachedCanvas.height;
+          ctx.drawImage(cachedCanvas, 0, 0);
+        }
+        return;
+      }
+
+      // Sinon, générer le code-barre
       try {
-        // Format to 12 digits for EAN13
         let formattedCode = eanCode.replace(/\D/g, '');
         
         if (formattedCode.length < 12) {
@@ -56,7 +69,6 @@ export function BarcodeDisplay({ eanCode, size = "medium", showText = true }: Ba
 
         const config = sizeConfig[size];
 
-        // Use bwip-js for mobile-compatible barcode generation
         bwipjs.toCanvas(canvasRef.current, {
           bcid: 'ean13',
           text: formattedCode,
@@ -69,8 +81,10 @@ export function BarcodeDisplay({ eanCode, size = "medium", showText = true }: Ba
       } catch (error) {
         console.error("Erreur lors de la génération du code-barre:", error);
       }
-    }, 100);
+    };
 
+    // Petit délai pour s'assurer que le canvas est complètement rendu
+    const timer = setTimeout(generateBarcode, 50);
     return () => clearTimeout(timer);
   }, [isVisible, eanCode, size, showText]);
 

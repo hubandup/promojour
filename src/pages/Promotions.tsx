@@ -34,6 +34,7 @@ import { BulkImportPromotionsDialog } from "@/components/BulkImportPromotionsDia
 import { PromotionsCalendar } from "@/components/PromotionsCalendar";
 import { ProfileBadge } from "@/components/ProfileBadge";
 import { BarcodeDisplay } from "@/components/BarcodeDisplay";
+import { useBarcodePreload } from "@/hooks/use-barcode-preload";
 import { usePromotions } from "@/hooks/use-promotions";
 import { useUserData } from "@/hooks/use-user-data";
 import { useStores } from "@/hooks/use-stores";
@@ -69,6 +70,12 @@ const Promotions = () => {
   const { stores, loading: storesLoading } = useStores();
   const { campaigns, loading: campaignsLoading } = useCampaigns();
   const { mechanics, isLoading: mechanicsLoading } = usePromotionalMechanics();
+
+  // Précharger tous les codes-barres des promotions
+  const eanCodes = promotions
+    .map(p => p.attributes?.cta_ean_code)
+    .filter(Boolean) as string[];
+  useBarcodePreload(eanCodes);
 
   const loading = promotionsLoading || userLoading || storesLoading || campaignsLoading || mechanicsLoading;
 
