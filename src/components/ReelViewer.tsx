@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChevronUp, ChevronDown, ExternalLink } from "lucide-react";
+import { BarcodeDialog } from "@/components/BarcodeDialog";
 
 interface ReelViewerProps {
   store: Store;
@@ -19,6 +20,7 @@ export function ReelViewer({ store, promotions, previewMode = false }: ReelViewe
   const [currentIndex, setCurrentIndex] = useState(0);
   const [viewTracked, setViewTracked] = useState<Set<string>>(new Set());
   const [orgLogo, setOrgLogo] = useState<string | null>(null);
+  const [barcodeDialogOpen, setBarcodeDialogOpen] = useState(false);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
@@ -91,6 +93,24 @@ export function ReelViewer({ store, promotions, previewMode = false }: ReelViewe
       }
     } catch (error) {
       console.error("Error tracking click:", error);
+    }
+  };
+
+  const handleCtaClick = async () => {
+    await trackClick();
+    
+    const ctaActionType = currentPromo.attributes?.ctaActionType || "url";
+    
+    if (ctaActionType === "ean") {
+      const eanCode = currentPromo.attributes?.eanCode;
+      if (eanCode) {
+        setBarcodeDialogOpen(true);
+      }
+    } else {
+      const ctaUrl = currentPromo.attributes?.ctaUrl;
+      if (ctaUrl) {
+        window.open(ctaUrl, "_blank");
+      }
     }
   };
 
@@ -276,9 +296,9 @@ export function ReelViewer({ store, promotions, previewMode = false }: ReelViewe
               <Button
                 size="lg"
                 className="w-full bg-white text-black hover:bg-white/90 font-semibold shadow-lg"
-                onClick={trackClick}
+                onClick={handleCtaClick}
               >
-                {promo.attributes?.cta_text || "En savoir +"}
+                {currentPromo.attributes?.ctaText || "J'en Profite"}
                 <ExternalLink className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -325,6 +345,16 @@ export function ReelViewer({ store, promotions, previewMode = false }: ReelViewe
           )}
         </div>
       ))}
+
+      {/* Barcode Dialog */}
+      {currentPromo?.attributes?.eanCode && (
+        <BarcodeDialog
+          open={barcodeDialogOpen}
+          onOpenChange={setBarcodeDialogOpen}
+          eanCode={currentPromo.attributes.eanCode}
+          promotionTitle={currentPromo.title}
+        />
+      )}
     </div>
   );
 }
