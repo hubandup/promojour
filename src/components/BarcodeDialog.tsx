@@ -13,8 +13,6 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
   const barcodeRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
-    console.log('[BarcodeDialog] Effect triggered:', { open, eanCode, hasRef: !!barcodeRef.current });
-    
     if (open && barcodeRef.current && eanCode) {
       try {
         // Format to 12 digits - JsBarcode will calculate the 13th check digit
@@ -26,6 +24,11 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
           formattedCode = formattedCode.substring(0, 12);
         }
 
+        // Clear any existing SVG content first
+        if (barcodeRef.current) {
+          barcodeRef.current.innerHTML = '';
+        }
+
         JsBarcode(barcodeRef.current, formattedCode, {
           format: "EAN13",
           width: 2,
@@ -33,7 +36,8 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
           displayValue: true,
           fontSize: 14,
           background: "#ffffff",
-          lineColor: "#000000"
+          lineColor: "#000000",
+          margin: 10
         });
       } catch (error) {
         console.error("Erreur lors de la génération du code-barre:", error);

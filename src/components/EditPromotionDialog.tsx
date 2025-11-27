@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { usePromotionalMechanics } from "@/hooks/use-promotional-mechanics";
 import { useAutoPublishPromotion } from "@/hooks/use-auto-publish-promotion";
+import { useUserData } from "@/hooks/use-user-data";
 
 const promotionSchema = z.object({
   title: z.string().min(3, "Le titre doit contenir au moins 3 caractères").max(100),
@@ -61,6 +62,7 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
   
   const { mechanics } = usePromotionalMechanics();
   const { tryAutoPublish } = useAutoPublishPromotion();
+  const { isSuperAdmin } = useUserData();
 
   const {
     register,
@@ -74,9 +76,9 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
     defaultValues: {
       status: "draft",
       ctaText: "J'en Profite",
-      ctaActionType: "url",
-      ctaUrl: "",
-      eanCode: "",
+      ctaActionType: isSuperAdmin ? "ean" : "url",
+      ctaUrl: isSuperAdmin ? "" : "",
+      eanCode: isSuperAdmin ? "978156592764" : "",
     },
   });
 
