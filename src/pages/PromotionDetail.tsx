@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BarcodeDisplay } from "@/components/BarcodeDisplay";
 
 const PromotionDetail = () => {
   const { id } = useParams();
@@ -36,6 +37,7 @@ const PromotionDetail = () => {
         .single();
 
       if (error) throw error;
+      console.log('Promotion detail fetched:', data); // Debug: vérifier les données
       setPromotion(data);
     } catch (error) {
       console.error('Error fetching promotion:', error);
@@ -176,6 +178,16 @@ const PromotionDetail = () => {
                   <div className="p-4 rounded-xl bg-muted/30">
                     <p className="text-sm text-muted-foreground mb-2">Description</p>
                     <p className="text-sm">{promotion.description}</p>
+                  </div>
+                )}
+                {promotion.attributes?.cta_ean_code && (
+                  <div className="p-4 rounded-xl bg-white border border-border/50">
+                    <p className="text-sm text-muted-foreground mb-3">Code-barres EAN</p>
+                    <BarcodeDisplay 
+                      eanCode={promotion.attributes.cta_ean_code} 
+                      size="medium" 
+                      showText={true}
+                    />
                   </div>
                 )}
               </div>
