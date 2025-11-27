@@ -14,15 +14,19 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
 
   useEffect(() => {
     if (open && barcodeRef.current && eanCode) {
+      console.log("Génération du code-barre avec EAN:", eanCode);
       try {
         // Format to 12 digits - JsBarcode will calculate the 13th check digit
         let formattedCode = eanCode.replace(/\D/g, ''); // Remove non-digits
+        console.log("Code formaté:", formattedCode);
         
         if (formattedCode.length < 12) {
-          formattedCode = formattedCode.padEnd(12, '0');
+          formattedCode = formattedCode.padStart(12, '0');
         } else if (formattedCode.length > 12) {
           formattedCode = formattedCode.substring(0, 12);
         }
+
+        console.log("Code final pour JsBarcode (12 chiffres):", formattedCode);
 
         // Use Canvas instead of SVG for better iOS Safari compatibility
         JsBarcode(barcodeRef.current, formattedCode, {
@@ -35,9 +39,13 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
           lineColor: "#000000",
           margin: 10
         });
+        
+        console.log("Code-barre généré avec succès");
       } catch (error) {
         console.error("Erreur lors de la génération du code-barre:", error);
       }
+    } else {
+      console.log("Conditions non remplies - open:", open, "canvas:", !!barcodeRef.current, "eanCode:", eanCode);
     }
   }, [open, eanCode]);
 
@@ -55,7 +63,7 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
             {promotionTitle}
           </p>
           <div className="bg-white p-4 rounded-lg border">
-            <canvas ref={barcodeRef}></canvas>
+            <canvas ref={barcodeRef} width="250" height="100"></canvas>
           </div>
           <p className="text-xs text-muted-foreground">
             Présentez ce code-barre en caisse
