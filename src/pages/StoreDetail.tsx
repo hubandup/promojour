@@ -13,7 +13,9 @@ import { toast } from "sonner";
 import { SocialConnectionsManager } from "@/components/SocialConnectionsManager";
 import { ManualPublishTest } from "@/components/ManualPublishTest";
 import { GoogleMerchantSettings } from "@/components/GoogleMerchantSettings";
+import { PlatformConnectionDialog } from "@/components/PlatformConnectionDialog";
 import { useSocialConnections } from "@/hooks/use-social-connections";
+import { useGoogleMerchant } from "@/hooks/use-google-merchant";
 import {
   MapPin,
   Phone,
@@ -34,6 +36,7 @@ import {
 } from "lucide-react";
 import googleMerchantLogo from "@/assets/google-merchant-center.svg";
 import googleMyBusinessLogo from "@/assets/google-my-business.png";
+import whatsappLogo from "@/assets/whatsapp.svg";
 
 interface Store {
   id: string;
@@ -69,7 +72,7 @@ const StoreDetail = () => {
   const [promotions, setPromotions] = useState<any[]>([]);
   const [loadingPromotions, setLoadingPromotions] = useState(true);
   const [activeTab, setActiveTab] = useState("info");
-  const { connections = [], loading: connectionsLoading } = useSocialConnections(id);
+  const [openPlatformDialog, setOpenPlatformDialog] = useState<string | null>(null);
 
   // Horaires par défaut
   const defaultHours = {
@@ -81,6 +84,9 @@ const StoreDetail = () => {
     samedi: { open: "10:00", close: "18:00", closed: false },
     dimanche: { open: "00:00", close: "00:00", closed: true },
   };
+
+  const { connections = [], loading: connectionsLoading } = useSocialConnections(id);
+  const { account: googleMerchantAccount, initiateOAuth: initiateGoogleOAuth } = useGoogleMerchant(id!);
 
   useEffect(() => {
     fetchStore();
@@ -752,127 +758,275 @@ const StoreDetail = () => {
             </TabsContent>
 
             <TabsContent value="social" className="space-y-8">
-              {/* Section principale: Connexions aux plateformes */}
               <div className="space-y-6">
-                <div className="space-y-2 animate-fade-in">
+                <div className="space-y-2">
                   <h2 className="text-2xl font-bold tracking-tight">Connexions aux plateformes</h2>
                   <p className="text-muted-foreground">
                     Connectez vos comptes pour diffuser automatiquement vos promotions
                   </p>
                 </div>
 
-                {/* Grid des plateformes sociales */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                {/* Grid des plateformes */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Facebook */}
-                  <Card className="glass-card border-border/50 hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-[#1877F2]/10 flex items-center justify-center">
-                          <Facebook className="h-7 w-7 text-[#1877F2]" />
-                        </div>
-                        <div>
-                          <div className="font-semibold">Facebook</div>
-                          <div className="text-sm font-normal text-muted-foreground">
-                            Publications sur votre page
+                  <Card className="glass-card border-border/50 hover:shadow-lg transition-smooth cursor-pointer group">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-[#1877F2]/10 flex items-center justify-center">
+                            <Facebook className="h-6 w-6 text-[#1877F2]" />
+                          </div>
+                          <div>
+                            <div className="font-semibold">Facebook</div>
+                            <div className="text-xs text-muted-foreground">
+                              {connections?.find(c => c.platform === 'facebook')?.is_connected && (
+                                <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20 mt-1">
+                                  Connecté
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <SocialConnectionsManager storeId={store.id} platforms={['facebook']} />
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Publiez vos promotions sur votre page Facebook
+                      </p>
+                      <Button 
+                        onClick={() => setOpenPlatformDialog('facebook')}
+                        variant="outline" 
+                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                      >
+                        Connecter
+                      </Button>
                     </CardContent>
                   </Card>
 
                   {/* Instagram */}
-                  <Card className="glass-card border-border/50 hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] flex items-center justify-center">
-                          <Instagram className="h-7 w-7 text-white" />
-                        </div>
-                        <div>
-                          <div className="font-semibold">Instagram</div>
-                          <div className="text-sm font-normal text-muted-foreground">
-                            Reels sur votre compte
+                  <Card className="glass-card border-border/50 hover:shadow-lg transition-smooth cursor-pointer group">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] flex items-center justify-center">
+                            <Instagram className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <div className="font-semibold">Instagram</div>
+                            <div className="text-xs text-muted-foreground">
+                              {connections?.find(c => c.platform === 'instagram')?.is_connected && (
+                                <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20 mt-1">
+                                  Connecté
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <SocialConnectionsManager storeId={store.id} platforms={['instagram']} />
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Publiez vos promotions en Reels sur Instagram
+                      </p>
+                      <Button 
+                        onClick={() => setOpenPlatformDialog('instagram')}
+                        variant="outline" 
+                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                      >
+                        Connecter
+                      </Button>
                     </CardContent>
                   </Card>
-                </div>
 
-                {/* Grid Google services */}
-                <div className="grid grid-cols-1 gap-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-                  {/* Google Merchant Center */}
-                  <Card className="glass-card border-border/50 hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-[#4285F4]/10 flex items-center justify-center">
-                          <img src={googleMerchantLogo} alt="Google Merchant Center" className="h-7 w-7" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-semibold">Google Merchant Center</div>
-                          <div className="text-sm font-normal text-muted-foreground">
-                            Synchronisez avec Google Shopping
+                  {/* WhatsApp */}
+                  <Card className="glass-card border-border/50 opacity-60">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-[#25D366]/10 flex items-center justify-center">
+                            <img src={whatsappLogo} alt="WhatsApp" className="h-6 w-6" />
+                          </div>
+                          <div>
+                            <div className="font-semibold">WhatsApp</div>
+                            <Badge variant="secondary" className="text-xs mt-1">Prochainement</Badge>
                           </div>
                         </div>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <GoogleMerchantSettings storeId={store.id} />
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Publiez vos promotions sur WhatsApp Business
+                      </p>
+                      <Button 
+                        disabled
+                        variant="outline" 
+                        className="w-full"
+                      >
+                        Prochainement
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Google Merchant Center */}
+                  <Card className="glass-card border-border/50 hover:shadow-lg transition-smooth cursor-pointer group">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-[#4285F4]/10 flex items-center justify-center">
+                            <img src={googleMerchantLogo} alt="Google Merchant Center" className="h-6 w-6" />
+                          </div>
+                          <div>
+                            <div className="font-semibold">Google Merchant Center</div>
+                            <div className="text-xs text-muted-foreground">
+                              {googleMerchantAccount?.is_connected && (
+                                <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20 mt-1">
+                                  Connecté
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Synchronisez vos promotions avec Google Shopping pour les diffuser sur les résultats de recherche Google
+                      </p>
+                      <Button 
+                        onClick={() => setOpenPlatformDialog('google-merchant')}
+                        variant="outline" 
+                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                      >
+                        Connecter
+                      </Button>
                     </CardContent>
                   </Card>
 
                   {/* Google My Business */}
                   <Card className="glass-card border-border/50 opacity-60">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-[#4285F4]/10 flex items-center justify-center">
-                          <img src={googleMyBusinessLogo} alt="Google My Business" className="h-7 w-7" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-semibold flex items-center gap-2">
-                            Google My Business
-                            <Badge variant="secondary" className="text-xs">Bientôt</Badge>
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-[#4285F4]/10 flex items-center justify-center">
+                            <img src={googleMyBusinessLogo} alt="Google My Business" className="h-6 w-6" />
                           </div>
-                          <div className="text-sm font-normal text-muted-foreground">
-                            Fiche d'établissement Google
+                          <div>
+                            <div className="font-semibold">Google My Business</div>
+                            <Badge variant="secondary" className="text-xs mt-1">Prochainement</Badge>
                           </div>
                         </div>
-                      </CardTitle>
-                    </CardHeader>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Synchronisez votre fiche d'établissement avec Google
+                      </p>
+                      <Button 
+                        disabled
+                        variant="outline" 
+                        className="w-full"
+                      >
+                        Prochainement
+                      </Button>
+                    </CardContent>
                   </Card>
                 </div>
               </div>
 
-              {/* Section outils de test */}
-              <div className="space-y-6 pt-8 border-t animate-fade-in" style={{ animationDelay: '0.3s' }}>
-                <div className="space-y-2">
-                  <h2 className="text-2xl font-bold tracking-tight">Outils de test</h2>
-                  <p className="text-muted-foreground">
-                    Testez vos publications avant de les automatiser
-                  </p>
-                </div>
+              {/* Platform Connection Dialogs */}
+              <PlatformConnectionDialog
+                open={openPlatformDialog === 'facebook'}
+                onOpenChange={(open) => !open && setOpenPlatformDialog(null)}
+                platform={{
+                  name: "Facebook",
+                  logo: <Facebook className="h-8 w-8 text-[#1877F2]" />,
+                  description: "Publiez vos promotions sur votre page Facebook",
+                  isConnected: connections?.find(c => c.platform === 'facebook')?.is_connected,
+                  steps: [
+                    {
+                      title: "Étape 1 : Connecter votre compte Facebook",
+                      description: "Autorisez PromoJour à accéder à votre page Facebook.",
+                      action: {
+                        label: "Connecter mon compte Facebook",
+                        onClick: () => {
+                          window.location.href = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/facebook-oauth-init?store_id=${id}`;
+                        }
+                      }
+                    }
+                  ],
+                  about: {
+                    title: "À propos de Facebook",
+                    items: [
+                      "Diffusez vos promotions sur votre page Facebook",
+                      "Publication automatique depuis PromoJour",
+                      "Un compte Facebook Business est requis",
+                      "Les visuels et descriptions sont automatiquement inclus"
+                    ]
+                  }
+                }}
+              />
 
-                <Card className="border-2 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Share2 className="h-5 w-5" />
-                      Test de publication manuelle
-                      <Badge variant="outline" className="ml-2">Dev</Badge>
-                    </CardTitle>
-                    <CardDescription>
-                      Sélectionnez une promotion et testez sa publication sur vos réseaux connectés
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ManualPublishTest storeId={store.id} />
-                  </CardContent>
-                </Card>
-              </div>
+              <PlatformConnectionDialog
+                open={openPlatformDialog === 'instagram'}
+                onOpenChange={(open) => !open && setOpenPlatformDialog(null)}
+                platform={{
+                  name: "Instagram",
+                  logo: <Instagram className="h-8 w-8 text-white" />,
+                  description: "Publiez vos promotions en Reels sur Instagram",
+                  isConnected: connections?.find(c => c.platform === 'instagram')?.is_connected,
+                  steps: [
+                    {
+                      title: "Étape 1 : Connecter votre compte Instagram",
+                      description: "Autorisez PromoJour à accéder à votre compte Instagram Business.",
+                      action: {
+                        label: "Connecter mon compte Instagram",
+                        onClick: () => {
+                          window.location.href = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/facebook-oauth-init?store_id=${id}`;
+                        }
+                      }
+                    }
+                  ],
+                  about: {
+                    title: "À propos d'Instagram",
+                    items: [
+                      "Diffusez vos promotions en Reels sur Instagram",
+                      "Publication automatique depuis PromoJour",
+                      "Un compte Instagram Business connecté à une page Facebook est requis",
+                      "Les vidéos et visuels sont automatiquement inclus"
+                    ]
+                  }
+                }}
+              />
+
+              <PlatformConnectionDialog
+                open={openPlatformDialog === 'google-merchant'}
+                onOpenChange={(open) => !open && setOpenPlatformDialog(null)}
+                platform={{
+                  name: "Google Merchant Center",
+                  logo: <img src={googleMerchantLogo} alt="Google Merchant Center" className="h-8 w-8" />,
+                  description: "Synchronisez avec Google Shopping",
+                  isConnected: googleMerchantAccount?.is_connected,
+                  steps: [
+                    {
+                      title: "Étape 1 : Connecter votre compte Google",
+                      description: "Autorisez PromoJour à accéder à vos comptes Google Merchant Center.",
+                      action: {
+                        label: "Connecter mon compte Google",
+                        onClick: () => initiateGoogleOAuth()
+                      }
+                    }
+                  ],
+                  about: {
+                    title: "À propos de Google Merchant Center",
+                    items: [
+                      "Diffusez vos promotions sur Google Shopping",
+                      "Synchronisation à la demande depuis PromoJour",
+                      "Un compte Google avec un Merchant Center est requis",
+                      "Les codes-barres EAN sont automatiquement inclus"
+                    ]
+                  },
+                  links: [
+                    {
+                      label: "Créer un compte Merchant Center",
+                      url: "https://merchants.google.com/"
+                    },
+                    {
+                      label: "Documentation Google",
+                      url: "https://support.google.com/merchants/"
+                    }
+                  ]
+                }}
+              />
             </TabsContent>
 
             <TabsContent value="stats" className="space-y-6">
