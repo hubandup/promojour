@@ -73,6 +73,8 @@ const StoreDetail = () => {
   const [loadingPromotions, setLoadingPromotions] = useState(true);
   const [activeTab, setActiveTab] = useState("info");
   const [openPlatformDialog, setOpenPlatformDialog] = useState<string | null>(null);
+  const [editingInfo, setEditingInfo] = useState(false);
+  const [editingHours, setEditingHours] = useState(false);
 
   // Horaires par défaut
   const defaultHours = {
@@ -85,6 +87,8 @@ const StoreDetail = () => {
     dimanche: { open: "00:00", close: "00:00", closed: true },
   };
 
+  const [hours, setHours] = useState(defaultHours);
+
   const { connections = [], loading: connectionsLoading } = useSocialConnections(id);
   const { account: googleMerchantAccount, initiateOAuth: initiateGoogleOAuth } = useGoogleMerchant(id!);
 
@@ -92,6 +96,12 @@ const StoreDetail = () => {
     fetchStore();
     fetchPromotions();
   }, [id]);
+
+  useEffect(() => {
+    if (store) {
+      setHours(store.opening_hours || defaultHours);
+    }
+  }, [store]);
 
   useEffect(() => {
     // Check for OAuth callback success/error
@@ -208,6 +218,60 @@ const StoreDetail = () => {
     }
   };
 
+  const handleSaveInfo = async () => {
+    if (!formData || !id) return;
+
+    try {
+      const { error } = await supabase
+        .from("stores")
+        .update({
+          name: formData.name,
+          description: formData.description,
+          phone: formData.phone,
+          email: formData.email,
+          website_url: formData.website_url,
+          google_maps_url: formData.google_maps_url,
+          address_line1: formData.address_line1,
+          address_line2: formData.address_line2,
+          postal_code: formData.postal_code,
+          city: formData.city,
+          country: formData.country,
+        })
+        .eq("id", id);
+
+      if (error) throw error;
+      
+      toast.success("Informations modifiées avec succès");
+      setStore({ ...store, ...formData });
+      setEditingInfo(false);
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast.error("Erreur lors de la modification");
+    }
+  };
+
+  const handleSaveHours = async () => {
+    if (!id) return;
+
+    try {
+      const { error } = await supabase
+        .from("stores")
+        .update({
+          opening_hours: hours,
+        })
+        .eq("id", id);
+
+      if (error) throw error;
+      
+      toast.success("Horaires modifiés avec succès");
+      setStore({ ...store, opening_hours: hours });
+      setEditingHours(false);
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast.error("Erreur lors de la modification");
+    }
+  };
+
   const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !id) return;
@@ -239,8 +303,6 @@ const StoreDetail = () => {
   };
 
   const updateHours = (day: string, field: string, value: string | boolean) => {
-    if (!formData) return;
-    const hours = formData.opening_hours || defaultHours;
     const updatedHours = {
       ...hours,
       [day]: {
@@ -248,10 +310,7 @@ const StoreDetail = () => {
         [field]: value,
       },
     };
-    setFormData({
-      ...formData,
-      opening_hours: updatedHours,
-    });
+    setHours(updatedHours);
   };
 
   const downloadQRCode = (format: 'svg' | 'png') => {
@@ -341,8 +400,6 @@ const StoreDetail = () => {
       </div>
     );
   }
-
-  const hours = store.opening_hours || defaultHours;
 
   return (
     <div className="space-y-6">
@@ -471,12 +528,47 @@ const StoreDetail = () => {
               </Card>
 
               <Card className="glass-card border-border/50">
-                <CardHeader>
-                  <CardTitle>Informations générales</CardTitle>
-                  <CardDescription>Coordonnées et détails du magasin</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                  <div>
+                    <CardTitle>Informations générales</CardTitle>
+                    <CardDescription>Coordonnées et détails du magasin</CardDescription>
+                  </div>
+                  {editingInfo ? (
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setEditingInfo(false);
+                          setFormData(store);
+                        }}
+                        className="rounded-xl"
+                      >
+                        Annuler
+                      </Button>
+                      <Button 
+                        size="sm"
+                        onClick={handleSaveInfo}
+                        className="rounded-xl bg-primary"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        Enregistrer
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingInfo(true)}
+                      className="rounded-xl"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Modifier
+                    </Button>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {isEditing ? (
+                  {editingInfo ? (
                     <>
                       <div className="space-y-2">
                         <Label>Nom du magasin</Label>
@@ -564,11 +656,44 @@ const StoreDetail = () => {
               </Card>
 
               <Card className="glass-card border-border/50">
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                   <CardTitle>Adresse</CardTitle>
+                  {editingInfo ? (
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setEditingInfo(false);
+                          setFormData(store);
+                        }}
+                        className="rounded-xl"
+                      >
+                        Annuler
+                      </Button>
+                      <Button 
+                        size="sm"
+                        onClick={handleSaveInfo}
+                        className="rounded-xl bg-primary"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        Enregistrer
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingInfo(true)}
+                      className="rounded-xl"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Modifier
+                    </Button>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {isEditing ? (
+                  {editingInfo ? (
                     <>
                       <div className="space-y-2">
                         <Label>Adresse ligne 1</Label>
@@ -632,16 +757,51 @@ const StoreDetail = () => {
 
             <TabsContent value="hours" className="space-y-6">
               <Card className="glass-card border-border/50">
-                <CardHeader>
-                  <CardTitle>Horaires d'ouverture</CardTitle>
-                  <CardDescription>Définissez les horaires hebdomadaires</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                  <div>
+                    <CardTitle>Horaires d'ouverture</CardTitle>
+                    <CardDescription>Définissez les horaires hebdomadaires</CardDescription>
+                  </div>
+                  {editingHours ? (
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setEditingHours(false);
+                          setHours(store.opening_hours || defaultHours);
+                        }}
+                        className="rounded-xl"
+                      >
+                        Annuler
+                      </Button>
+                      <Button 
+                        size="sm"
+                        onClick={handleSaveHours}
+                        className="rounded-xl bg-primary"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        Enregistrer
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingHours(true)}
+                      className="rounded-xl"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Modifier
+                    </Button>
+                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     {Object.entries(hours).map(([day, dayHours]: [string, any]) => (
                       <div key={day} className="flex items-center gap-4">
                         <div className="w-24 font-medium text-sm capitalize">{day}</div>
-                        {isEditing ? (
+                        {editingHours ? (
                           <>
                             <Input
                               type="time"
