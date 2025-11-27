@@ -11,7 +11,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SocialConnectionsManager } from "@/components/SocialConnectionsManager";
-import { AutoPublishSettings } from "@/components/AutoPublishSettings";
 import { ManualPublishTest } from "@/components/ManualPublishTest";
 import { GoogleMerchantSettings } from "@/components/GoogleMerchantSettings";
 import { useSocialConnections } from "@/hooks/use-social-connections";
@@ -751,10 +750,41 @@ const StoreDetail = () => {
             </TabsContent>
 
             <TabsContent value="social" className="space-y-6">
-              <SocialConnectionsManager storeId={store.id} />
-              <ManualPublishTest storeId={store.id} />
-              <AutoPublishSettings storeId={store.id} />
-              <GoogleMerchantSettings storeId={store.id} />
+              <Card className="glass-card border-border/50">
+                <CardHeader>
+                  <CardTitle>Réseaux sociaux</CardTitle>
+                  <CardDescription>
+                    Connectez vos comptes Facebook et Instagram pour publier vos promotions
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SocialConnectionsManager storeId={store.id} />
+                </CardContent>
+              </Card>
+
+              <Card className="glass-card border-border/50">
+                <CardHeader>
+                  <CardTitle>Google Merchant Center</CardTitle>
+                  <CardDescription>
+                    Synchronisez vos promotions avec Google Shopping pour les diffuser sur les résultats de recherche Google
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <GoogleMerchantSettings storeId={store.id} />
+                </CardContent>
+              </Card>
+
+              <Card className="glass-card border-border/50">
+                <CardHeader>
+                  <CardTitle>Test de publication manuelle</CardTitle>
+                  <CardDescription>
+                    Testez la publication d'une promotion sur vos réseaux connectés
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ManualPublishTest storeId={store.id} />
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="stats" className="space-y-6">
