@@ -15,7 +15,8 @@ interface BarcodeDisplayProps {
 export function BarcodeDisplay({ eanCode, size = "medium", showText = true, onGenerate }: BarcodeDisplayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(true);
+  const [isReady, setIsReady] = useState(false);
 
   const sizeConfig = {
     small: { scale: 1, height: 6 },
@@ -49,12 +50,10 @@ export function BarcodeDisplay({ eanCode, size = "medium", showText = true, onGe
   }, [eanCode, onGenerate]);
 
   useEffect(() => {
-    if (!isVisible || !canvasRef.current || !eanCode || isGenerating) return;
+    if (!isVisible || !canvasRef.current || !eanCode || isReady) return;
 
     const generateBarcode = async () => {
       if (!canvasRef.current) return;
-
-      setIsGenerating(true);
 
       // Vérifier d'abord le cache
       const cachedCanvas = getBarcodeFromCache(eanCode);
@@ -67,6 +66,7 @@ export function BarcodeDisplay({ eanCode, size = "medium", showText = true, onGe
           ctx.drawImage(cachedCanvas, 0, 0);
         }
         setIsGenerating(false);
+        setIsReady(true);
         return;
       }
 
@@ -91,15 +91,17 @@ export function BarcodeDisplay({ eanCode, size = "medium", showText = true, onGe
           textxalign: 'center',
           backgroundcolor: 'ffffff',
         });
+        
+        setIsGenerating(false);
+        setIsReady(true);
       } catch (error) {
         console.error("Erreur lors de la génération du code-barre:", error);
-      } finally {
         setIsGenerating(false);
       }
     };
 
     generateBarcode();
-  }, [isVisible, eanCode, size, showText, isGenerating]);
+  }, [isVisible, eanCode, size, showText, isReady]);
 
   if (!eanCode) return null;
 

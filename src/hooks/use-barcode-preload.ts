@@ -80,4 +80,6 @@ export function getBarcodeFromCache(eanCode: string): HTMLCanvasElement | null {
 
 export function clearBarcodeCache() {
   Object.keys(barcodeCache).forEach(key => delete barcodeCache[key]);
+  generationQueue.clear();
+  console.log('Cache des codes-barres nettoyé');
 }
