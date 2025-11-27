@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useEffect, useRef } from "react";
 import JsBarcode from "jsbarcode";
 
@@ -46,8 +46,10 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Code-barre de réduction</DialogTitle>
+          <DialogDescription className="sr-only">
+            Dialogue affichant le code-barre EAN du bon de réduction
+          </DialogDescription>
         </DialogHeader>
-        <p className="sr-only">Dialogue affichant le code-barre EAN du bon de réduction</p>
         <div className="flex flex-col items-center justify-center space-y-4 p-6">
           <p className="text-sm text-muted-foreground text-center">
             {promotionTitle}
