@@ -32,7 +32,6 @@ import {
   TrendingUp,
   Save,
   Share2,
-  ShoppingBag,
 } from "lucide-react";
 
 interface Store {
@@ -396,7 +395,7 @@ const StoreDetail = () => {
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-6 rounded-xl">
+            <TabsList className="grid w-full grid-cols-5 rounded-xl">
               <TabsTrigger value="info" className="rounded-xl">Informations</TabsTrigger>
               <TabsTrigger value="hours" className="rounded-xl">Horaires</TabsTrigger>
               <TabsTrigger value="promotions" className="rounded-xl">
@@ -405,10 +404,6 @@ const StoreDetail = () => {
               <TabsTrigger value="social" className="rounded-xl">
                 <Share2 className="w-4 h-4 mr-2" />
                 Connexions
-              </TabsTrigger>
-              <TabsTrigger value="google" className="rounded-xl">
-                <ShoppingBag className="w-4 h-4 mr-2" />
-                Google
               </TabsTrigger>
               <TabsTrigger value="stats" className="rounded-xl">Statistiques</TabsTrigger>
             </TabsList>
@@ -759,9 +754,6 @@ const StoreDetail = () => {
               <SocialConnectionsManager storeId={store.id} />
               <ManualPublishTest storeId={store.id} />
               <AutoPublishSettings storeId={store.id} />
-            </TabsContent>
-
-            <TabsContent value="google" className="space-y-6">
               <GoogleMerchantSettings storeId={store.id} />
             </TabsContent>
 
