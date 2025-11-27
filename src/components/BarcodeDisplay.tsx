@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // @ts-ignore - bwip-js doesn't have TypeScript declarations
 import bwipjs from "bwip-js";
@@ -11,6 +11,7 @@ interface BarcodeDisplayProps {
 
 export function BarcodeDisplay({ eanCode, size = "medium", showText = true }: BarcodeDisplayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   const sizeConfig = {
     small: { scale: 1, height: 6 },
@@ -18,8 +19,31 @@ export function BarcodeDisplay({ eanCode, size = "medium", showText = true }: Ba
     large: { scale: 3, height: 10 },
   };
 
+  // Observer pour détecter quand le canvas est visible
   useEffect(() => {
-    if (canvasRef.current && eanCode) {
+    if (!canvasRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(canvasRef.current);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible || !canvasRef.current || !eanCode) return;
+
+    // Petit délai pour s'assurer que le canvas est complètement rendu
+    const timer = setTimeout(() => {
+      if (!canvasRef.current) return;
+
       try {
         // Format to 12 digits for EAN13
         let formattedCode = eanCode.replace(/\D/g, '');
@@ -45,8 +69,10 @@ export function BarcodeDisplay({ eanCode, size = "medium", showText = true }: Ba
       } catch (error) {
         console.error("Erreur lors de la génération du code-barre:", error);
       }
-    }
-  }, [eanCode, size, showText]);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [isVisible, eanCode, size, showText]);
 
   if (!eanCode) return null;
 
