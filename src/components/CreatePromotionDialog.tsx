@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePromotionalMechanics } from "@/hooks/use-promotional-mechanics";
 import { usePromotionLimits } from "@/hooks/use-promotion-limits";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useUserData } from "@/hooks/use-user-data";
 
 const promotionSchema = z.object({
   title: z.string().min(3, "Le titre doit contenir au moins 3 caractères").max(100),
@@ -55,6 +56,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
   
   const { mechanics } = usePromotionalMechanics();
   const { limits, validatePromotionDates, checkLimits } = usePromotionLimits();
+  const { isSuperAdmin } = useUserData();
 
   const {
     register,
@@ -70,9 +72,9 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
       category: "mode",
       mechanicType: "price_discount",
       ctaText: "J'en Profite",
-      ctaActionType: "url",
-      ctaUrl: "",
-      eanCode: "",
+      ctaActionType: isSuperAdmin ? "ean" : "url",
+      ctaUrl: isSuperAdmin ? "" : "",
+      eanCode: isSuperAdmin ? "978156592764" : "",
     },
   });
 
