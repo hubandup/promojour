@@ -134,6 +134,66 @@ export type Database = {
           },
         ]
       }
+      google_merchant_accounts: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          google_business_profile_location_id: string | null
+          google_email: string | null
+          google_merchant_account_id: string
+          id: string
+          is_connected: boolean | null
+          last_synced_at: string | null
+          refresh_token: string | null
+          store_id: string
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          google_business_profile_location_id?: string | null
+          google_email?: string | null
+          google_merchant_account_id: string
+          id?: string
+          is_connected?: boolean | null
+          last_synced_at?: string | null
+          refresh_token?: string | null
+          store_id: string
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          google_business_profile_location_id?: string | null
+          google_email?: string | null
+          google_merchant_account_id?: string
+          id?: string
+          is_connected?: boolean | null
+          last_synced_at?: string | null
+          refresh_token?: string | null
+          store_id?: string
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_merchant_accounts_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_merchant_accounts_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           account_type: Database["public"]["Enums"]["account_type"]
