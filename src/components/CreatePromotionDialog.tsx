@@ -309,6 +309,74 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Image ou vidéo - TOP */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Image ou vidéo</h3>
+            
+            <div className="space-y-4">
+              <div 
+                className={cn(
+                  "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+                  isDragging ? "border-primary bg-primary/5" : "border-border"
+                )}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <input
+                  type="file"
+                  id="images"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+                <label htmlFor="images" className="cursor-pointer">
+                  <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-sm font-medium mb-1">
+                    Cliquez ou glissez-déposez vos images ou vidéos
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    PNG, JPG, MP4 jusqu'à 10MB (max 5 fichiers)
+                  </p>
+                </label>
+              </div>
+
+              {imagePreviews.length > 0 && (
+                <div className="grid grid-cols-5 gap-4">
+                  {imagePreviews.map((preview, index) => {
+                    const isVideo = images[index]?.type.startsWith('video/');
+                    return (
+                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden border bg-muted">
+                        {isVideo ? (
+                          <video
+                            src={preview}
+                            className="w-full h-full object-cover"
+                            controls
+                            playsInline
+                          />
+                        ) : (
+                          <img
+                            src={preview}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Informations générales */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Informations générales</h3>
@@ -381,31 +449,34 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Informations produit</h3>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="productName">Nom du produit *</Label>
-                <Input
-                  id="productName"
-                  placeholder="Ex: Chaussures Nike Air Max"
-                  {...register("productName")}
-                />
-                {errors.productName && (
-                  <p className="text-sm text-destructive">{errors.productName.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="ean">Code EAN (optionnel)</Label>
-                <Input
-                  id="ean"
-                  placeholder="Ex: 1234567890123"
-                  {...register("ean")}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="productName">Nom du produit *</Label>
+              <Input
+                id="productName"
+                placeholder="Ex: Chaussures Nike Air Max"
+                {...register("productName")}
+              />
+              {errors.productName && (
+                <p className="text-sm text-destructive">{errors.productName.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="mechanicType">Mécanique promotionnelle *</Label>
+              <Label htmlFor="ean">Code EAN (optionnel)</Label>
+              <Input
+                id="ean"
+                placeholder="Ex: 1234567890123"
+                {...register("ean")}
+              />
+            </div>
+          </div>
+
+          {/* Mécanique promotionnelle */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Mécanique promotionnelle</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="mechanicType">Type de mécanique *</Label>
               <Select value={mechanicType} onValueChange={(value) => setValue("mechanicType", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner une mécanique" />
@@ -487,7 +558,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
             )}
           </div>
 
-          {/* Période */}
+          {/* Période de validité */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Période de validité</h3>
             
@@ -555,9 +626,9 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
             </div>
           </div>
 
-          {/* Call-to-Action Frontend */}
+          {/* Bouton */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Call-to-Action Frontend</h3>
+            <h3 className="text-lg font-semibold">Bouton</h3>
             
             <div className="space-y-2">
               <Label htmlFor="ctaText">Intitulé du bouton</Label>
@@ -614,62 +685,6 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
                 <p className="text-xs text-muted-foreground">Code EAN à 13 chiffres pour générer le code-barre</p>
               </div>
             )}
-          </div>
-
-          {/* Images */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Visuels</h3>
-            
-            <div className="space-y-4">
-              <div 
-                className={cn(
-                  "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
-                  isDragging ? "border-primary bg-primary/5" : "border-border"
-                )}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <input
-                  type="file"
-                  id="images"
-                  accept="image/*,video/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleImageUpload}
-                />
-                <label htmlFor="images" className="cursor-pointer">
-                  <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-sm font-medium mb-1">
-                    Cliquez ou glissez-déposez vos images
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    PNG, JPG, MP4 jusqu'à 10MB (max 5 fichiers)
-                  </p>
-                </label>
-              </div>
-
-              {imagePreviews.length > 0 && (
-                <div className="grid grid-cols-5 gap-4">
-                  {imagePreviews.map((preview, index) => (
-                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
-                      <img
-                        src={preview}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
 
           {/* Actions */}

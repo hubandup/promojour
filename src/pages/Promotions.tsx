@@ -480,14 +480,22 @@ const Promotions = () => {
                     />
                   </TableCell>
                   <TableCell>
-                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted relative">
                       {promo.video_url ? (
-                        <video
-                          src={promo.video_url}
-                          className="w-full h-full object-cover"
-                          muted
-                          playsInline
-                        />
+                        <>
+                          <video
+                            src={promo.video_url}
+                            className="w-full h-full object-cover"
+                            muted
+                            playsInline
+                            preload="metadata"
+                          />
+                          <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
+                            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </div>
+                        </>
                       ) : promo.image_url ? (
                         <img
                           src={promo.image_url}
@@ -669,7 +677,13 @@ const Promotions = () => {
                       }}
                       muted
                       playsInline
+                      preload="metadata"
                     />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
+                      <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-smooth flex items-center justify-center pointer-events-none">
                       <span className="text-white font-semibold text-sm bg-black/50 px-3 py-1 rounded-lg">
                         Cliquer pour modifier
