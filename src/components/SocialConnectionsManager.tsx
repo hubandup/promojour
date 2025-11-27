@@ -28,9 +28,59 @@ export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerPr
       if (error) throw error;
 
       if (data?.authUrl) {
-        // Redirection directe vers Facebook OAuth au lieu d'une popup
-        // Cela évite les problèmes de blocage ERR_BLOCKED_BY_RESPONSE
-        window.location.href = data.authUrl;
+        // Ouvrir OAuth dans une popup pour éviter ERR_BLOCKED_BY_RESPONSE
+        const width = 600;
+        const height = 700;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+        
+        const popup = window.open(
+          data.authUrl,
+          'facebook_oauth',
+          `width=${width},height=${height},left=${left},top=${top},popup=yes`
+        );
+
+        if (!popup) {
+          toast({
+            title: "Erreur",
+            description: "Veuillez autoriser les popups pour ce site",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Écouter les messages de la popup
+        const handleMessage = (event: MessageEvent) => {
+          if (event.origin !== window.location.origin) return;
+          
+          if (event.data.type === 'oauth_success') {
+            window.removeEventListener('message', handleMessage);
+            toast({
+              title: "Connexion réussie",
+              description: "Votre compte Facebook a été connecté",
+            });
+            refetch();
+          } else if (event.data.type === 'oauth_error') {
+            window.removeEventListener('message', handleMessage);
+            toast({
+              title: "Erreur",
+              description: event.data.error === 'oauth_denied' 
+                ? "Vous avez annulé la connexion Facebook"
+                : "Une erreur s'est produite lors de la connexion",
+              variant: "destructive",
+            });
+          }
+        };
+
+        window.addEventListener('message', handleMessage);
+
+        // Nettoyer l'écouteur si la popup est fermée manuellement
+        const checkClosed = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(checkClosed);
+            window.removeEventListener('message', handleMessage);
+          }
+        }, 500);
       }
     } catch (error) {
       console.error('Error initiating Facebook OAuth:', error);

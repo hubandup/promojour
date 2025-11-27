@@ -36,7 +36,7 @@ serve(async (req) => {
         error_description: errorDescription,
       });
       const baseUrl = Deno.env.get('SUPABASE_URL') || '';
-      const redirectUrl = `${baseUrl.replace('.supabase.co', '.lovableproject.com')}/stores/${storeId}?error=oauth_denied`;
+      const redirectUrl = `${baseUrl.replace('.supabase.co', '.lovableproject.com')}/oauth/callback?error=oauth_denied&storeId=${storeId}`;
       console.log('Redirecting to:', redirectUrl);
       return new Response(null, {
         status: 302,
@@ -254,11 +254,11 @@ serve(async (req) => {
       console.log('ℹ️ No Instagram Business Account found on any Facebook Page');
     }
 
-    // Redirect back to store page with success
+    // Redirect to OAuth callback page
     const baseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const redirectUrl = `${baseUrl.replace('.supabase.co', '.lovableproject.com')}/stores/${storeId}?success=social_connected`;
+    const redirectUrl = `${baseUrl.replace('.supabase.co', '.lovableproject.com')}/oauth/callback?success=social_connected&storeId=${storeId}`;
     
-    console.log('Step 8: Redirecting to success page...');
+    console.log('Step 8: Redirecting to OAuth callback page...');
     console.log('Redirect URL:', redirectUrl);
     console.log('=== Facebook OAuth Callback - Success ===');
     
