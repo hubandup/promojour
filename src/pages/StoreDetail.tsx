@@ -14,6 +14,7 @@ import { SocialConnectionsManager } from "@/components/SocialConnectionsManager"
 import { ManualPublishTest } from "@/components/ManualPublishTest";
 import { GoogleMerchantSettings } from "@/components/GoogleMerchantSettings";
 import { PlatformConnectionDialog } from "@/components/PlatformConnectionDialog";
+import { CreatePromotionDialog } from "@/components/CreatePromotionDialog";
 import { useSocialConnections } from "@/hooks/use-social-connections";
 import { useGoogleMerchant } from "@/hooks/use-google-merchant";
 import {
@@ -33,6 +34,7 @@ import {
   TrendingUp,
   Save,
   Share2,
+  Plus,
 } from "lucide-react";
 import googleMerchantLogo from "@/assets/google-merchant-center.svg";
 import googleMyBusinessLogo from "@/assets/google-my-business.png";
@@ -75,6 +77,7 @@ const StoreDetail = () => {
   const [openPlatformDialog, setOpenPlatformDialog] = useState<string | null>(null);
   const [editingInfo, setEditingInfo] = useState(false);
   const [editingHours, setEditingHours] = useState(false);
+  const [createPromotionOpen, setCreatePromotionOpen] = useState(false);
 
   // Horaires par défaut
   const defaultHours = {
@@ -850,11 +853,20 @@ const StoreDetail = () => {
 
             <TabsContent value="promotions" className="space-y-6">
               <Card className="glass-card border-border/50">
-                <CardHeader>
-                  <CardTitle>Promotions actives</CardTitle>
-                  <CardDescription>
-                    Promotions visibles dans ce magasin
-                  </CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                  <div>
+                    <CardTitle>Promotions actives</CardTitle>
+                    <CardDescription>
+                      Promotions visibles dans ce magasin
+                    </CardDescription>
+                  </div>
+                  <Button
+                    onClick={() => setCreatePromotionOpen(true)}
+                    className="rounded-xl"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Ajouter une promotion
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   {loadingPromotions ? (
@@ -1294,6 +1306,16 @@ const StoreDetail = () => {
           </Card>
         </div>
       </div>
+
+      <CreatePromotionDialog
+        open={createPromotionOpen}
+        onOpenChange={setCreatePromotionOpen}
+        onSuccess={() => {
+          fetchPromotions();
+          setCreatePromotionOpen(false);
+        }}
+        defaultStoreId={id}
+      />
     </div>
   );
 };
