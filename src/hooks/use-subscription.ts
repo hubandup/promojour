@@ -5,14 +5,14 @@ import { useToast } from "@/hooks/use-toast";
 // Product IDs from Stripe
 const SUBSCRIPTION_TIERS = {
   magasin_pro: {
-    product_id: "prod_TTJqtna7x0NRvU",
-    price_id: "price_1SWND0GDOvS4sk4KU5LRNzFG",
+    product_id: "prod_TV7KeCZNLIdJE1",
+    price_id: "price_1SY75QGDOvS4sk4KTCLHOYao",
     name: "Magasin Pro",
-    price: 49,
+    price: 39,
   },
   centrale: {
-    product_id: "prod_TTJry1b4VaPaLm",
-    price_id: "price_1SWNDLGDOvS4sk4KZxMt1HfJ",
+    product_id: "prod_TV7KAoiegIpbXx",
+    price_id: "price_1SY75RGDOvS4sk4KA3XQpZPg",
     name: "Centrale",
     price: 180,
   },
