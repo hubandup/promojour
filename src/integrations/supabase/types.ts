@@ -137,6 +137,7 @@ export type Database = {
       google_merchant_accounts: {
         Row: {
           access_token: string | null
+          available_accounts: Json | null
           created_at: string
           google_business_profile_location_id: string | null
           google_email: string | null
@@ -151,6 +152,7 @@ export type Database = {
         }
         Insert: {
           access_token?: string | null
+          available_accounts?: Json | null
           created_at?: string
           google_business_profile_location_id?: string | null
           google_email?: string | null
@@ -165,6 +167,7 @@ export type Database = {
         }
         Update: {
           access_token?: string | null
+          available_accounts?: Json | null
           created_at?: string
           google_business_profile_location_id?: string | null
           google_email?: string | null

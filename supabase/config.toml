@@ -24,5 +24,8 @@ verify_jwt = false
 [functions.google-merchant-oauth-callback]
 verify_jwt = false
 
+[functions.google-merchant-list-accounts]
+verify_jwt = true
+
 [functions.sync-google-merchant]
 verify_jwt = true

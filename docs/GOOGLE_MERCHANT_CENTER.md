@@ -4,58 +4,73 @@ This document explains how to configure and use the Google Merchant Center integ
 
 ## Overview
 
-The Google Merchant Center integration allows PromoJour to automatically push active promotions as products to Google Shopping, making them discoverable through Google search results and the Shopping tab.
+The Google Merchant Center integration allows PromoJour stores to automatically push active promotions as products to Google Shopping. Each store can independently connect their own Google Merchant Center account without requiring access to Google Cloud Console.
+
+## Multi-Tenant Architecture
+
+The integration is fully multi-tenant and store-centric:
+
+1. **Store-Level Connections**: Each store maintains its own Google account connection
+2. **Account Selection**: After OAuth, users select which Merchant Center account to use
+3. **Independent Syncing**: Each store syncs its own promotions to its selected account
+4. **No Technical Setup Required**: Store owners connect directly through PromoJour UI
 
 ## Architecture
 
 The integration consists of:
 
-1. **Database**: `google_merchant_accounts` table stores OAuth tokens and Merchant Center configuration per store
+1. **Database**: `google_merchant_accounts` table stores OAuth tokens and selected Merchant Center account per store
 2. **Edge Functions**: 
    - `google-merchant-oauth-init`: Initiates OAuth flow
-   - `google-merchant-oauth-callback`: Handles OAuth callback and stores tokens
-   - `sync-google-merchant`: Syncs promotions to Google Merchant Center
+   - `google-merchant-oauth-callback`: Handles OAuth callback, lists available accounts
+   - `google-merchant-list-accounts`: Refreshes available Merchant Center accounts
+   - `sync-google-merchant`: Syncs promotions to selected Merchant Center account
 3. **React Hook**: `useGoogleMerchant` manages connection state and sync operations
 4. **UI Component**: `GoogleMerchantSettings` provides the user interface
 
+## User Workflow (No Technical Setup Required)
+
+### Step 1: Connect Google Account
+
+1. Navigate to store page: **Mes magasins → Select Store → Connexions tab**
+2. Scroll to **Google Merchant Center** section
+3. Click **"Connecter mon compte Google"**
+4. Authorize PromoJour in the popup window
+
+### Step 2: Select Merchant Center Account
+
+After successful OAuth:
+- PromoJour automatically lists all Merchant Center accounts accessible by your Google account
+- Select the account you want to use for this store from the dropdown
+- Selection is saved automatically
+
+**If no accounts are found:**
+- A message explains you need to create a Merchant Center account first
+- Click the link to create one at https://merchants.google.com/
+- Return to PromoJour and click **"Rafraîchir les comptes"**
+
+### Step 3: Sync Promotions
+
+Once an account is selected:
+- Click **"Synchroniser maintenant"**
+- All active promotions for the store are pushed to Google Merchant Center
+- A confirmation message shows the sync result
+
 ## Prerequisites
 
-Before using this integration, you need:
+### For Store Owners (Non-Technical Users)
 
-### 1. Google Merchant Center Account
+1. **Google Account**: A standard Google account (Gmail)
+2. **Merchant Center Account**: Create one at https://merchants.google.com/
+   - Complete business information
+   - Add shipping and tax settings
+   - Verify and claim your website (if applicable)
 
-- Create a Merchant Center account at https://merchants.google.com/
-- Complete the account setup (business information, shipping, tax settings)
-- Note your Merchant Center ID (visible in the URL or settings)
+That's it! No need to touch Google Cloud Console or configure OAuth credentials.
 
-### 2. Google Cloud Project
+### For Platform Administrators Only
 
-- Go to https://console.cloud.google.com/
-- Create a new project or select an existing one
-- Enable the **Content API for Shopping**:
-  - Navigate to APIs & Services → Library
-  - Search for "Content API for Shopping"
-  - Click Enable
-
-### 3. OAuth 2.0 Credentials
-
-In the Google Cloud Console:
-
-1. Go to APIs & Services → Credentials
-2. Click "Create Credentials" → "OAuth client ID"
-3. Application type: "Web application"
-4. Authorized JavaScript origins:
-   - `https://your-app-domain.com`
-   - `http://localhost:5173` (for development)
-5. Authorized redirect URIs:
-   - `https://your-supabase-project.functions.supabase.co/google-merchant-oauth-callback`
-6. Copy the **Client ID** and **Client Secret**
-
-## Configuration
-
-### 1. Set Environment Variables
-
-The following secrets must be configured in your Supabase project:
+The following are configured once at the platform level (already done):
 
 ```bash
 GOOGLE_CLIENT_ID=your_google_client_id
@@ -63,47 +78,31 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_REDIRECT_URI=https://your-supabase-project.functions.supabase.co/google-merchant-oauth-callback
 ```
 
-These are already configured if you followed the setup prompts during integration installation.
+## Features
 
-### 2. Configure Edge Functions
+### Automatic Account Discovery
 
-The edge functions are automatically deployed and configured in `supabase/config.toml`:
+After OAuth, the system automatically:
+- Lists all Merchant Center accounts for the Google user
+- Shows account names and IDs
+- Allows switching between accounts
+- Handles multi-account scenarios seamlessly
 
-```toml
-[functions.google-merchant-oauth-init]
-verify_jwt = false
+### Account Selection
 
-[functions.google-merchant-oauth-callback]
-verify_jwt = false
+Users can:
+- Select from available Merchant Center accounts via dropdown
+- Change selected account at any time
+- Refresh the account list to detect newly created accounts
+- See which account is currently active
 
-[functions.sync-google-merchant]
-verify_jwt = true
-```
+### Manual Sync
 
-## Usage
-
-### Connecting a Store to Google Merchant Center
-
-1. Navigate to a store detail page: **Mes magasins → Select Store**
-2. Click the **Google** tab
-3. Click **"Connecter Google Merchant Center"**
-4. Authorize PromoJour in the popup window
-5. Enter your **Merchant Center Account ID** (numeric)
-6. Click **"Enregistrer l'ID"**
-
-### Syncing Promotions
-
-Once connected, you can sync promotions manually:
-
-1. Go to the store's Google tab
-2. Click **"Synchroniser maintenant"**
-3. Wait for confirmation
-
-The sync process:
-- Fetches all active promotions for the store
-- Converts each promotion to a Google Merchant Center product
-- Pushes products via the Content API
-- Updates the last sync timestamp
+The sync button:
+- Pushes all active promotions to the selected Merchant Center account
+- Shows sync progress with loading indicator
+- Displays success/error messages
+- Updates last sync timestamp
 
 ### Product Payload Structure
 
