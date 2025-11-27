@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SocialConnectionsManager } from "@/components/SocialConnectionsManager";
 import { AutoPublishSettings } from "@/components/AutoPublishSettings";
+import { ManualPublishTest } from "@/components/ManualPublishTest";
 import { useSocialConnections } from "@/hooks/use-social-connections";
 import {
   MapPin,
@@ -750,6 +751,7 @@ const StoreDetail = () => {
 
             <TabsContent value="social" className="space-y-6">
               <SocialConnectionsManager storeId={store.id} />
+              <ManualPublishTest storeId={store.id} />
               <AutoPublishSettings storeId={store.id} />
             </TabsContent>
 
