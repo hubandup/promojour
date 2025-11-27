@@ -17,18 +17,14 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
     
     if (open && barcodeRef.current && eanCode) {
       try {
-        // Pad or truncate to 13 digits for EAN13
+        // Format to 12 digits - JsBarcode will calculate the 13th check digit
         let formattedCode = eanCode.replace(/\D/g, ''); // Remove non-digits
         
-        console.log('[BarcodeDialog] Formatting code. Original:', eanCode, 'Cleaned:', formattedCode);
-        
-        if (formattedCode.length < 13) {
-          formattedCode = formattedCode.padStart(13, '0');
-        } else if (formattedCode.length > 13) {
-          formattedCode = formattedCode.substring(0, 13);
+        if (formattedCode.length < 12) {
+          formattedCode = formattedCode.padEnd(12, '0');
+        } else if (formattedCode.length > 12) {
+          formattedCode = formattedCode.substring(0, 12);
         }
-
-        console.log('[BarcodeDialog] Final code:', formattedCode);
 
         JsBarcode(barcodeRef.current, formattedCode, {
           format: "EAN13",
@@ -39,10 +35,8 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
           background: "#ffffff",
           lineColor: "#000000"
         });
-        
-        console.log('[BarcodeDialog] Barcode generated successfully!');
       } catch (error) {
-        console.error('[BarcodeDialog] Error generating barcode:', error);
+        console.error("Erreur lors de la génération du code-barre:", error);
       }
     }
   }, [open, eanCode]);
