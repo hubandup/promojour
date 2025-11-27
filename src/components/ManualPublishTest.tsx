@@ -36,13 +36,12 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
 
       if (!store) throw new Error('Store not found');
 
-      // Récupérer les promotions actives avec vidéo (centrales ou du magasin)
+      // Récupérer toutes les promotions actives (centrales ou du magasin)
       const { data, error } = await supabase
         .from('promotions')
         .select('*')
         .eq('organization_id', store.organization_id)
         .eq('status', 'active')
-        .not('video_url', 'is', null)
         .order('created_at', { ascending: false })
         .limit(20);
 
@@ -114,7 +113,7 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
           Test de publication manuelle
         </CardTitle>
         <CardDescription>
-          Publiez une promotion manuellement sur Facebook pour tester la connexion
+          Publiez une promotion manuellement sur Facebook pour tester la connexion. Note : seules les promotions avec vidéo peuvent être publiées en Reel.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -122,7 +121,7 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
           <label className="text-sm font-medium">Sélectionnez une promotion</label>
           <Select value={selectedPromoId} onValueChange={setSelectedPromoId}>
             <SelectTrigger>
-              <SelectValue placeholder="Choisir une promotion avec vidéo..." />
+              <SelectValue placeholder="Choisir une promotion..." />
             </SelectTrigger>
             <SelectContent>
               {isLoading ? (
@@ -132,15 +131,27 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
                   <SelectItem key={promo.id} value={promo.id}>
                     <div className="flex items-center gap-2">
                       <span>{promo.title}</span>
-                      <Badge variant="outline" className="text-xs">
-                        Vidéo
-                      </Badge>
+                      {promo.video_url && (
+                        <Badge variant="outline" className="text-xs">
+                          Vidéo
+                        </Badge>
+                      )}
+                      {!promo.video_url && promo.image_url && (
+                        <Badge variant="secondary" className="text-xs">
+                          Image
+                        </Badge>
+                      )}
+                      {!promo.video_url && !promo.image_url && (
+                        <Badge variant="secondary" className="text-xs opacity-50">
+                          Pas de média
+                        </Badge>
+                      )}
                     </div>
                   </SelectItem>
                 ))
               ) : (
                 <SelectItem value="none" disabled>
-                  Aucune promotion avec vidéo disponible
+                  Aucune promotion disponible
                 </SelectItem>
               )}
             </SelectContent>
@@ -166,7 +177,7 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
         </Button>
 
         <p className="text-xs text-muted-foreground">
-          💡 Cette action publiera immédiatement la promotion sélectionnée sur votre page Facebook en tant que Reel.
+          💡 Cette action publiera immédiatement la promotion sélectionnée sur votre page Facebook en tant que Reel. Seules les promotions avec vidéo peuvent être publiées.
         </p>
       </CardContent>
     </Card>
