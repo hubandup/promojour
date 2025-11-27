@@ -90,6 +90,36 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // List available Merchant Center accounts for this Google user
+    let availableAccounts: any[] = [];
+    try {
+      const accountsResponse = await fetch(
+        'https://shoppingcontent.googleapis.com/content/v2.1/accounts/authinfo',
+        {
+          headers: {
+            'Authorization': `Bearer ${access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (accountsResponse.ok) {
+        const accountsData = await accountsResponse.json();
+        const accountInfos = accountsData.accountIdentifiers || [];
+
+        for (const info of accountInfos) {
+          if (info.merchantId) {
+            availableAccounts.push({
+              id: info.merchantId,
+              name: `Merchant Account ${info.merchantId}`,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to list accounts during OAuth:', err);
+    }
+
     // Check if connection already exists
     const { data: existing } = await supabase
       .from('google_merchant_accounts')
@@ -107,12 +137,14 @@ serve(async (req) => {
           token_expires_at: tokenExpiresAt,
           google_email: googleEmail,
           is_connected: true,
+          available_accounts: availableAccounts,
+          google_merchant_account_id: availableAccounts.length === 1 ? availableAccounts[0].id : '',
         })
         .eq('store_id', storeId);
 
       if (updateError) throw updateError;
     } else {
-      // Create new connection (merchant account ID will be added later via UI)
+      // Create new connection
       const { error: insertError } = await supabase
         .from('google_merchant_accounts')
         .insert({
@@ -121,14 +153,15 @@ serve(async (req) => {
           refresh_token,
           token_expires_at: tokenExpiresAt,
           google_email: googleEmail,
-          google_merchant_account_id: '', // Will be set via UI
+          google_merchant_account_id: availableAccounts.length === 1 ? availableAccounts[0].id : '',
           is_connected: true,
+          available_accounts: availableAccounts,
         });
 
       if (insertError) throw insertError;
     }
 
-    console.log('Successfully stored Google Merchant tokens for store:', storeId);
+    console.log(`Successfully stored Google Merchant tokens for store ${storeId}. Found ${availableAccounts.length} accounts.`);
 
     // Return success HTML that closes the popup
     return new Response(

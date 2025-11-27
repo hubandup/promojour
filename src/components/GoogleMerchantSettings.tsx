@@ -1,212 +1,268 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ExternalLink, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
-import { useGoogleMerchant } from "@/hooks/use-google-merchant";
+import { Loader2, ExternalLink, CheckCircle2, XCircle, RefreshCw, AlertCircle } from "lucide-react";
+import { useGoogleMerchant, MerchantAccountOption } from "@/hooks/use-google-merchant";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface GoogleMerchantSettingsProps {
   storeId: string;
 }
 
 export function GoogleMerchantSettings({ storeId }: GoogleMerchantSettingsProps) {
-  const { account, loading, syncing, initiateOAuth, updateMerchantAccountId, disconnect, syncToGoogle } = useGoogleMerchant(storeId);
-  const [merchantAccountId, setMerchantAccountId] = useState("");
+  const { 
+    account, 
+    loading, 
+    syncing, 
+    loadingAccounts,
+    initiateOAuth, 
+    selectMerchantAccount, 
+    refreshAccounts,
+    disconnect, 
+    syncToGoogle 
+  } = useGoogleMerchant(storeId);
+  
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="pt-6 flex justify-center">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </CardContent>
-      </Card>
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
     );
   }
 
-  const isConnected = account?.is_connected && account?.google_merchant_account_id;
+  const isConnected = account?.is_connected;
+  const hasSelectedAccount = account?.google_merchant_account_id;
+  const availableAccounts = account?.available_accounts || [];
+  const canSync = isConnected && hasSelectedAccount;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              Google Merchant Center
-              {isConnected ? (
-                <Badge variant="default" className="gap-1">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Connecté
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="gap-1">
-                  <XCircle className="h-3 w-3" />
-                  Non connecté
-                </Badge>
-              )}
-            </CardTitle>
-            <CardDescription>
-              Synchronisez vos promotions avec Google Merchant Center pour les diffuser sur Google Shopping
-            </CardDescription>
-          </div>
+    <div className="space-y-6">
+      {/* Connection Status */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Google Merchant Center</h3>
+          <p className="text-sm text-muted-foreground">
+            Diffusez vos promotions sur Google Shopping
+          </p>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Connection Status */}
-        {account && (
-          <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Compte Google</p>
-                <p className="text-sm font-medium">{account.google_email || "Non disponible"}</p>
-              </div>
-              {account.google_merchant_account_id && (
-                <div>
-                  <p className="text-sm text-muted-foreground">ID Merchant Center</p>
-                  <p className="text-sm font-medium">{account.google_merchant_account_id}</p>
-                </div>
-              )}
-              {account.last_synced_at && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Dernière synchronisation</p>
-                  <p className="text-sm font-medium">
-                    {new Date(account.last_synced_at).toLocaleString('fr-FR')}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+        {isConnected ? (
+          <Badge variant="default" className="gap-1">
+            <CheckCircle2 className="h-3 w-3" />
+            Connecté
+          </Badge>
+        ) : (
+          <Badge variant="secondary" className="gap-1">
+            <XCircle className="h-3 w-3" />
+            Non connecté
+          </Badge>
         )}
+      </div>
 
-        {/* OAuth Connection */}
-        {!account?.is_connected && (
-          <div className="space-y-4">
-            <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
-              <h4 className="text-sm font-semibold mb-2">Étape 1 : Connecter votre compte Google</h4>
-              <p className="text-sm text-muted-foreground mb-4">
-                Autorisez PromoJour à accéder à votre Merchant Center pour synchroniser vos promotions.
+      {/* Not Connected - Step 1 */}
+      {!isConnected && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-3">
+              <p className="font-medium">Étape 1 : Connecter votre compte Google</p>
+              <p className="text-sm">
+                Autorisez PromoJour à accéder à vos comptes Google Merchant Center.
               </p>
-              <Button onClick={initiateOAuth}>
-                Connecter Google Merchant Center
+              <Button onClick={initiateOAuth} className="mt-2">
+                Connecter mon compte Google
               </Button>
             </div>
-            <div className="text-xs text-muted-foreground space-y-1">
-              <p><strong>Prérequis :</strong></p>
-              <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>Compte Google Merchant Center créé</li>
-                <li>API Content for Shopping activée</li>
-                <li>Autorisations configurées dans Google Cloud Console</li>
-              </ul>
-            </div>
-          </div>
-        )}
+          </AlertDescription>
+        </Alert>
+      )}
 
-        {/* Merchant Account ID Configuration */}
-        {account?.is_connected && !account.google_merchant_account_id && (
-          <div className="space-y-4">
-            <div className="p-4 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
-              <h4 className="text-sm font-semibold mb-2">Étape 2 : Configurer votre ID Merchant Center</h4>
-              <p className="text-sm text-muted-foreground mb-4">
-                Saisissez l'identifiant numérique de votre compte Merchant Center (visible dans l'URL ou les paramètres).
-              </p>
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="merchant-id">ID Merchant Center</Label>
-                  <Input
-                    id="merchant-id"
-                    type="text"
-                    placeholder="123456789"
-                    value={merchantAccountId}
-                    onChange={(e) => setMerchantAccountId(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Exemple : 123456789 (nombre sans espaces)
-                  </p>
+      {/* Connected - Show Account Info */}
+      {isConnected && (
+        <div className="space-y-4">
+          <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+            <div>
+              <Label className="text-xs text-muted-foreground">Compte Google</Label>
+              <p className="text-sm font-medium">{account.google_email || "Non disponible"}</p>
+            </div>
+
+            {/* Account Selection */}
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Compte Merchant Center</Label>
+              {availableAccounts.length === 0 ? (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <p className="text-sm font-medium mb-2">
+                      Aucun compte Merchant Center trouvé
+                    </p>
+                    <p className="text-xs mb-3">
+                      Créez un compte sur{" "}
+                      <a 
+                        href="https://merchants.google.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="underline"
+                      >
+                        Google Merchant Center
+                      </a>
+                      , puis rafraîchissez la liste.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={refreshAccounts}
+                      disabled={loadingAccounts}
+                    >
+                      {loadingAccounts && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                      Rafraîchir les comptes
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="space-y-2">
+                  <Select
+                    value={selectedAccountId || account.google_merchant_account_id}
+                    onValueChange={(value) => {
+                      setSelectedAccountId(value);
+                      selectMerchantAccount(value);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un compte" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableAccounts.map((acc: MerchantAccountOption) => (
+                        <SelectItem key={acc.id} value={acc.id}>
+                          {acc.name} ({acc.id})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={refreshAccounts}
+                      disabled={loadingAccounts}
+                    >
+                      {loadingAccounts && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                      Rafraîchir
+                    </Button>
+                  </div>
                 </div>
-                <Button 
-                  onClick={() => updateMerchantAccountId(merchantAccountId)}
-                  disabled={!merchantAccountId.trim()}
-                >
-                  Enregistrer l'ID
-                </Button>
+              )}
+            </div>
+
+            {hasSelectedAccount && (
+              <div>
+                <Label className="text-xs text-muted-foreground">ID du compte sélectionné</Label>
+                <p className="text-sm font-medium font-mono">{account.google_merchant_account_id}</p>
               </div>
-            </div>
-            <Button variant="outline" size="sm" onClick={disconnect}>
-              Déconnecter
-            </Button>
-          </div>
-        )}
+            )}
 
-        {/* Sync Controls */}
-        {isConnected && (
-          <div className="space-y-4">
-            <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
-              <h4 className="text-sm font-semibold mb-2">Synchronisation</h4>
-              <p className="text-sm text-muted-foreground mb-4">
-                Envoyez vos promotions actives vers Google Merchant Center.
-              </p>
-              <div className="flex gap-2">
-                <Button 
-                  onClick={syncToGoogle}
-                  disabled={syncing}
-                >
-                  {syncing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {syncing ? "Synchronisation..." : "Synchroniser maintenant"}
-                  <RefreshCw className="ml-2 h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="sm" onClick={disconnect}>
-                  Déconnecter
-                </Button>
+            {account.last_synced_at && (
+              <div>
+                <Label className="text-xs text-muted-foreground">Dernière synchronisation</Label>
+                <p className="text-sm">
+                  {new Date(account.last_synced_at).toLocaleString('fr-FR')}
+                </p>
               </div>
-            </div>
-
-            <div className="text-xs text-muted-foreground space-y-1">
-              <p><strong>Informations :</strong></p>
-              <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>Seules les promotions avec le statut "active" sont synchronisées</li>
-                <li>Les produits sont créés/mis à jour dans votre Merchant Center</li>
-                <li>Les prix promotionnels et dates sont automatiquement appliqués</li>
-                <li>Les codes-barres EAN sont inclus si disponibles</li>
-              </ul>
-            </div>
+            )}
           </div>
-        )}
 
-        {/* Documentation Links */}
-        <div className="pt-4 border-t">
-          <h4 className="text-sm font-semibold mb-2">Documentation</h4>
-          <div className="space-y-2">
-            <a
-              href="https://merchants.google.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-primary hover:underline"
-            >
-              Google Merchant Center Console
-              <ExternalLink className="h-3 w-3" />
-            </a>
-            <a
-              href="https://console.cloud.google.com/apis/library/content.googleapis.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-primary hover:underline"
-            >
-              Activer Content API for Shopping
-              <ExternalLink className="h-3 w-3" />
-            </a>
-            <a
-              href="https://developers.google.com/shopping-content/guides/quickstart"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-primary hover:underline"
-            >
-              Guide de démarrage Google
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          </div>
+          {/* Sync Actions */}
+          {canSync && (
+            <Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <AlertDescription>
+                <p className="text-sm font-medium mb-2">Prêt à synchroniser</p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Vos promotions actives seront envoyées vers Google Shopping.
+                </p>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={syncToGoogle}
+                    disabled={syncing}
+                    size="sm"
+                  >
+                    {syncing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {syncing ? "Synchronisation..." : "Synchroniser maintenant"}
+                    <RefreshCw className="ml-2 h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={disconnect}
+                  >
+                    Déconnecter
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {isConnected && !hasSelectedAccount && availableAccounts.length > 0 && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <p className="text-sm">
+                  Sélectionnez un compte Merchant Center pour activer la synchronisation.
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {!canSync && hasSelectedAccount && (
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={disconnect}>
+                Déconnecter
+              </Button>
+            </div>
+          )}
         </div>
-      </CardContent>
-    </Card>
+      )}
+
+      {/* Info Section */}
+      <div className="pt-4 border-t space-y-2">
+        <p className="text-xs font-semibold">À propos de Google Merchant Center</p>
+        <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+          <li>Diffusez vos promotions sur Google Shopping</li>
+          <li>Synchronisation à la demande depuis PromoJour</li>
+          <li>Un compte Google avec un Merchant Center est requis</li>
+          <li>Les codes-barres EAN sont automatiquement inclus</li>
+        </ul>
+        <div className="pt-2 space-y-1">
+          <a
+            href="https://merchants.google.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs text-primary hover:underline"
+          >
+            Créer un compte Merchant Center
+            <ExternalLink className="h-3 w-3" />
+          </a>
+          <a
+            href="https://support.google.com/merchants"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs text-primary hover:underline"
+          >
+            Documentation Google
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
+      </div>
+    </div>
   );
 }

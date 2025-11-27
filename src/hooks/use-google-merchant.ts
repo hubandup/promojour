@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+export interface MerchantAccountOption {
+  id: string;
+  name: string;
+  websiteUrl?: string | null;
+}
+
 export interface GoogleMerchantAccount {
   id: string;
   store_id: string;
@@ -10,6 +16,7 @@ export interface GoogleMerchantAccount {
   google_email: string | null;
   is_connected: boolean;
   last_synced_at: string | null;
+  available_accounts: MerchantAccountOption[];
   created_at: string;
   updated_at: string;
 }
@@ -18,6 +25,7 @@ export function useGoogleMerchant(storeId: string | null) {
   const [account, setAccount] = useState<GoogleMerchantAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -39,7 +47,16 @@ export function useGoogleMerchant(storeId: string | null) {
         .maybeSingle();
 
       if (error) throw error;
-      setAccount(data);
+      
+      // Cast available_accounts from Json to our type
+      if (data) {
+        setAccount({
+          ...data,
+          available_accounts: (data.available_accounts as any) || [],
+        } as GoogleMerchantAccount);
+      } else {
+        setAccount(null);
+      }
     } catch (error) {
       console.error('Error fetching Google Merchant account:', error);
     } finally {
@@ -114,7 +131,7 @@ export function useGoogleMerchant(storeId: string | null) {
     }
   };
 
-  const updateMerchantAccountId = async (merchantAccountId: string) => {
+  const selectMerchantAccount = async (merchantAccountId: string) => {
     if (!storeId) return;
 
     try {
@@ -127,17 +144,46 @@ export function useGoogleMerchant(storeId: string | null) {
 
       toast({
         title: "Succès",
-        description: "ID Merchant Center enregistré",
+        description: "Compte Merchant Center sélectionné",
       });
 
       fetchAccount();
     } catch (error) {
-      console.error('Error updating merchant account ID:', error);
+      console.error('Error selecting merchant account:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de mettre à jour l'ID",
+        description: "Impossible de sélectionner le compte",
         variant: "destructive",
       });
+    }
+  };
+
+  const refreshAccounts = async () => {
+    if (!storeId) return;
+
+    setLoadingAccounts(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('google-merchant-list-accounts', {
+        body: { storeId },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Succès",
+        description: data.message || "Comptes récupérés",
+      });
+
+      fetchAccount();
+    } catch (error) {
+      console.error('Error refreshing accounts:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de récupérer les comptes",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingAccounts(false);
     }
   };
 
@@ -201,8 +247,10 @@ export function useGoogleMerchant(storeId: string | null) {
     account,
     loading,
     syncing,
+    loadingAccounts,
     initiateOAuth,
-    updateMerchantAccountId,
+    selectMerchantAccount,
+    refreshAccounts,
     disconnect,
     syncToGoogle,
     refetch: fetchAccount,
