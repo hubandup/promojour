@@ -8,11 +8,13 @@ interface BarcodeDisplayProps {
   eanCode: string;
   size?: "small" | "medium" | "large";
   showText?: boolean;
+  onGenerate?: (eanCode: string) => void;
 }
 
-export function BarcodeDisplay({ eanCode, size = "medium", showText = true }: BarcodeDisplayProps) {
+export function BarcodeDisplay({ eanCode, size = "medium", showText = true, onGenerate }: BarcodeDisplayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const sizeConfig = {
     small: { scale: 1, height: 6 },
@@ -20,7 +22,7 @@ export function BarcodeDisplay({ eanCode, size = "medium", showText = true }: Ba
     large: { scale: 3, height: 10 },
   };
 
-  // Observer pour détecter quand le canvas est visible
+  // Observer pour détecter quand le canvas est visible dans le viewport
   useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -28,21 +30,30 @@ export function BarcodeDisplay({ eanCode, size = "medium", showText = true }: Ba
       (entries) => {
         if (entries[0].isIntersecting) {
           setIsVisible(true);
+          // Informer le parent que ce code-barre est devenu visible
+          if (onGenerate) {
+            onGenerate(eanCode);
+          }
         }
       },
-      { threshold: 0.1 }
+      { 
+        threshold: 0.1,
+        rootMargin: '100px' // Précharger 100px avant que l'élément soit visible
+      }
     );
 
     observer.observe(canvasRef.current);
 
     return () => observer.disconnect();
-  }, []);
+  }, [eanCode, onGenerate]);
 
   useEffect(() => {
-    if (!isVisible || !canvasRef.current || !eanCode) return;
+    if (!isVisible || !canvasRef.current || !eanCode || isGenerating) return;
 
-    const generateBarcode = () => {
+    const generateBarcode = async () => {
       if (!canvasRef.current) return;
+
+      setIsGenerating(true);
 
       // Vérifier d'abord le cache
       const cachedCanvas = getBarcodeFromCache(eanCode);
@@ -54,6 +65,7 @@ export function BarcodeDisplay({ eanCode, size = "medium", showText = true }: Ba
           canvasRef.current.height = cachedCanvas.height;
           ctx.drawImage(cachedCanvas, 0, 0);
         }
+        setIsGenerating(false);
         return;
       }
 
@@ -69,7 +81,7 @@ export function BarcodeDisplay({ eanCode, size = "medium", showText = true }: Ba
 
         const config = sizeConfig[size];
 
-        bwipjs.toCanvas(canvasRef.current, {
+        await bwipjs.toCanvas(canvasRef.current, {
           bcid: 'ean13',
           text: formattedCode,
           scale: config.scale,
@@ -80,13 +92,13 @@ export function BarcodeDisplay({ eanCode, size = "medium", showText = true }: Ba
         });
       } catch (error) {
         console.error("Erreur lors de la génération du code-barre:", error);
+      } finally {
+        setIsGenerating(false);
       }
     };
 
-    // Petit délai pour s'assurer que le canvas est complètement rendu
-    const timer = setTimeout(generateBarcode, 50);
-    return () => clearTimeout(timer);
-  }, [isVisible, eanCode, size, showText]);
+    generateBarcode();
+  }, [isVisible, eanCode, size, showText, isGenerating]);
 
   if (!eanCode) return null;
 
