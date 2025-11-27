@@ -720,6 +720,11 @@ const Promotions = () => {
                     </Badge>
                   )}
                 </div>
+                {promo.attributes?.cta_ean_code && (
+                  <div className="mt-3 bg-white p-2 rounded-lg border border-border/50">
+                    <BarcodeDisplay eanCode={promo.attributes.cta_ean_code} size="small" showText={true} />
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 text-sm">
@@ -779,12 +784,6 @@ const Promotions = () => {
                      <span className="text-muted-foreground">Clics:</span>
                      <span className="font-bold text-primary">{promo.clicks_count}</span>
                    </div>
-                   {promo.attributes?.cta_ean_code && (
-                     <div className="mt-3 bg-white p-3 rounded-lg border">
-                       <p className="text-xs text-muted-foreground mb-2 text-center">Code-barre EAN13</p>
-                       <BarcodeDisplay eanCode={promo.attributes.cta_ean_code} size="small" showText={true} />
-                     </div>
-                   )}
                  </div>
                 <div className="flex gap-2 mt-6">
                   <Button 
