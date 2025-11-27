@@ -60,6 +60,16 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
       return;
     }
 
+    const selectedPromo = promotions?.find(p => p.id === selectedPromoId);
+    if (!selectedPromo?.video_url) {
+      toast({
+        title: "Vidéo requise",
+        description: "Seules les promotions avec vidéo peuvent être publiées en Reel sur Facebook",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setPublishing(true);
 
     try {
@@ -160,7 +170,12 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
 
         <Button
           onClick={handlePublish}
-          disabled={!selectedPromoId || publishing || isLoading}
+          disabled={
+            !selectedPromoId || 
+            publishing || 
+            isLoading || 
+            !promotions?.find(p => p.id === selectedPromoId)?.video_url
+          }
           className="w-full"
         >
           {publishing ? (
@@ -176,8 +191,16 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
           )}
         </Button>
 
+        {selectedPromoId && !promotions?.find(p => p.id === selectedPromoId)?.video_url && (
+          <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3">
+            <p className="text-xs text-yellow-600 dark:text-yellow-500">
+              ⚠️ Cette promotion ne contient pas de vidéo. Les Reels Facebook nécessitent une vidéo pour être publiés.
+            </p>
+          </div>
+        )}
+        
         <p className="text-xs text-muted-foreground">
-          💡 Cette action publiera immédiatement la promotion sélectionnée sur votre page Facebook en tant que Reel. Seules les promotions avec vidéo peuvent être publiées.
+          💡 Cette action publiera immédiatement la promotion sélectionnée sur votre page Facebook en tant que Reel.
         </p>
       </CardContent>
     </Card>
