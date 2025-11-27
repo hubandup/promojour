@@ -153,12 +153,13 @@ async function publishFacebookPost(
   imageUrl: string,
   message: string
 ): Promise<any> {
-  // Use Facebook Photos API for better image quality
+  // Use Facebook Photos API with URL upload
   const url = `https://graph.facebook.com/v18.0/${pageId}/photos`;
   
   const params = new URLSearchParams({
     url: imageUrl,
     caption: message,
+    published: 'true',
     access_token: accessToken,
   });
 
