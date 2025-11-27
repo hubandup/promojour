@@ -751,77 +751,128 @@ const StoreDetail = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="social" className="space-y-6">
-              {/* Facebook et Instagram via SocialConnectionsManager */}
-              <SocialConnectionsManager storeId={store.id} platforms={['facebook', 'instagram']} />
-
-              {/* Google Merchant Center */}
-              <Card className="glass-card border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#4285F4]/10 flex items-center justify-center">
-                      <img src={googleMerchantLogo} alt="Google Merchant Center" className="h-6 w-6" />
-                    </div>
-                    Google Merchant Center
-                  </CardTitle>
-                  <CardDescription>
-                    Synchronisez vos promotions avec Google Shopping pour les diffuser sur les résultats de recherche Google
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <GoogleMerchantSettings storeId={store.id} />
-                </CardContent>
-              </Card>
-
-              {/* Google My Business */}
-              <Card className="glass-card border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#4285F4]/10 flex items-center justify-center">
-                      <img src={googleMyBusinessLogo} alt="Google My Business" className="h-6 w-6" />
-                    </div>
-                    Google My Business
-                  </CardTitle>
-                  <CardDescription>
-                    Synchronisez votre fiche d'établissement avec Google
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm text-muted-foreground">
-                    Bientôt disponible
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Séparateur avant la section test */}
-              <div className="relative my-8">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-border" />
+            <TabsContent value="social" className="space-y-8">
+              {/* Section principale: Connexions aux plateformes */}
+              <div className="space-y-6">
+                <div className="space-y-2 animate-fade-in">
+                  <h2 className="text-2xl font-bold tracking-tight">Connexions aux plateformes</h2>
+                  <p className="text-muted-foreground">
+                    Connectez vos comptes pour diffuser automatiquement vos promotions
+                  </p>
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Outils de test
-                  </span>
+
+                {/* Grid des plateformes sociales */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                  {/* Facebook */}
+                  <Card className="glass-card border-border/50 hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-[#1877F2]/10 flex items-center justify-center">
+                          <Facebook className="h-7 w-7 text-[#1877F2]" />
+                        </div>
+                        <div>
+                          <div className="font-semibold">Facebook</div>
+                          <div className="text-sm font-normal text-muted-foreground">
+                            Publications sur votre page
+                          </div>
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <SocialConnectionsManager storeId={store.id} platforms={['facebook']} />
+                    </CardContent>
+                  </Card>
+
+                  {/* Instagram */}
+                  <Card className="glass-card border-border/50 hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] flex items-center justify-center">
+                          <Instagram className="h-7 w-7 text-white" />
+                        </div>
+                        <div>
+                          <div className="font-semibold">Instagram</div>
+                          <div className="text-sm font-normal text-muted-foreground">
+                            Reels sur votre compte
+                          </div>
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <SocialConnectionsManager storeId={store.id} platforms={['instagram']} />
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Grid Google services */}
+                <div className="grid grid-cols-1 gap-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                  {/* Google Merchant Center */}
+                  <Card className="glass-card border-border/50 hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-[#4285F4]/10 flex items-center justify-center">
+                          <img src={googleMerchantLogo} alt="Google Merchant Center" className="h-7 w-7" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-semibold">Google Merchant Center</div>
+                          <div className="text-sm font-normal text-muted-foreground">
+                            Synchronisez avec Google Shopping
+                          </div>
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <GoogleMerchantSettings storeId={store.id} />
+                    </CardContent>
+                  </Card>
+
+                  {/* Google My Business */}
+                  <Card className="glass-card border-border/50 opacity-60">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-[#4285F4]/10 flex items-center justify-center">
+                          <img src={googleMyBusinessLogo} alt="Google My Business" className="h-7 w-7" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-semibold flex items-center gap-2">
+                            Google My Business
+                            <Badge variant="secondary" className="text-xs">Bientôt</Badge>
+                          </div>
+                          <div className="text-sm font-normal text-muted-foreground">
+                            Fiche d'établissement Google
+                          </div>
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                  </Card>
                 </div>
               </div>
 
-              {/* Test de publication manuelle - Section distincte */}
-              <Card className="border-2 border-dashed border-primary/30 bg-primary/5">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
+              {/* Section outils de test */}
+              <div className="space-y-6 pt-8 border-t animate-fade-in" style={{ animationDelay: '0.3s' }}>
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-bold tracking-tight">Outils de test</h2>
+                  <p className="text-muted-foreground">
+                    Testez vos publications avant de les automatiser
+                  </p>
+                </div>
+
+                <Card className="border-2 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors">
+                  <CardHeader>
                     <CardTitle className="flex items-center gap-2">
+                      <Share2 className="h-5 w-5" />
                       Test de publication manuelle
-                      <Badge variant="outline" className="ml-2">Test</Badge>
+                      <Badge variant="outline" className="ml-2">Dev</Badge>
                     </CardTitle>
-                  </div>
-                  <CardDescription>
-                    Testez la publication d'une promotion sur vos réseaux connectés
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ManualPublishTest storeId={store.id} />
-                </CardContent>
-              </Card>
+                    <CardDescription>
+                      Sélectionnez une promotion et testez sa publication sur vos réseaux connectés
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ManualPublishTest storeId={store.id} />
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="stats" className="space-y-6">

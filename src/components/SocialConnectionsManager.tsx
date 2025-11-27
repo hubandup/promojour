@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { supabase } from "@/integrations/supabase/client";
 import { useSocialConnections } from "@/hooks/use-social-connections";
 import { useToast } from "@/hooks/use-toast";
-import { Facebook, Instagram, MapPin, AlertCircle, ExternalLink } from "lucide-react";
+import { Facebook, Instagram, MapPin, AlertCircle, ExternalLink, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useState } from "react";
@@ -205,23 +205,14 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
       )}
       
       {platforms.includes('facebook') && (
-        <Card className="glass-card border-border/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#1877F2]/10 flex items-center justify-center">
-                <Facebook className="h-6 w-6 text-[#1877F2]" />
-              </div>
-              Facebook
-            </CardTitle>
-            <CardDescription>
-              Publiez vos promotions sur votre page Facebook
-            </CardDescription>
-          </CardHeader>
-        <CardContent>
+        <div>
           {isReallyConnected(facebookConnection) ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Badge variant="default">Connecté</Badge>
+                <Badge variant="default" className="gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Connecté
+                </Badge>
                 {facebookConnection.account_name && (
                   <span className="text-sm text-muted-foreground">
                     {facebookConnection.account_name}
@@ -230,6 +221,7 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
               </div>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => handleDisconnect('facebook')}
               >
                 Déconnecter
@@ -241,28 +233,18 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
               Connecter Facebook
             </Button>
           )}
-        </CardContent>
-        </Card>
+        </div>
       )}
 
       {platforms.includes('instagram') && (
-        <Card className="glass-card border-border/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] flex items-center justify-center">
-                <Instagram className="h-6 w-6 text-white" />
-              </div>
-              Instagram
-            </CardTitle>
-            <CardDescription>
-              Publiez vos promotions en Reels sur Instagram
-            </CardDescription>
-          </CardHeader>
-        <CardContent>
+        <div>
           {isReallyConnected(instagramConnection) ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Badge variant="default">Connecté</Badge>
+                <Badge variant="default" className="gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Connecté
+                </Badge>
                 {instagramConnection?.account_name && (
                   <span className="text-sm text-muted-foreground">
                     @{instagramConnection.account_name}
@@ -276,6 +258,7 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
               </div>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => handleDisconnect('instagram')}
               >
                 Déconnecter
@@ -289,15 +272,19 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
                   {!instagramConnection && " Aucun compte Instagram Business trouvé sur cette page Facebook."}
                 </p>
               ) : (
-                <Button onClick={handleConnectFacebook}>
-                  <Facebook className="mr-2 h-4 w-4" />
-                  Connecter via Facebook
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Connectez d'abord votre page Facebook pour accéder à Instagram
+                  </p>
+                  <Button onClick={handleConnectFacebook} variant="outline">
+                    <Facebook className="mr-2 h-4 w-4" />
+                    Connecter via Facebook
+                  </Button>
+                </div>
               )}
             </div>
           )}
-        </CardContent>
-        </Card>
+        </div>
       )}
 
       {platforms.includes('google_business') && (
@@ -313,31 +300,31 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
               Synchronisez votre fiche d'établissement avec Google
             </CardDescription>
           </CardHeader>
-        <CardContent>
-          {isReallyConnected(gmbConnection) ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Badge variant="default">Connecté</Badge>
-                {gmbConnection.account_name && (
-                  <span className="text-sm text-muted-foreground">
-                    {gmbConnection.account_name}
-                  </span>
-                )}
+          <CardContent>
+            {isReallyConnected(gmbConnection) ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Badge variant="default">Connecté</Badge>
+                  {gmbConnection.account_name && (
+                    <span className="text-sm text-muted-foreground">
+                      {gmbConnection.account_name}
+                    </span>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => handleDisconnect('google_business')}
+                >
+                  Déconnecter
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => handleDisconnect('google_business')}
-              >
-                Déconnecter
+            ) : (
+              <Button variant="outline" disabled>
+                <MapPin className="mr-2 h-4 w-4" />
+                Bientôt disponible
               </Button>
-            </div>
-          ) : (
-            <Button variant="outline" disabled>
-              <MapPin className="mr-2 h-4 w-4" />
-              Bientôt disponible
-            </Button>
-          )}
-        </CardContent>
+            )}
+          </CardContent>
         </Card>
       )}
     </div>
