@@ -23,7 +23,6 @@ import { useUserData } from "@/hooks/use-user-data";
 const promotionSchema = z.object({
   title: z.string().min(3, "Le titre doit contenir au moins 3 caractères").max(100),
   description: z.string().min(10, "La description doit contenir au moins 10 caractères").max(500).nullable(),
-  category: z.string().nullable(),
   mechanicType: z.string().min(1, "Veuillez sélectionner une mécanique promotionnelle"),
   productName: z.string().min(1, "Le nom du produit est requis"),
   ean: z.string().optional(),
@@ -84,7 +83,6 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
 
   const startDate = watch("startDate");
   const endDate = watch("endDate");
-  const category = watch("category");
   const status = watch("status");
   const mechanicType = watch("mechanicType");
   const originalPrice = watch("originalPrice");
@@ -135,7 +133,6 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
       if (data) {
         setValue('title', data.title);
         setValue('description', data.description || "");
-        setValue('category', data.category || "mode");
         setValue('status', data.status);
         setPreviousStatus(data.status); // Store the current status
         setStoreId(data.store_id || ""); // Store the store_id
@@ -318,7 +315,6 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
       const updateData: any = {
         title: data.title,
         description: data.description,
-        category: data.category,
         status: data.status,
         start_date: data.startDate.toISOString(),
         end_date: data.endDate.toISOString(),
@@ -394,6 +390,72 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Image ou vidéo - TOP */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Image ou vidéo</h3>
+            
+            <div className="space-y-4">
+              <div 
+                className={cn(
+                  "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+                  isDragging ? "border-primary bg-primary/5" : "border-border"
+                )}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <input
+                  type="file"
+                  id="images"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+                <label htmlFor="images" className="cursor-pointer">
+                  <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-sm font-medium mb-1">
+                    Cliquez ou glissez-déposez vos images ou vidéos
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    PNG, JPG, MP4 jusqu'à 10MB (max 5 fichiers)
+                  </p>
+                </label>
+              </div>
+
+              {imagePreviews.length > 0 && (
+                <div className="grid grid-cols-5 gap-4">
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border bg-muted">
+                      {previewTypes[index] === 'video' ? (
+                        <video
+                          src={preview}
+                          className="w-full h-full object-cover"
+                          controls
+                          playsInline
+                        />
+                      ) : (
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Informations générales */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Informations générales</h3>
             
@@ -422,40 +484,20 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="category">Catégorie</Label>
-                <Select value={category} onValueChange={(value) => setValue("category", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une catégorie" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mode">Mode</SelectItem>
-                    <SelectItem value="alimentation">Alimentation</SelectItem>
-                    <SelectItem value="electronique">Électronique</SelectItem>
-                    <SelectItem value="maison">Maison & Décoration</SelectItem>
-                    <SelectItem value="beaute">Beauté & Santé</SelectItem>
-                    <SelectItem value="sport">Sport & Loisirs</SelectItem>
-                    <SelectItem value="generale">Générale</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="status">Statut *</Label>
-                <Select value={status} onValueChange={(value: any) => setValue("status", value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Brouillon</SelectItem>
-                    <SelectItem value="scheduled">Programmé</SelectItem>
-                    <SelectItem value="active">Actif</SelectItem>
-                    <SelectItem value="expired">Expiré</SelectItem>
-                    <SelectItem value="archived">Archivé</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Statut *</Label>
+              <Select value={status} onValueChange={(value: any) => setValue("status", value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Actif</SelectItem>
+                  <SelectItem value="draft">Brouillon</SelectItem>
+                  <SelectItem value="scheduled">Programmé</SelectItem>
+                  <SelectItem value="expired">Expiré</SelectItem>
+                  <SelectItem value="archived">Archivé</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -463,31 +505,34 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Informations produit</h3>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="productName">Nom du produit *</Label>
-                <Input
-                  id="productName"
-                  placeholder="Ex: Chaussures Nike Air Max"
-                  {...register("productName")}
-                />
-                {errors.productName && (
-                  <p className="text-sm text-destructive">{errors.productName.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="ean">Code EAN (optionnel)</Label>
-                <Input
-                  id="ean"
-                  placeholder="Ex: 1234567890123"
-                  {...register("ean")}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="productName">Nom du produit *</Label>
+              <Input
+                id="productName"
+                placeholder="Ex: Chaussures Nike Air Max"
+                {...register("productName")}
+              />
+              {errors.productName && (
+                <p className="text-sm text-destructive">{errors.productName.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="mechanicType">Mécanique promotionnelle *</Label>
+              <Label htmlFor="ean">Code EAN (optionnel)</Label>
+              <Input
+                id="ean"
+                placeholder="Ex: 1234567890123"
+                {...register("ean")}
+              />
+            </div>
+          </div>
+
+          {/* Mécanique promotionnelle */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Mécanique promotionnelle</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="mechanicType">Type de mécanique *</Label>
               <Select value={mechanicType} onValueChange={(value) => setValue("mechanicType", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner une mécanique" />
@@ -569,6 +614,7 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
             )}
           </div>
 
+          {/* Période de validité */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Période de validité</h3>
             
@@ -636,9 +682,9 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
             </div>
           </div>
 
-          {/* Call-to-Action Frontend */}
+          {/* Bouton (CTA) */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Call-to-Action Frontend</h3>
+            <h3 className="text-lg font-semibold">Bouton</h3>
             
             <div className="space-y-2">
               <Label htmlFor="ctaText">Intitulé du bouton</Label>
@@ -648,7 +694,7 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
                 defaultValue="J'en Profite"
                 {...register("ctaText")}
               />
-              <p className="text-xs text-muted-foreground">Texte affiché sur le bouton d'action en frontend</p>
+              <p className="text-xs text-muted-foreground">Par défaut : J'en Profite</p>
             </div>
 
             <div className="space-y-2">
@@ -661,12 +707,25 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
                   <SelectValue placeholder="Sélectionner le type d'action" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="url">Lien URL</SelectItem>
                   <SelectItem value="ean">Code EAN (code-barre)</SelectItem>
+                  <SelectItem value="url">Lien URL</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">Action déclenchée lors du clic sur le bouton</p>
+              <p className="text-xs text-muted-foreground">Par défaut : Code EAN</p>
             </div>
+
+            {ctaActionType === "ean" && (
+              <div className="space-y-2">
+                <Label htmlFor="eanCode">Code EAN du bon de réduction</Label>
+                <Input
+                  id="eanCode"
+                  placeholder="1234567890123"
+                  maxLength={13}
+                  {...register("eanCode")}
+                />
+                <p className="text-xs text-muted-foreground">Code EAN à 13 chiffres pour générer le code-barre</p>
+              </div>
+            )}
 
             {ctaActionType === "url" && (
               <div className="space-y-2">
@@ -682,83 +741,6 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
                 )}
               </div>
             )}
-
-            {ctaActionType === "ean" && (
-              <div className="space-y-2">
-                <Label htmlFor="eanCode">Code EAN du bon de réduction</Label>
-                <Input
-                  id="eanCode"
-                  placeholder="1234567890123"
-                  maxLength={13}
-                  {...register("eanCode")}
-                />
-                <p className="text-xs text-muted-foreground">Code EAN à 13 chiffres pour générer le code-barre</p>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Visuels</h3>
-            
-            <div className="space-y-4">
-              <div 
-                className={cn(
-                  "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
-                  isDragging ? "border-primary bg-primary/5" : "border-border"
-                )}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <input
-                  type="file"
-                  id="images"
-                  accept="image/*,video/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleImageUpload}
-                />
-                <label htmlFor="images" className="cursor-pointer">
-                  <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-sm font-medium mb-1">
-                    Cliquez ou glissez-déposez vos images
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    PNG, JPG, MP4 jusqu'à 10MB (max 5 fichiers)
-                  </p>
-                </label>
-              </div>
-
-              {imagePreviews.length > 0 && (
-                <div className="grid grid-cols-5 gap-4">
-                  {imagePreviews.map((preview, index) => (
-                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border bg-muted">
-                      {previewTypes[index] === 'video' ? (
-                        <video
-                          src={preview}
-                          className="w-full h-full object-cover"
-                          controls
-                          playsInline
-                        />
-                      ) : (
-                        <img
-                          src={preview}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t">
