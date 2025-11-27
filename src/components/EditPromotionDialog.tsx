@@ -46,7 +46,9 @@ interface EditPromotionDialogProps {
 export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess }: EditPromotionDialogProps) => {
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [previewTypes, setPreviewTypes] = useState<('image' | 'video')[]>([]);
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
+  const [existingVideoUrl, setExistingVideoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -142,12 +144,28 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
           setValue('mechanicType', "price_discount");
         }
         
+        // Load existing media
         if (data.image_url) {
           setExistingImageUrl(data.image_url);
           setImagePreviews([data.image_url]);
+          setPreviewTypes(['image']);
         } else {
           setExistingImageUrl(null);
+        }
+
+        if (data.video_url) {
+          setExistingVideoUrl(data.video_url);
+          if (!data.image_url) {
+            setImagePreviews([data.video_url]);
+            setPreviewTypes(['video']);
+          }
+        } else {
+          setExistingVideoUrl(null);
+        }
+
+        if (!data.image_url && !data.video_url) {
           setImagePreviews([]);
+          setPreviewTypes([]);
         }
       }
     } catch (error) {
@@ -165,6 +183,9 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
     setImages((prev) => [...prev, ...files]);
     
     files.forEach((file) => {
+      const isVideo = file.type.startsWith('video/');
+      setPreviewTypes((prev) => [...prev, isVideo ? 'video' : 'image']);
+      
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreviews((prev) => [...prev, reader.result as string]);
@@ -207,6 +228,7 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
   const removeImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+    setPreviewTypes((prev) => prev.filter((_, i) => i !== index));
   };
 
   const onSubmit = async (data: PromotionFormData) => {
@@ -216,15 +238,17 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
     
     try {
       let imageUrl = existingImageUrl;
+      let videoUrl = existingVideoUrl;
 
-      // Upload new image if provided
+      // Upload new media if provided
       if (images.length > 0) {
         setUploading(true);
         const file = images[0];
         const fileExt = file.name.split('.').pop();
         const fileName = `${promotionId}-${Date.now()}.${fileExt}`;
+        const isVideo = file.type.startsWith('video/');
         
-        console.log('[EditPromotion] Uploading image:', fileName);
+        console.log('[EditPromotion] Uploading media:', fileName, 'Type:', isVideo ? 'video' : 'image');
         
         const { error: uploadError, data: uploadData } = await supabase.storage
           .from('promotion-images')
@@ -241,8 +265,13 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
           .from('promotion-images')
           .getPublicUrl(fileName);
 
-        imageUrl = publicUrl;
-        console.log('[EditPromotion] Image URL:', imageUrl);
+        if (isVideo) {
+          videoUrl = publicUrl;
+          console.log('[EditPromotion] Video URL:', videoUrl);
+        } else {
+          imageUrl = publicUrl;
+          console.log('[EditPromotion] Image URL:', imageUrl);
+        }
         setUploading(false);
       }
 
@@ -277,9 +306,12 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
         attributes,
       };
 
-      // Only update image_url if we have one
+      // Update media URLs if we have them
       if (imageUrl) {
         updateData.image_url = imageUrl;
+      }
+      if (videoUrl) {
+        updateData.video_url = videoUrl;
       }
 
       console.log('[EditPromotion] Updating promotion ID:', promotionId);
@@ -620,12 +652,21 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
               {imagePreviews.length > 0 && (
                 <div className="grid grid-cols-5 gap-4">
                   {imagePreviews.map((preview, index) => (
-                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
-                      <img
-                        src={preview}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
+                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border bg-muted">
+                      {previewTypes[index] === 'video' ? (
+                        <video
+                          src={preview}
+                          className="w-full h-full object-cover"
+                          controls
+                          playsInline
+                        />
+                      ) : (
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
                       <button
                         type="button"
                         onClick={() => removeImage(index)}
