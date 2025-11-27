@@ -100,11 +100,17 @@ export function ReelViewer({ store, promotions, previewMode = false }: ReelViewe
     await trackClick();
     
     const ctaActionType = currentPromo.attributes?.ctaActionType || "url";
+    console.log('[ReelViewer] CTA clicked. Action type:', ctaActionType);
+    console.log('[ReelViewer] Current promo attributes:', currentPromo.attributes);
     
     if (ctaActionType === "ean") {
       const eanCode = currentPromo.attributes?.eanCode;
+      console.log('[ReelViewer] EAN Code found:', eanCode);
       if (eanCode) {
+        console.log('[ReelViewer] Opening barcode dialog');
         setBarcodeDialogOpen(true);
+      } else {
+        console.error('[ReelViewer] No EAN code found in attributes');
       }
     } else {
       const ctaUrl = currentPromo.attributes?.ctaUrl;
