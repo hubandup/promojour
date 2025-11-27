@@ -21,26 +21,27 @@ export default function Pricing() {
 
   const pricingTiers = [
     {
-      name: "Gratuit",
+      name: "Essai gratuit",
       price: "0€",
-      period: "/mois",
-      description: "Parfait pour tester",
+      period: "/15 jours",
+      description: "Testez toutes les fonctionnalités",
       features: [
-        "1 magasin maximum",
-        "7 promos planifiables",
-        "Statistiques de base",
+        "1 magasin",
+        "7 promos par semaine",
         "Connexions réseaux sociaux",
-        "QR code standard",
+        "Statistiques de base",
+        "Planification 15 jours",
+        "QR code & codes-barres EAN",
       ],
-      cta: "Commencer gratuitement",
+      cta: "Commencer l'essai gratuit",
       variant: "outline" as const,
       priceId: null,
       highlighted: false,
     },
     {
       name: "Magasin Pro",
-      price: "49€",
-      period: "/mois",
+      price: "39€",
+      period: " HT/mois",
       description: "Le meilleur choix pour les commerçants",
       features: [
         "Jusqu'à 5 magasins",
@@ -48,10 +49,12 @@ export default function Pricing() {
         "Statistiques complètes",
         "Import CSV/Excel",
         "QR codes personnalisés",
+        "Codes-barres EAN",
+        "Vidéos & Reels",
         "Jusqu'à 5 utilisateurs",
         "Support prioritaire",
       ],
-      cta: "Démarrer l'essai gratuit",
+      cta: "Démarrer",
       variant: "default" as const,
       priceId: tiers.magasin_pro.price_id,
       highlighted: true,
@@ -59,9 +62,9 @@ export default function Pricing() {
     {
       name: "Centrale",
       price: "180€",
-      period: "/mois",
+      period: " HT/mois",
       description: "Pour les réseaux et franchises",
-      note: "+ 19€/mois par magasin",
+      note: "+ 19€ HT/mois par magasin",
       features: [
         "Magasins illimités",
         "Utilisateurs illimités",
@@ -70,6 +73,7 @@ export default function Pricing() {
         "Import en masse",
         "Contrôle des champs promos",
         "Dashboard réseau complet",
+        "Rôles franchisés & managers",
         "Support dédié",
       ],
       cta: "Commencer",
@@ -225,10 +229,10 @@ export default function Pricing() {
 
             <Card>
               <CardContent className="p-6">
-                <h3 className="font-bold mb-2">La formule Gratuite est-elle vraiment gratuite ?</h3>
+                <h3 className="font-bold mb-2">L'essai gratuit nécessite-t-il une carte bancaire ?</h3>
                 <p className="text-muted-foreground text-sm">
-                  Oui, 100% gratuite. Aucune carte bancaire requise pour démarrer. 
-                  Idéale pour tester PromoJour avec un magasin.
+                  Non, aucune carte bancaire requise pour démarrer votre essai de 15 jours. 
+                  Testez toutes les fonctionnalités en toute liberté, sans engagement.
                 </p>
               </CardContent>
             </Card>
@@ -237,7 +241,7 @@ export default function Pricing() {
               <CardContent className="p-6">
                 <h3 className="font-bold mb-2">Comment fonctionne la tarification de la formule Centrale ?</h3>
                 <p className="text-muted-foreground text-sm">
-                  La formule Centrale est facturée 180€/mois de base, puis 19€/mois pour chaque magasin supplémentaire. 
+                  La formule Centrale est facturée 180€ HT/mois de base, puis 19€ HT/mois pour chaque magasin supplémentaire. 
                   Parfait pour les réseaux de franchise ou enseignes avec plusieurs points de vente.
                 </p>
               </CardContent>
