@@ -1,6 +1,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useEffect, useRef } from "react";
-import JsBarcode from "jsbarcode";
+
+// @ts-ignore - bwip-js doesn't have TypeScript declarations
+import bwipjs from "bwip-js";
 
 interface BarcodeDialogProps {
   open: boolean;
@@ -14,11 +16,9 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
 
   useEffect(() => {
     if (open && barcodeRef.current && eanCode) {
-      console.log("Génération du code-barre avec EAN:", eanCode);
       try {
-        // Format to 12 digits - JsBarcode will calculate the 13th check digit
-        let formattedCode = eanCode.replace(/\D/g, ''); // Remove non-digits
-        console.log("Code formaté:", formattedCode);
+        // Format to 12 digits for EAN13
+        let formattedCode = eanCode.replace(/\D/g, '');
         
         if (formattedCode.length < 12) {
           formattedCode = formattedCode.padStart(12, '0');
@@ -26,26 +26,21 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
           formattedCode = formattedCode.substring(0, 12);
         }
 
-        console.log("Code final pour JsBarcode (12 chiffres):", formattedCode);
-
-        // Use Canvas instead of SVG for better iOS Safari compatibility
-        JsBarcode(barcodeRef.current, formattedCode, {
-          format: "EAN13",
-          width: 2,
-          height: 80,
-          displayValue: true,
-          fontSize: 14,
-          background: "#ffffff",
-          lineColor: "#000000",
-          margin: 10
+        // Use bwip-js for better mobile compatibility
+        bwipjs.toCanvas(barcodeRef.current, {
+          bcid: 'ean13',
+          text: formattedCode,
+          scale: 3,
+          height: 10,
+          includetext: true,
+          textxalign: 'center',
+          backgroundcolor: 'ffffff',
         });
         
         console.log("Code-barre généré avec succès");
       } catch (error) {
         console.error("Erreur lors de la génération du code-barre:", error);
       }
-    } else {
-      console.log("Conditions non remplies - open:", open, "canvas:", !!barcodeRef.current, "eanCode:", eanCode);
     }
   }, [open, eanCode]);
 
@@ -63,7 +58,7 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
             {promotionTitle}
           </p>
           <div className="bg-white p-4 rounded-lg border">
-            <canvas ref={barcodeRef} width="250" height="100"></canvas>
+            <canvas ref={barcodeRef}></canvas>
           </div>
           <p className="text-xs text-muted-foreground">
             Présentez ce code-barre en caisse
