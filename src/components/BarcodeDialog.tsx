@@ -10,7 +10,7 @@ interface BarcodeDialogProps {
 }
 
 export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: BarcodeDialogProps) {
-  const barcodeRef = useRef<SVGSVGElement>(null);
+  const barcodeRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (open && barcodeRef.current && eanCode) {
@@ -24,11 +24,7 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
           formattedCode = formattedCode.substring(0, 12);
         }
 
-        // Clear any existing SVG content first
-        if (barcodeRef.current) {
-          barcodeRef.current.innerHTML = '';
-        }
-
+        // Use Canvas instead of SVG for better iOS Safari compatibility
         JsBarcode(barcodeRef.current, formattedCode, {
           format: "EAN13",
           width: 2,
@@ -57,7 +53,7 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
             {promotionTitle}
           </p>
           <div className="bg-white p-4 rounded-lg border">
-            <svg ref={barcodeRef}></svg>
+            <canvas ref={barcodeRef}></canvas>
           </div>
           <p className="text-xs text-muted-foreground">
             Présentez ce code-barre en caisse
