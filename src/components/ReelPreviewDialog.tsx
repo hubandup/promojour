@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ReelViewer } from "./ReelViewer";
 import { Store } from "@/hooks/use-stores";
 import { Promotion } from "@/hooks/use-promotions";
@@ -42,6 +42,7 @@ export function ReelPreviewDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-full h-screen p-0 border-0">
+        <DialogTitle className="sr-only">Aperçu de la promotion</DialogTitle>
         <ReelViewer 
           store={mockStore} 
           promotions={[promotion]} 
