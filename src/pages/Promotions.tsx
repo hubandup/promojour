@@ -33,6 +33,7 @@ import { ReelPreviewDialog } from "@/components/ReelPreviewDialog";
 import { BulkImportPromotionsDialog } from "@/components/BulkImportPromotionsDialog";
 import { PromotionsCalendar } from "@/components/PromotionsCalendar";
 import { ProfileBadge } from "@/components/ProfileBadge";
+import { BarcodeDisplay } from "@/components/BarcodeDisplay";
 import { usePromotions } from "@/hooks/use-promotions";
 import { useUserData } from "@/hooks/use-user-data";
 import { useStores } from "@/hooks/use-stores";
@@ -507,11 +508,18 @@ const Promotions = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {promo.attributes?.mechanicType && getMechanicName(promo.attributes.mechanicType) && (
-                      <Badge variant="secondary" className="bg-primary/10 text-primary">
-                        {getMechanicName(promo.attributes.mechanicType)}
-                      </Badge>
-                    )}
+                    <div className="space-y-2">
+                      {promo.attributes?.mechanicType && getMechanicName(promo.attributes.mechanicType) && (
+                        <Badge variant="secondary" className="bg-primary/10 text-primary">
+                          {getMechanicName(promo.attributes.mechanicType)}
+                        </Badge>
+                      )}
+                      {promo.attributes?.cta_ean_code && (
+                        <div className="mt-2 bg-white p-2 rounded border">
+                          <BarcodeDisplay eanCode={promo.attributes.cta_ean_code} size="small" showText={false} />
+                        </div>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {promo.attributes?.originalPrice && (
@@ -767,11 +775,17 @@ const Promotions = () => {
                     <span className="text-muted-foreground">Vues:</span>
                     <span className="font-bold text-primary">{promo.views_count}</span>
                   </div>
-                  <div className="flex justify-between p-2 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5">
-                    <span className="text-muted-foreground">Clics:</span>
-                    <span className="font-bold text-primary">{promo.clicks_count}</span>
-                  </div>
-                </div>
+                   <div className="flex justify-between p-2 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5">
+                     <span className="text-muted-foreground">Clics:</span>
+                     <span className="font-bold text-primary">{promo.clicks_count}</span>
+                   </div>
+                   {promo.attributes?.cta_ean_code && (
+                     <div className="mt-3 bg-white p-3 rounded-lg border">
+                       <p className="text-xs text-muted-foreground mb-2 text-center">Code-barre EAN13</p>
+                       <BarcodeDisplay eanCode={promo.attributes.cta_ean_code} size="small" showText={true} />
+                     </div>
+                   )}
+                 </div>
                 <div className="flex gap-2 mt-6">
                   <Button 
                     variant="outline" 
