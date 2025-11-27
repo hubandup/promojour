@@ -71,11 +71,11 @@ const Promotions = () => {
   const { campaigns, loading: campaignsLoading } = useCampaigns();
   const { mechanics, isLoading: mechanicsLoading } = usePromotionalMechanics();
 
-  // Précharger tous les codes-barres des promotions
+  // Précharger uniquement les 5 premiers codes-barres visibles
   const eanCodes = promotions
     .map(p => p.attributes?.cta_ean_code)
     .filter(Boolean) as string[];
-  useBarcodePreload(eanCodes);
+  const { generateBarcode } = useBarcodePreload(eanCodes);
 
   const loading = promotionsLoading || userLoading || storesLoading || campaignsLoading || mechanicsLoading;
 
@@ -523,7 +523,12 @@ const Promotions = () => {
                       )}
                       {promo.attributes?.cta_ean_code && (
                         <div className="mt-2 bg-white p-2 rounded border">
-                          <BarcodeDisplay eanCode={promo.attributes.cta_ean_code} size="small" showText={false} />
+                          <BarcodeDisplay 
+                            eanCode={promo.attributes.cta_ean_code} 
+                            size="small" 
+                            showText={false}
+                            onGenerate={generateBarcode}
+                          />
                         </div>
                       )}
                     </div>
@@ -729,7 +734,12 @@ const Promotions = () => {
                 </div>
                 {promo.attributes?.cta_ean_code && (
                   <div className="mt-3 bg-white p-2 rounded-lg border border-border/50">
-                    <BarcodeDisplay eanCode={promo.attributes.cta_ean_code} size="small" showText={true} />
+                    <BarcodeDisplay 
+                      eanCode={promo.attributes.cta_ean_code} 
+                      size="small" 
+                      showText={true}
+                      onGenerate={generateBarcode}
+                    />
                   </div>
                 )}
               </CardHeader>
