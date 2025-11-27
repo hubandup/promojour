@@ -73,6 +73,10 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
     resolver: zodResolver(promotionSchema),
     defaultValues: {
       status: "draft",
+      ctaText: "J'en Profite",
+      ctaActionType: "url",
+      ctaUrl: "",
+      eanCode: "",
     },
   });
 
@@ -648,7 +652,7 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
             <div className="space-y-2">
               <Label htmlFor="ctaActionType">Type d'action</Label>
               <Select 
-                value={ctaActionType || "url"} 
+                value={ctaActionType} 
                 onValueChange={(value: "url" | "ean") => setValue("ctaActionType", value)}
               >
                 <SelectTrigger>
