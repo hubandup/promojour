@@ -49,13 +49,7 @@ export function GoogleMerchantSettings({ storeId }: GoogleMerchantSettingsProps)
   return (
     <div className="space-y-6">
       {/* Connection Status */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Google Merchant Center</h3>
-          <p className="text-sm text-muted-foreground">
-            Diffusez vos promotions sur Google Shopping
-          </p>
-        </div>
+      <div className="flex items-center justify-end">
         {isConnected ? (
           <Badge variant="default" className="gap-1">
             <CheckCircle2 className="h-3 w-3" />

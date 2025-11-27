@@ -32,6 +32,8 @@ import {
   Save,
   Share2,
 } from "lucide-react";
+import googleMerchantLogo from "@/assets/google-merchant-center.svg";
+import googleMyBusinessLogo from "@/assets/google-my-business.png";
 
 interface Store {
   id: string;
@@ -750,21 +752,18 @@ const StoreDetail = () => {
             </TabsContent>
 
             <TabsContent value="social" className="space-y-6">
-              <Card className="glass-card border-border/50">
-                <CardHeader>
-                  <CardTitle>Réseaux sociaux</CardTitle>
-                  <CardDescription>
-                    Connectez vos comptes Facebook et Instagram pour publier vos promotions
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <SocialConnectionsManager storeId={store.id} />
-                </CardContent>
-              </Card>
+              {/* Facebook et Instagram via SocialConnectionsManager */}
+              <SocialConnectionsManager storeId={store.id} platforms={['facebook', 'instagram']} />
 
+              {/* Google Merchant Center */}
               <Card className="glass-card border-border/50">
                 <CardHeader>
-                  <CardTitle>Google Merchant Center</CardTitle>
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-[#4285F4]/10 flex items-center justify-center">
+                      <img src={googleMerchantLogo} alt="Google Merchant Center" className="h-6 w-6" />
+                    </div>
+                    Google Merchant Center
+                  </CardTitle>
                   <CardDescription>
                     Synchronisez vos promotions avec Google Shopping pour les diffuser sur les résultats de recherche Google
                   </CardDescription>
@@ -774,6 +773,27 @@ const StoreDetail = () => {
                 </CardContent>
               </Card>
 
+              {/* Google My Business */}
+              <Card className="glass-card border-border/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-[#4285F4]/10 flex items-center justify-center">
+                      <img src={googleMyBusinessLogo} alt="Google My Business" className="h-6 w-6" />
+                    </div>
+                    Google My Business
+                  </CardTitle>
+                  <CardDescription>
+                    Synchronisez votre fiche d'établissement avec Google
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-sm text-muted-foreground">
+                    Bientôt disponible
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Test de publication manuelle */}
               <Card className="glass-card border-border/50">
                 <CardHeader>
                   <CardTitle>Test de publication manuelle</CardTitle>

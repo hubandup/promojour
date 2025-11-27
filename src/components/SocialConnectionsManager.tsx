@@ -10,9 +10,10 @@ import { useState } from "react";
 
 interface SocialConnectionsManagerProps {
   storeId: string;
+  platforms?: ('facebook' | 'instagram' | 'google_business')[];
 }
 
-export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerProps) {
+export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'instagram', 'google_business'] }: SocialConnectionsManagerProps) {
   const { connections, loading, refetch } = useSocialConnections(storeId);
   const { toast } = useToast();
   const [showConfigGuide, setShowConfigGuide] = useState(false);
@@ -203,16 +204,19 @@ export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerPr
         </Alert>
       )}
       
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Facebook className="h-5 w-5 text-[hsl(var(--primary))]" />
-            Facebook
-          </CardTitle>
-          <CardDescription>
-            Publiez vos promotions sur votre page Facebook
-          </CardDescription>
-        </CardHeader>
+      {platforms.includes('facebook') && (
+        <Card className="glass-card border-border/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[#1877F2]/10 flex items-center justify-center">
+                <Facebook className="h-6 w-6 text-[#1877F2]" />
+              </div>
+              Facebook
+            </CardTitle>
+            <CardDescription>
+              Publiez vos promotions sur votre page Facebook
+            </CardDescription>
+          </CardHeader>
         <CardContent>
           {isReallyConnected(facebookConnection) ? (
             <div className="flex items-center justify-between">
@@ -238,18 +242,22 @@ export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerPr
             </Button>
           )}
         </CardContent>
-      </Card>
+        </Card>
+      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Instagram className="h-5 w-5 text-[hsl(var(--primary))]" />
-            Instagram
-          </CardTitle>
-          <CardDescription>
-            Publiez vos promotions en Reels sur Instagram
-          </CardDescription>
-        </CardHeader>
+      {platforms.includes('instagram') && (
+        <Card className="glass-card border-border/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] flex items-center justify-center">
+                <Instagram className="h-6 w-6 text-white" />
+              </div>
+              Instagram
+            </CardTitle>
+            <CardDescription>
+              Publiez vos promotions en Reels sur Instagram
+            </CardDescription>
+          </CardHeader>
         <CardContent>
           {isReallyConnected(instagramConnection) ? (
             <div className="flex items-center justify-between">
@@ -289,18 +297,22 @@ export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerPr
             </div>
           )}
         </CardContent>
-      </Card>
+        </Card>
+      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-[hsl(var(--primary))]" />
-            Google My Business
-          </CardTitle>
-          <CardDescription>
-            Publiez vos promotions sur votre fiche Google Business
-          </CardDescription>
-        </CardHeader>
+      {platforms.includes('google_business') && (
+        <Card className="glass-card border-border/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[#4285F4]/10 flex items-center justify-center">
+                <MapPin className="h-6 w-6 text-[#4285F4]" />
+              </div>
+              Google My Business
+            </CardTitle>
+            <CardDescription>
+              Synchronisez votre fiche d'établissement avec Google
+            </CardDescription>
+          </CardHeader>
         <CardContent>
           {isReallyConnected(gmbConnection) ? (
             <div className="flex items-center justify-between">
@@ -326,7 +338,8 @@ export function SocialConnectionsManager({ storeId }: SocialConnectionsManagerPr
             </Button>
           )}
         </CardContent>
-      </Card>
+        </Card>
+      )}
     </div>
   );
 }
