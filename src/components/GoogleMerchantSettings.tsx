@@ -109,7 +109,7 @@ export function GoogleMerchantSettings({ storeId }: GoogleMerchantSettingsProps)
                     <p className="text-xs mb-3">
                       Créez un compte sur{" "}
                       <a 
-                        href="https://merchants.google.com" 
+                        href="https://business.google.com/ca-fr/merchant-center/" 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="underline"
@@ -244,7 +244,7 @@ export function GoogleMerchantSettings({ storeId }: GoogleMerchantSettingsProps)
         </ul>
         <div className="pt-2 space-y-1">
           <a
-            href="https://merchants.google.com/"
+            href="https://business.google.com/ca-fr/merchant-center/"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-xs text-primary hover:underline"
@@ -253,7 +253,7 @@ export function GoogleMerchantSettings({ storeId }: GoogleMerchantSettingsProps)
             <ExternalLink className="h-3 w-3" />
           </a>
           <a
-            href="https://support.google.com/merchants"
+            href="https://support.google.com/merchants?hl=fr&sjid=2045488710065134553-EU#topic=12158920"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-xs text-primary hover:underline"
