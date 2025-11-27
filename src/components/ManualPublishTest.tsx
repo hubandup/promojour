@@ -37,12 +37,12 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
 
       if (!store) throw new Error('Store not found');
 
-      // Récupérer toutes les promotions actives (centrales ou du magasin)
+      // Récupérer toutes les promotions actives et programmées (centrales ou du magasin)
       const { data, error } = await supabase
         .from('promotions')
         .select('*')
         .eq('organization_id', store.organization_id)
-        .eq('status', 'active')
+        .in('status', ['active', 'scheduled'])
         .order('created_at', { ascending: false })
         .limit(20);
 
