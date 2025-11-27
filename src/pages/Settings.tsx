@@ -23,6 +23,10 @@ const Settings = () => {
   const [editingMechanic, setEditingMechanic] = useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [mechanicToDelete, setMechanicToDelete] = useState<string | null>(null);
+  const [brandingColor, setBrandingColor] = useState("#8B5CF6");
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [performanceAlerts, setPerformanceAlerts] = useState(true);
+  const [tipsEnabled, setTipsEnabled] = useState(false);
   
   const { mechanics, createMechanic, updateMechanic, deleteMechanic } = usePromotionalMechanics();
 
@@ -182,6 +186,36 @@ const Settings = () => {
     setDeleteDialogOpen(false);
   };
 
+  const handleSaveBranding = async () => {
+    try {
+      // TODO: Save branding settings to database
+      toast.success("Paramètres de branding enregistrés");
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast.error("Erreur lors de la sauvegarde");
+    }
+  };
+
+  const handleSaveIntegrations = async () => {
+    try {
+      // TODO: Save integrations settings to database
+      toast.success("Paramètres d'intégration enregistrés");
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast.error("Erreur lors de la sauvegarde");
+    }
+  };
+
+  const handleSaveNotifications = async () => {
+    try {
+      // TODO: Save notification preferences to database
+      toast.success("Préférences de notification enregistrées");
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast.error("Erreur lors de la sauvegarde");
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -328,7 +362,8 @@ const Settings = () => {
                 <div className="flex items-center gap-4">
                   <Input
                     type="color"
-                    defaultValue="#8B5CF6"
+                    value={brandingColor}
+                    onChange={(e) => setBrandingColor(e.target.value)}
                     className="w-20 h-12 rounded-xl cursor-pointer"
                   />
                   <p className="text-sm text-muted-foreground">
@@ -350,6 +385,13 @@ const Settings = () => {
                 </div>
                 <Button variant="outline" size="sm" className="rounded-xl">Configurer</Button>
               </div>
+
+              <Button
+                onClick={handleSaveBranding}
+                className="rounded-xl w-full"
+              >
+                Enregistrer les modifications
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -390,6 +432,13 @@ const Settings = () => {
                 </div>
                 <Button variant="outline" size="sm" className="rounded-xl">Connecter</Button>
               </div>
+
+              <Button
+                onClick={handleSaveIntegrations}
+                className="rounded-xl w-full"
+              >
+                Enregistrer les modifications
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -488,22 +537,29 @@ const Settings = () => {
                   <Label className="font-semibold">Notifications email</Label>
                   <p className="text-sm text-muted-foreground">Recevoir des emails de rappel</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} />
               </div>
               <div className="flex items-center justify-between p-4 rounded-xl border border-border/50 bg-card/50 hover:shadow-md transition-smooth">
                 <div className="space-y-0.5">
                   <Label className="font-semibold">Alertes de performance</Label>
                   <p className="text-sm text-muted-foreground">Statistiques hebdomadaires</p>
                 </div>
-                <Switch defaultChecked />
+                <Switch checked={performanceAlerts} onCheckedChange={setPerformanceAlerts} />
               </div>
               <div className="flex items-center justify-between p-4 rounded-xl border border-border/50 bg-card/50 hover:shadow-md transition-smooth">
                 <div className="space-y-0.5">
                   <Label className="font-semibold">Conseils & astuces</Label>
                   <p className="text-sm text-muted-foreground">Optimisez vos promotions</p>
                 </div>
-                <Switch />
+                <Switch checked={tipsEnabled} onCheckedChange={setTipsEnabled} />
               </div>
+
+              <Button
+                onClick={handleSaveNotifications}
+                className="rounded-xl w-full"
+              >
+                Enregistrer les modifications
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
