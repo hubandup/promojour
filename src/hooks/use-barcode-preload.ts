@@ -51,9 +51,9 @@ export function useBarcodePreload(eanCodes: string[]) {
     }
   }, []);
 
-  // Précharger uniquement les 5 premiers codes-barres au montage
+  // Précharger uniquement les 10 premiers codes-barres au montage
   useEffect(() => {
-    const initialCodes = eanCodes.slice(0, 5);
+    const initialCodes = eanCodes.slice(0, 10);
     
     const preloadInitial = async () => {
       for (const code of initialCodes) {
