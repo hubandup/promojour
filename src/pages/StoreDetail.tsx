@@ -798,48 +798,51 @@ const StoreDetail = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {Object.entries(hours).map(([day, dayHours]: [string, any]) => (
-                      <div key={day} className="flex items-center gap-4">
-                        <div className="w-24 font-medium text-sm capitalize">{day}</div>
-                        {editingHours ? (
-                          <>
-                            <Input
-                              type="time"
-                              value={dayHours.open || "09:00"}
-                              onChange={(e) => updateHours(day, "open", e.target.value)}
-                              disabled={dayHours.closed}
-                              className="w-32 rounded-xl"
-                            />
-                            <span className="text-muted-foreground">-</span>
-                            <Input
-                              type="time"
-                              value={dayHours.close || "19:00"}
-                              onChange={(e) => updateHours(day, "close", e.target.value)}
-                              disabled={dayHours.closed}
-                              className="w-32 rounded-xl"
-                            />
-                            <Button
-                              variant={dayHours.closed ? "outline" : "ghost"}
-                              size="sm"
-                              onClick={() => updateHours(day, "closed", !dayHours.closed)}
-                              className="rounded-xl"
-                            >
-                              {dayHours.closed ? "Fermé" : "Ouvert"}
-                            </Button>
-                          </>
-                        ) : (
-                          <div className="text-muted-foreground">
-                            {dayHours.closed ? (
-                              <span className="text-red-500">Fermé</span>
-                            ) : (
-                              <span>
-                                {dayHours.open} - {dayHours.close}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                    {['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'].map((day) => {
+                      const dayHours = hours[day] || { open: "09:00", close: "19:00", closed: false };
+                      return (
+                        <div key={day} className="flex items-center gap-4">
+                          <div className="w-24 font-medium text-sm capitalize">{day}</div>
+                          {editingHours ? (
+                            <>
+                              <Input
+                                type="time"
+                                value={dayHours.open || "09:00"}
+                                onChange={(e) => updateHours(day, "open", e.target.value)}
+                                disabled={dayHours.closed}
+                                className="w-32 rounded-xl"
+                              />
+                              <span className="text-muted-foreground">-</span>
+                              <Input
+                                type="time"
+                                value={dayHours.close || "19:00"}
+                                onChange={(e) => updateHours(day, "close", e.target.value)}
+                                disabled={dayHours.closed}
+                                className="w-32 rounded-xl"
+                              />
+                              <Button
+                                variant={dayHours.closed ? "outline" : "ghost"}
+                                size="sm"
+                                onClick={() => updateHours(day, "closed", !dayHours.closed)}
+                                className="rounded-xl"
+                              >
+                                {dayHours.closed ? "Fermé" : "Ouvert"}
+                              </Button>
+                            </>
+                          ) : (
+                            <div className="text-muted-foreground">
+                              {dayHours.closed ? (
+                                <span className="text-red-500">Fermé</span>
+                              ) : (
+                                <span>
+                                  {dayHours.open} - {dayHours.close}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
