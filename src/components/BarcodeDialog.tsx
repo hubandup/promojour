@@ -13,17 +13,10 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
   const barcodeRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
-    console.log('[BarcodeDialog] Dialog open:', open);
-    console.log('[BarcodeDialog] EAN Code:', eanCode);
-    console.log('[BarcodeDialog] Ref:', barcodeRef.current);
-    
     if (open && barcodeRef.current && eanCode) {
       try {
         // Pad or truncate to 13 digits for EAN13
         let formattedCode = eanCode.replace(/\D/g, ''); // Remove non-digits
-        
-        console.log('[BarcodeDialog] Original code:', eanCode);
-        console.log('[BarcodeDialog] Formatted code:', formattedCode);
         
         if (formattedCode.length < 13) {
           // Pad with zeros to reach 13 digits
@@ -32,8 +25,6 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
           // Truncate to 13 digits
           formattedCode = formattedCode.substring(0, 13);
         }
-
-        console.log('[BarcodeDialog] Final code for EAN13:', formattedCode);
 
         JsBarcode(barcodeRef.current, formattedCode, {
           format: "EAN13",
@@ -44,8 +35,6 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
           background: "#ffffff",
           lineColor: "#000000"
         });
-        
-        console.log('[BarcodeDialog] Barcode generated successfully');
       } catch (error) {
         console.error("Erreur lors de la génération du code-barre:", error);
       }

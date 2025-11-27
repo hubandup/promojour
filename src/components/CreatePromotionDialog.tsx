@@ -69,6 +69,10 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
       status: "draft",
       category: "mode",
       mechanicType: "price_discount",
+      ctaText: "J'en Profite",
+      ctaActionType: "url",
+      ctaUrl: "",
+      eanCode: "",
     },
   });
 
@@ -567,7 +571,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
             <div className="space-y-2">
               <Label htmlFor="ctaActionType">Type d'action</Label>
               <Select 
-                value={ctaActionType || "url"} 
+                value={ctaActionType} 
                 onValueChange={(value: "url" | "ean") => setValue("ctaActionType", value)}
               >
                 <SelectTrigger>
