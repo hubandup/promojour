@@ -793,10 +793,27 @@ const StoreDetail = () => {
                 </CardContent>
               </Card>
 
-              {/* Test de publication manuelle */}
-              <Card className="glass-card border-border/50">
+              {/* Séparateur avant la section test */}
+              <div className="relative my-8">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Outils de test
+                  </span>
+                </div>
+              </div>
+
+              {/* Test de publication manuelle - Section distincte */}
+              <Card className="border-2 border-dashed border-primary/30 bg-primary/5">
                 <CardHeader>
-                  <CardTitle>Test de publication manuelle</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      Test de publication manuelle
+                      <Badge variant="outline" className="ml-2">Test</Badge>
+                    </CardTitle>
+                  </div>
                   <CardDescription>
                     Testez la publication d'une promotion sur vos réseaux connectés
                   </CardDescription>
