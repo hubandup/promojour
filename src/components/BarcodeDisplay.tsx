@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getBarcodeFromCache } from "@/hooks/use-barcode-preload";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // @ts-ignore - bwip-js doesn't have TypeScript declarations
 import bwipjs from "bwip-js";
@@ -102,9 +103,25 @@ export function BarcodeDisplay({ eanCode, size = "medium", showText = true, onGe
 
   if (!eanCode) return null;
 
+  const sizeMap = {
+    small: { width: 150, height: 60 },
+    medium: { width: 200, height: 80 },
+    large: { width: 300, height: 100 },
+  };
+
   return (
     <div className="flex flex-col items-center gap-1">
-      <canvas ref={canvasRef} className="max-w-full" />
+      {isGenerating ? (
+        <Skeleton 
+          className="rounded-md" 
+          style={{ 
+            width: `${sizeMap[size].width}px`, 
+            height: `${sizeMap[size].height}px` 
+          }} 
+        />
+      ) : (
+        <canvas ref={canvasRef} className="max-w-full" />
+      )}
       {showText && (
         <p className="text-xs text-muted-foreground">
           Code-barres : {eanCode}
