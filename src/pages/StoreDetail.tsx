@@ -750,8 +750,7 @@ const StoreDetail = () => {
 
             <TabsContent value="social" className="space-y-6">
               <SocialConnectionsManager storeId={store.id} />
-              {/* AutoPublishSettings temporairement désactivé pour debug */}
-              {/* <AutoPublishSettings storeId={store.id} /> */}
+              <AutoPublishSettings storeId={store.id} />
             </TabsContent>
 
             <TabsContent value="stats" className="space-y-6">

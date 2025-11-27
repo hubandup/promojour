@@ -11,19 +11,20 @@ interface AutoPublishSettingsProps {
 }
 
 export function AutoPublishSettings({ storeId }: AutoPublishSettingsProps) {
-  const { settings, loading, updateSettings } = useStoreAutoPublishSettings(storeId);
+  const { settings, loading, isInitialized, updateSettings } = useStoreAutoPublishSettings(storeId);
   const { connections, loading: connectionsLoading } = useSocialConnections(storeId);
 
   const facebookConnected = connections.some(c => c.platform === 'facebook' && c.is_connected);
   const instagramConnected = connections.some(c => c.platform === 'instagram' && c.is_connected);
 
-  // Protection robuste contre les valeurs undefined
-  const autoPublishFacebook = settings?.auto_publish_facebook ?? false;
-  const autoPublishInstagram = settings?.auto_publish_instagram ?? false;
-
-  if (loading || connectionsLoading || !settings) {
+  // Attendre l'initialisation complète avant de rendre les Switch
+  if (!isInitialized || connectionsLoading) {
     return <div>Chargement...</div>;
   }
+
+  // Valeurs garanties après initialisation
+  const autoPublishFacebook = settings.auto_publish_facebook;
+  const autoPublishInstagram = settings.auto_publish_instagram;
 
   return (
     <Card>

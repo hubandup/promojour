@@ -13,6 +13,7 @@ export function useStoreAutoPublishSettings(storeId: string) {
     auto_publish_instagram: false,
   });
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export function useStoreAutoPublishSettings(storeId: string) {
 
   const fetchSettings = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('store_settings')
         .select('auto_publish_facebook, auto_publish_instagram')
@@ -33,8 +35,8 @@ export function useStoreAutoPublishSettings(storeId: string) {
 
       if (data) {
         setSettings({
-          auto_publish_facebook: data.auto_publish_facebook || false,
-          auto_publish_instagram: data.auto_publish_instagram || false,
+          auto_publish_facebook: data.auto_publish_facebook ?? false,
+          auto_publish_instagram: data.auto_publish_instagram ?? false,
         });
       }
     } catch (error) {
@@ -46,6 +48,7 @@ export function useStoreAutoPublishSettings(storeId: string) {
       });
     } finally {
       setLoading(false);
+      setIsInitialized(true);
     }
   };
 
@@ -84,6 +87,7 @@ export function useStoreAutoPublishSettings(storeId: string) {
   return {
     settings,
     loading,
+    isInitialized,
     updateSettings,
     refetch: fetchSettings,
   };
