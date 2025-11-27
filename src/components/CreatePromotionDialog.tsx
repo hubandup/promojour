@@ -46,9 +46,10 @@ interface CreatePromotionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  defaultStoreId?: string;
 }
 
-export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreatePromotionDialogProps) => {
+export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultStoreId }: CreatePromotionDialogProps) => {
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -249,6 +250,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
         .from('promotions')
         .insert({
           organization_id: profile.organization_id,
+          store_id: defaultStoreId || null,
           title: data.title,
           description: data.description,
           category: data.category,
