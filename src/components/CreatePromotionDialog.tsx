@@ -35,7 +35,7 @@ const promotionSchema = z.object({
   status: z.enum(["draft", "scheduled", "active", "archived"]),
   ctaText: z.string().optional(),
   ctaActionType: z.enum(["url", "ean"]).optional(),
-  ctaUrl: z.string().url("L'URL doit être valide").optional().or(z.literal("")),
+  ctaUrl: z.union([z.string().url("L'URL doit être valide"), z.literal("")]).optional(),
   eanCode: z.string().optional(),
 });
 

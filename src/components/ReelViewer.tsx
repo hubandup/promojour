@@ -97,19 +97,33 @@ export function ReelViewer({ store, promotions, previewMode = false }: ReelViewe
   };
 
   const handleCtaClick = async () => {
+    console.log('[ReelViewer] === CTA CLICKED ===');
+    console.log('[ReelViewer] Current promo:', currentPromo);
+    console.log('[ReelViewer] Attributes:', currentPromo.attributes);
+    
     await trackClick();
     
     const ctaActionType = currentPromo.attributes?.ctaActionType || "url";
+    const eanCode = currentPromo.attributes?.eanCode;
+    const ctaUrl = currentPromo.attributes?.ctaUrl;
+    
+    console.log('[ReelViewer] CTA Action Type:', ctaActionType);
+    console.log('[ReelViewer] EAN Code:', eanCode);
+    console.log('[ReelViewer] CTA URL:', ctaUrl);
     
     if (ctaActionType === "ean") {
-      const eanCode = currentPromo.attributes?.eanCode;
       if (eanCode) {
+        console.log('[ReelViewer] Opening barcode dialog with code:', eanCode);
         setBarcodeDialogOpen(true);
+      } else {
+        console.error('[ReelViewer] No EAN code found!');
       }
     } else {
-      const ctaUrl = currentPromo.attributes?.ctaUrl;
       if (ctaUrl) {
+        console.log('[ReelViewer] Opening URL:', ctaUrl);
         window.open(ctaUrl, "_blank");
+      } else {
+        console.log('[ReelViewer] No URL configured');
       }
     }
   };
