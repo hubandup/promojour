@@ -313,7 +313,6 @@ export function ReelViewer({ store, promotions, previewMode = false }: ReelViewe
                 onClick={handleCtaClick}
               >
                 {currentPromo.attributes?.ctaText || "J'en Profite"}
-                <ExternalLink className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>
