@@ -33,6 +33,10 @@ const promotionSchema = z.object({
   startDate: z.date({ required_error: "La date de début est requise" }),
   endDate: z.date({ required_error: "La date de fin est requise" }),
   status: z.enum(["draft", "scheduled", "active", "archived"]),
+  ctaText: z.string().optional(),
+  ctaActionType: z.enum(["url", "ean"]).optional(),
+  ctaUrl: z.string().url("L'URL doit être valide").optional().or(z.literal("")),
+  eanCode: z.string().optional(),
 });
 
 type PromotionFormData = z.infer<typeof promotionSchema>;
@@ -76,6 +80,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
   const originalPrice = watch("originalPrice");
   const discountedPrice = watch("discountedPrice");
   const discountPercentage = watch("discountPercentage");
+  const ctaActionType = watch("ctaActionType");
 
   // Auto-calculate discount percentage when prices change
   useEffect(() => {
@@ -214,6 +219,10 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
         mechanicType: data.mechanicType,
         productName: data.productName,
         ean: data.ean,
+        ctaText: data.ctaText || "J'en Profite",
+        ctaActionType: data.ctaActionType || "url",
+        ctaUrl: data.ctaUrl || "",
+        eanCode: data.eanCode || "",
       };
 
       if (data.mechanicType === 'price_discount' && data.originalPrice && data.discountedPrice) {
@@ -538,6 +547,67 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess }: CreateP
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Call-to-Action Frontend */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Call-to-Action Frontend</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="ctaText">Intitulé du bouton</Label>
+              <Input
+                id="ctaText"
+                placeholder="J'en Profite"
+                defaultValue="J'en Profite"
+                {...register("ctaText")}
+              />
+              <p className="text-xs text-muted-foreground">Texte affiché sur le bouton d'action en frontend</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ctaActionType">Type d'action</Label>
+              <Select 
+                value={ctaActionType || "url"} 
+                onValueChange={(value: "url" | "ean") => setValue("ctaActionType", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner le type d'action" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="url">Lien URL</SelectItem>
+                  <SelectItem value="ean">Code EAN (code-barre)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Action déclenchée lors du clic sur le bouton</p>
+            </div>
+
+            {ctaActionType === "url" && (
+              <div className="space-y-2">
+                <Label htmlFor="ctaUrl">URL de destination</Label>
+                <Input
+                  id="ctaUrl"
+                  type="url"
+                  placeholder="https://example.com"
+                  {...register("ctaUrl")}
+                />
+                {errors.ctaUrl && (
+                  <p className="text-sm text-destructive">{errors.ctaUrl.message}</p>
+                )}
+              </div>
+            )}
+
+            {ctaActionType === "ean" && (
+              <div className="space-y-2">
+                <Label htmlFor="eanCode">Code EAN du bon de réduction</Label>
+                <Input
+                  id="eanCode"
+                  placeholder="1234567890123"
+                  maxLength={13}
+                  {...register("eanCode")}
+                />
+                <p className="text-xs text-muted-foreground">Code EAN à 13 chiffres pour générer le code-barre</p>
+              </div>
+            )}
           </div>
 
           {/* Images */}
