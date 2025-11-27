@@ -885,12 +885,22 @@ const StoreDetail = () => {
                         <Card key={promo.id} className="border-border/50 hover:shadow-md transition-smooth">
                           <CardContent className="p-4">
                             <div className="flex gap-4">
-                              {promo.image_url && (
-                                <img
-                                  src={promo.image_url}
-                                  alt={promo.title}
-                                  className="w-24 h-24 object-cover rounded-lg"
-                                />
+                              {(promo.image_url || promo.video_url) && (
+                                <div className="relative w-24 h-24 flex-shrink-0">
+                                  {promo.video_url ? (
+                                    <video
+                                      src={promo.video_url}
+                                      className="w-24 h-24 object-cover rounded-lg"
+                                      preload="metadata"
+                                    />
+                                  ) : (
+                                    <img
+                                      src={promo.image_url}
+                                      alt={promo.title}
+                                      className="w-24 h-24 object-cover rounded-lg"
+                                    />
+                                  )}
+                                </div>
                               )}
                               <div className="flex-1">
                                 <div className="flex items-start justify-between gap-2">
