@@ -40,6 +40,7 @@ export function usePromotions() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log('Promotions fetched:', data); // Debug: vérifier les données
       setPromotions(data || []);
     } catch (error) {
       console.error('Error fetching promotions:', error);
