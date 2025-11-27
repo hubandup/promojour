@@ -473,7 +473,14 @@ const Promotions = () => {
                   </TableCell>
                   <TableCell>
                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted">
-                      {promo.image_url ? (
+                      {promo.video_url ? (
+                        <video
+                          src={promo.video_url}
+                          className="w-full h-full object-cover"
+                          muted
+                          playsInline
+                        />
+                      ) : promo.image_url ? (
                         <img
                           src={promo.image_url}
                           alt={promo.title}
@@ -629,7 +636,27 @@ const Promotions = () => {
           {filteredPromotions.map((promo) => (
             <Card key={promo.id} className="glass-card border-border/50 hover:shadow-glass hover:border-primary/20 transition-smooth overflow-hidden group">
               <div className="h-48 overflow-hidden relative bg-gradient-to-br from-muted/50 to-muted">
-                {promo.image_url ? (
+                {promo.video_url ? (
+                  <>
+                    <video
+                      src={promo.video_url}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-smooth duration-500 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('Video clicked, promotion ID:', promo.id);
+                        setSelectedPromotionId(promo.id);
+                        setEditDialogOpen(true);
+                      }}
+                      muted
+                      playsInline
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-smooth flex items-center justify-center pointer-events-none">
+                      <span className="text-white font-semibold text-sm bg-black/50 px-3 py-1 rounded-lg">
+                        Cliquer pour modifier
+                      </span>
+                    </div>
+                  </>
+                ) : promo.image_url ? (
                   <>
                     <img
                       src={promo.image_url}
@@ -653,7 +680,7 @@ const Promotions = () => {
                     className="w-full h-full flex items-center justify-center cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
-                      console.log('No image placeholder clicked, promotion ID:', promo.id);
+                      console.log('No media placeholder clicked, promotion ID:', promo.id);
                       setSelectedPromotionId(promo.id);
                       setEditDialogOpen(true);
                     }}
@@ -662,7 +689,7 @@ const Promotions = () => {
                       <svg className="w-16 h-16 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      <p className="text-xs">Cliquer pour ajouter une image</p>
+                      <p className="text-xs">Cliquer pour ajouter un média</p>
                     </div>
                   </div>
                 )}
