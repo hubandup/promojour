@@ -243,6 +243,28 @@ export function useGoogleMerchant(storeId: string | null) {
     }
   };
 
+  const listProducts = async () => {
+    if (!storeId) return null;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('google-merchant-list-products', {
+        body: { storeId },
+      });
+
+      if (error) throw error;
+
+      return data;
+    } catch (error) {
+      console.error('Error listing products:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de récupérer les produits",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
   return {
     account,
     loading,
@@ -253,6 +275,7 @@ export function useGoogleMerchant(storeId: string | null) {
     refreshAccounts,
     disconnect,
     syncToGoogle,
+    listProducts,
     refetch: fetchAccount,
   };
 }

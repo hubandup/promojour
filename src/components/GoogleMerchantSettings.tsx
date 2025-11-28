@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ExternalLink, CheckCircle2, XCircle, RefreshCw, AlertCircle } from "lucide-react";
+import { Loader2, ExternalLink, CheckCircle2, XCircle, RefreshCw, AlertCircle, Package } from "lucide-react";
 import { useGoogleMerchant, MerchantAccountOption } from "@/hooks/use-google-merchant";
 import {
   Select,
@@ -13,6 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface GoogleMerchantSettingsProps {
   storeId: string;
@@ -28,10 +30,22 @@ export function GoogleMerchantSettings({ storeId }: GoogleMerchantSettingsProps)
     selectMerchantAccount, 
     refreshAccounts,
     disconnect, 
-    syncToGoogle 
+    syncToGoogle,
+    listProducts
   } = useGoogleMerchant(storeId);
   
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
+  const [products, setProducts] = useState<any[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+
+  const handleListProducts = async () => {
+    setLoadingProducts(true);
+    const result = await listProducts();
+    if (result?.products) {
+      setProducts(result.products);
+    }
+    setLoadingProducts(false);
+  };
 
   if (loading) {
     return (
@@ -184,7 +198,7 @@ export function GoogleMerchantSettings({ storeId }: GoogleMerchantSettingsProps)
                 <p className="text-xs text-muted-foreground mb-3">
                   Vos promotions actives seront envoyées vers Google Shopping.
                 </p>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button 
                     onClick={syncToGoogle}
                     disabled={syncing}
@@ -194,6 +208,72 @@ export function GoogleMerchantSettings({ storeId }: GoogleMerchantSettingsProps)
                     {syncing ? "Synchronisation..." : "Synchroniser maintenant"}
                     <RefreshCw className="ml-2 h-4 w-4" />
                   </Button>
+                  
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleListProducts}
+                        disabled={loadingProducts}
+                      >
+                        {loadingProducts && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Package className="mr-2 h-4 w-4" />
+                        Voir les produits
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-3xl">
+                      <DialogHeader>
+                        <DialogTitle>Produits Google Merchant Center</DialogTitle>
+                        <DialogDescription>
+                          Produits disponibles dans votre compte Merchant Center
+                        </DialogDescription>
+                      </DialogHeader>
+                      <ScrollArea className="h-[400px] rounded-md border p-4">
+                        {loadingProducts ? (
+                          <div className="flex justify-center py-8">
+                            <Loader2 className="h-6 w-6 animate-spin" />
+                          </div>
+                        ) : products.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-8">
+                            Aucun produit trouvé
+                          </p>
+                        ) : (
+                          <div className="space-y-4">
+                            {products.map((product: any) => (
+                              <div key={product.id} className="p-4 border rounded-lg space-y-2">
+                                <h4 className="font-semibold">{product.title}</h4>
+                                {product.description && (
+                                  <p className="text-sm text-muted-foreground">{product.description}</p>
+                                )}
+                                <div className="flex gap-4 text-sm">
+                                  {product.price && (
+                                    <span className="font-medium">{product.price.value} {product.price.currency}</span>
+                                  )}
+                                  {product.availability && (
+                                    <Badge variant={product.availability === 'in stock' ? 'default' : 'secondary'}>
+                                      {product.availability}
+                                    </Badge>
+                                  )}
+                                </div>
+                                {product.link && (
+                                  <a 
+                                    href={product.link} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                                  >
+                                    Voir le produit <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </ScrollArea>
+                    </DialogContent>
+                  </Dialog>
+                  
                   <Button 
                     variant="outline" 
                     size="sm" 

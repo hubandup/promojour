@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { usePromotionalMechanics } from "@/hooks/use-promotional-mechanics";
 import { PromotionalMechanicDialog } from "@/components/PromotionalMechanicDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { GoogleMerchantSettings } from "@/components/GoogleMerchantSettings";
+import { useStores } from "@/hooks/use-stores";
 
 const Settings = () => {
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -27,8 +29,11 @@ const Settings = () => {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [performanceAlerts, setPerformanceAlerts] = useState(true);
   const [tipsEnabled, setTipsEnabled] = useState(false);
+  const [showGoogleMerchant, setShowGoogleMerchant] = useState(false);
   
   const { mechanics, createMechanic, updateMechanic, deleteMechanic } = usePromotionalMechanics();
+  const { stores } = useStores();
+  const firstStoreId = stores && stores.length > 0 ? stores[0].id : null;
 
   useEffect(() => {
     fetchOrganization();
@@ -439,6 +444,32 @@ const Settings = () => {
               >
                 Enregistrer les modifications
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Google Merchant Center Integration */}
+          <Card className="glass-card border-border/50">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-md">
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 410 410">
+                    <path d="M137.5 201c-8.56 0-15.5-6.94-15.5-15.5s6.94-15.5 15.5-15.5 15.5 6.94 15.5 15.5-6.94 15.5-15.5 15.5zm165.364 47.632l-93.6-93.6C205.52 151.288 200.32 149 194.6 149h-72.8a20.728 20.728 0 0 0-20.8 20.8v72.8c0 5.72 2.288 10.92 6.136 14.664l93.496 93.6C204.48 354.608 209.68 357 215.4 357s10.92-2.392 14.664-6.136l72.8-72.8C306.712 274.32 309 269.12 309 263.4c0-5.824-2.392-11.024-6.136-14.768z"/>
+                  </svg>
+                </div>
+                <div>
+                  <CardTitle>Google Merchant Center</CardTitle>
+                  <CardDescription>Synchronisez vos promotions avec Google Shopping</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {firstStoreId ? (
+                <GoogleMerchantSettings storeId={firstStoreId} />
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>Créez d'abord un magasin pour connecter Google Merchant Center</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
