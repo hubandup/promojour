@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import logoPromoJour from "@/assets/logo-promojour.png";
+import logoPromoJour from "@/assets/logo-promojour.svg";
 import { useUserData } from "@/hooks/use-user-data";
 import { useStores } from "@/hooks/use-stores";
 

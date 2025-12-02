@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { XCircle, ArrowLeft, CreditCard } from "lucide-react";
-import logoPromoJour from "@/assets/logo-promojour.png";
+import logoPromoJour from "@/assets/logo-promojour.svg";
 
 export default function PaymentCanceled() {
   const navigate = useNavigate();

@@ -30,7 +30,7 @@ import {
   TrendingUp,
   MapPin
 } from "lucide-react";
-import logoPromoJour from "@/assets/logo-promojour.png";
+import logoPromoJour from "@/assets/logo-promojour.svg";
 
 const contactFormSchema = z.object({
   name: z.string().trim().min(2, "Le nom doit contenir au moins 2 caractères").max(100, "Le nom est trop long"),

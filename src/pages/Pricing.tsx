@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useUserData } from "@/hooks/use-user-data";
 import { Check, ArrowRight, Sparkles } from "lucide-react";
-import logoPromoJour from "@/assets/logo-promojour.png";
+import logoPromoJour from "@/assets/logo-promojour.svg";
 
 export default function Pricing() {
   const navigate = useNavigate();
