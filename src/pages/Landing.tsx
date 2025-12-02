@@ -27,6 +27,7 @@ import {
   Building2
 } from "lucide-react";
 import logoPromoJour from "@/assets/logo-promojour.svg";
+import dashboardMockup from "@/assets/landing-dashboard-mockup.png";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -168,7 +169,7 @@ export default function Landing() {
           </div>
 
           {/* Platform logos */}
-          <div className="flex justify-center gap-4 sm:gap-8 mt-16 flex-wrap">
+          <div className="flex justify-center gap-4 sm:gap-8 mt-12 flex-wrap">
             <div className="flex items-center gap-2 px-5 py-3 rounded-xl bg-background border border-border shadow-sm">
               <Facebook className="h-5 w-5 text-[#1877F2]" />
               <span className="text-sm font-medium">Facebook</span>
@@ -184,6 +185,18 @@ export default function Landing() {
             <div className="flex items-center gap-2 px-5 py-3 rounded-xl bg-background border border-border shadow-sm">
               <ShoppingCart className="h-5 w-5 text-[#34A853]" />
               <span className="text-sm font-medium">Google Shopping</span>
+            </div>
+          </div>
+
+          {/* Dashboard Mockup */}
+          <div className="mt-16 relative">
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10 pointer-events-none" />
+            <div className="relative rounded-2xl overflow-hidden border border-border/50 shadow-2xl bg-background">
+              <img 
+                src={dashboardMockup} 
+                alt="Interface PromoJour - Gestion des promotions" 
+                className="w-full h-auto"
+              />
             </div>
           </div>
         </div>
