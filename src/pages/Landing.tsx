@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -40,10 +41,20 @@ const contactFormSchema = z.object({
 
 type ContactFormValues = z.infer<typeof contactFormSchema>;
 
+const rotatingWords = ["commerce", "restaurant", "magasin", "boutique", "point de vente"];
+
 export default function Landing() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { profile } = useUserData();
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentWordIndex((prev) => (prev + 1) % rotatingWords.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
   
   const parallaxTitle = useParallax(0.3);
   const parallaxSubtitle = useParallax(0.5);
@@ -177,9 +188,18 @@ export default function Landing() {
               className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight transition-transform"
               style={{ transform: `translateY(-${parallaxTitle}px)` }}
             >
-              Créez et diffusez vos promos<br />
-              <span className="bg-gradient-to-r from-primary via-orange to-coral bg-clip-text text-transparent">
-                en automatique
+              Automatisez les promos de votre{" "}
+              <span className="inline-block relative">
+                <span 
+                  key={currentWordIndex}
+                  className="bg-gradient-to-r from-primary via-orange to-coral bg-clip-text text-transparent animate-fade-in"
+                >
+                  {rotatingWords[currentWordIndex]}
+                </span>
+              </span>
+              <br />
+              <span className="text-3xl sm:text-4xl lg:text-5xl text-muted-foreground font-medium mt-4 block">
+                et boostez votre trafic en magasin
               </span>
             </h1>
             
