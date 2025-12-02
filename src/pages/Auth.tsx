@@ -101,7 +101,8 @@ const Auth = () => {
           <img 
             src={logoPromojour} 
             alt="PromoJour Logo" 
-            className="h-16 mx-auto mb-4"
+            className="h-16 mx-auto mb-4 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => navigate("/")}
           />
           <CardDescription>Gérez vos promotions efficacement</CardDescription>
         </CardHeader>
