@@ -482,9 +482,9 @@ export default function Landing() {
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => navigate("/auth?tab=signup")}
+                onClick={() => navigate("/auth?tab=signup&plan=free")}
               >
-                Commencer gratuitement
+                Essayer gratuitement
               </Button>
             </div>
 
@@ -524,9 +524,9 @@ export default function Landing() {
 
               <Button 
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                onClick={() => navigate("/auth?tab=signup")}
+                onClick={() => navigate("/auth?tab=signup&plan=pro")}
               >
-                Démarrer l'essai gratuit
+                Passer au plan Pro
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -562,9 +562,9 @@ export default function Landing() {
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => window.open('mailto:contact@promojour.fr?subject=Demande Centrale', '_blank')}
+                onClick={() => navigate("/auth?tab=signup&plan=centrale")}
               >
-                Nous contacter
+                Découvrir Centrale
               </Button>
             </div>
           </div>

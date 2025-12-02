@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Tag, Eye, Users, Plus, Instagram, Facebook, Store as StoreIcon, MousePointerClick } from "lucide-react";
 import { CreatePromotionDialog } from "@/components/CreatePromotionDialog";
 import { InfoAlert } from "@/components/InfoAlert";
+import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { useUserData } from "@/hooks/use-user-data";
 import { usePromotions } from "@/hooks/use-promotions";
 import { useStores } from "@/hooks/use-stores";
@@ -129,6 +130,9 @@ const Dashboard = () => {
           message={`${activePromotions.length < MIN_ACTIVE_PROMOTIONS ? `Vous avez moins de ${MIN_ACTIVE_PROMOTIONS} promotions actives. ` : ''}${scheduledPromotions.length < MIN_UPCOMING_PROMOTIONS ? `Vous avez moins de ${MIN_UPCOMING_PROMOTIONS} promotions à venir. ` : ''}Pensez à ajouter de nouvelles promotions pour maintenir votre visibilité.`}
         />
       )}
+
+      {/* Onboarding Checklist */}
+      <OnboardingChecklist />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

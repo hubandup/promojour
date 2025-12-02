@@ -10,6 +10,8 @@ import OAuthCallback from "./pages/OAuthCallback";
 import Pricing from "./pages/Pricing";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCanceled from "./pages/PaymentCanceled";
+import Onboarding from "./pages/Onboarding";
+import Checkout from "./pages/Checkout";
 import Dashboard from "./pages/Dashboard";
 import Promotions from "./pages/Promotions";
 import PromotionDetail from "./pages/PromotionDetail";
@@ -48,6 +50,8 @@ const App = () => (
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/payment-canceled" element={<PaymentCanceled />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/checkout" element={<Checkout />} />
             {/* Legal pages */}
             <Route path="/mentions-legales" element={<LegalNotice />} />
             <Route path="/politique-de-confidentialite" element={<PrivacyPolicy />} />

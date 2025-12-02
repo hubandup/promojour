@@ -32,3 +32,6 @@ verify_jwt = true
 
 [functions.google-merchant-list-products]
 verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
