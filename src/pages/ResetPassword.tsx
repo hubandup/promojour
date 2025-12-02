@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import logoPromojour from "@/assets/logo-promojour.png";
+import logoPromojour from "@/assets/logo-promojour.svg";
 
 const ResetPassword = () => {
   const navigate = useNavigate();

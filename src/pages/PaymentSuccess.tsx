@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, ArrowRight } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
-import logoPromoJour from "@/assets/logo-promojour.png";
+import logoPromoJour from "@/assets/logo-promojour.svg";
 
 export default function PaymentSuccess() {
   const navigate = useNavigate();
