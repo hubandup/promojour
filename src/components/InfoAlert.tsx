@@ -16,8 +16,8 @@ interface InfoAlertProps {
 
 const alertConfig = {
   warning: {
-    bgColor: "bg-[hsl(167,100%,60%)]",
-    textColor: "text-black",
+    bgColor: "bg-background border border-border",
+    textColor: "text-foreground",
     icon: AlertTriangle,
   },
   info: {
