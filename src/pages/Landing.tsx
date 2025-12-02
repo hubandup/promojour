@@ -41,7 +41,15 @@ const contactFormSchema = z.object({
 
 type ContactFormValues = z.infer<typeof contactFormSchema>;
 
-const rotatingWords = ["commerce", "restaurant", "magasin", "boutique", "point de vente"];
+const rotatingWords = [
+  "votre commerce",
+  "votre restaurant", 
+  "vos magasins",
+  "votre boutique",
+  "vos points de vente",
+  "votre salon",
+  "vos enseignes"
+];
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -52,7 +60,7 @@ export default function Landing() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentWordIndex((prev) => (prev + 1) % rotatingWords.length);
-    }, 2500);
+    }, 1800);
     return () => clearInterval(interval);
   }, []);
   
@@ -188,7 +196,7 @@ export default function Landing() {
               className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight transition-transform"
               style={{ transform: `translateY(-${parallaxTitle}px)` }}
             >
-              Automatisez les promos de votre{" "}
+              Automatisez les promos de{" "}
               <span className="inline-block relative">
                 <span 
                   key={currentWordIndex}
