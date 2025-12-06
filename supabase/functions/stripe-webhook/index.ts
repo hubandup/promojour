@@ -24,16 +24,24 @@ serve(async (req) => {
   let event: Stripe.Event;
 
   try {
-    // For production, you should verify the webhook signature
-    // const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
-    // event = stripe.webhooks.constructEvent(body, signature!, webhookSecret!);
+    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
     
-    // For now, parse the event directly
-    event = JSON.parse(body);
-    logStep("Event received", { type: event.type });
+    if (!webhookSecret) {
+      logStep("ERROR: STRIPE_WEBHOOK_SECRET not configured");
+      return new Response("Webhook secret not configured", { status: 500 });
+    }
+    
+    if (!signature) {
+      logStep("ERROR: Missing stripe-signature header");
+      return new Response("Missing signature", { status: 400 });
+    }
+    
+    // Verify webhook signature for security
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    logStep("Event verified and received", { type: event.type });
   } catch (err) {
-    logStep("Error parsing event", { error: err });
-    return new Response(`Webhook Error: ${err}`, { status: 400 });
+    logStep("Webhook signature verification failed", { error: err instanceof Error ? err.message : String(err) });
+    return new Response(`Webhook signature verification failed: ${err instanceof Error ? err.message : String(err)}`, { status: 400 });
   }
 
   try {
