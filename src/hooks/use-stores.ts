@@ -55,15 +55,17 @@ export function useStores() {
         return;
       }
 
+      // Use stores_with_contact view for conditional access to email/phone
+      // Only admins, editors, and store managers see contact info
       const { data, error } = await supabase
-        .from('stores')
+        .from('stores_with_contact' as any)
         .select('*')
         .eq('organization_id', profile.organization_id)
         .eq('is_active', true)
         .order('name');
 
       if (error) throw error;
-      setStores(data || []);
+      setStores((data as unknown as Store[]) || []);
     } catch (error) {
       console.error('Error fetching stores:', error);
       toast({
