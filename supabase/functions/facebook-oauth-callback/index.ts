@@ -6,6 +6,81 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Generate HTML response that communicates with the opener window
+function generateCallbackHtml(success: boolean, storeId: string | null, errorMessage?: string) {
+  const message = success 
+    ? { type: 'oauth_success', platform: 'facebook', storeId }
+    : { type: 'oauth_error', error: errorMessage || 'unknown_error', storeId };
+  
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>${success ? 'Connexion réussie' : 'Erreur de connexion'}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+      background: rgba(255,255,255,0.1);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+    }
+    .icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    h1 { margin: 0 0 0.5rem; font-size: 1.5rem; }
+    p { margin: 0; opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">${success ? '✓' : '✕'}</div>
+    <h1>${success ? 'Connexion réussie !' : 'Erreur de connexion'}</h1>
+    <p>${success ? 'Votre compte Facebook a été connecté.' : (errorMessage || 'Une erreur est survenue.')}</p>
+    <p style="margin-top: 1rem; font-size: 0.875rem;">Cette fenêtre va se fermer...</p>
+  </div>
+  <script>
+    (function() {
+      const message = ${JSON.stringify(message)};
+      
+      // Try to send message to opener
+      if (window.opener) {
+        try {
+          window.opener.postMessage(message, '*');
+        } catch (e) {
+          console.error('Failed to post message:', e);
+        }
+      }
+      
+      // Close window after delay
+      setTimeout(function() {
+        window.close();
+      }, 2000);
+      
+      // Fallback: if window doesn't close, show redirect link
+      setTimeout(function() {
+        if (!window.closed) {
+          document.body.innerHTML += '<p style="margin-top: 2rem;"><a href="/" style="color: white;">Cliquez ici pour continuer</a></p>';
+        }
+      }, 3000);
+    })();
+  </script>
+</body>
+</html>
+`;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -35,20 +110,19 @@ serve(async (req) => {
         error_reason: errorReason,
         error_description: errorDescription,
       });
-      const baseUrl = Deno.env.get('SUPABASE_URL') || '';
-      const redirectUrl = `${baseUrl.replace('.supabase.co', '.lovableproject.com')}/oauth/callback?error=oauth_denied&storeId=${storeId}`;
-      console.log('Redirecting to:', redirectUrl);
-      return new Response(null, {
-        status: 302,
-        headers: {
-          'Location': redirectUrl,
-        },
-      });
+      
+      return new Response(
+        generateCallbackHtml(false, storeId, errorDescription || errorReason || 'Connexion annulée'),
+        { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+      );
     }
 
     if (!code || !storeId) {
       console.error('❌ Missing required parameters:', { code: !!code, storeId: !!storeId });
-      throw new Error('Missing code or store ID');
+      return new Response(
+        generateCallbackHtml(false, storeId, 'Paramètres manquants'),
+        { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+      );
     }
 
     console.log('✓ All required parameters present');
@@ -72,20 +146,19 @@ serve(async (req) => {
     tokenUrl.searchParams.set('code', code);
 
     console.log('Step 1: Exchanging authorization code for short-lived token...');
-    console.log('Token endpoint:', tokenUrl.toString().replace(FACEBOOK_APP_SECRET!, '***SECRET***'));
     
     const tokenResponse = await fetch(tokenUrl.toString());
     const tokenData = await tokenResponse.json();
 
     console.log('Token response status:', tokenResponse.status);
-    console.log('Token response:', JSON.stringify({
-      ...tokenData,
-      access_token: tokenData.access_token ? `${tokenData.access_token.substring(0, 20)}...` : 'missing',
-    }));
 
     if (!tokenResponse.ok || !tokenData.access_token) {
       console.error('❌ Failed to get access token:', tokenData);
-      throw new Error(`Failed to get access token: ${JSON.stringify(tokenData)}`);
+      const fbError = tokenData.error?.message || 'Échec de récupération du token';
+      return new Response(
+        generateCallbackHtml(false, storeId, fbError),
+        { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+      );
     }
 
     console.log('✓ Short-lived token obtained');
@@ -103,16 +176,11 @@ serve(async (req) => {
     const longLivedData = await longLivedResponse.json();
 
     console.log('Long-lived token response status:', longLivedResponse.status);
-    console.log('Long-lived token data:', JSON.stringify({
-      ...longLivedData,
-      access_token: longLivedData.access_token ? `${longLivedData.access_token.substring(0, 20)}...` : 'missing',
-    }));
 
     const accessToken = longLivedData.access_token || shortLivedToken;
-    const expiresIn = longLivedData.expires_in || tokenData.expires_in || 5184000; // 60 days default
+    const expiresIn = longLivedData.expires_in || tokenData.expires_in || 5184000;
     
     console.log('✓ Using token type:', longLivedData.access_token ? 'long-lived' : 'short-lived');
-    console.log('Token expires in:', expiresIn, 'seconds');
 
     // Get user info
     console.log('Step 3: Fetching user info...');
@@ -121,11 +189,13 @@ serve(async (req) => {
     const meData = await meResponse.json();
 
     console.log('User info response status:', meResponse.status);
-    console.log('User data:', JSON.stringify(meData));
 
     if (meData.error) {
       console.error('❌ Error fetching user info:', meData.error);
-      throw new Error(`Failed to get user info: ${meData.error.message}`);
+      return new Response(
+        generateCallbackHtml(false, storeId, meData.error.message),
+        { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+      );
     }
 
     console.log('✓ User info obtained:', meData.name, `(ID: ${meData.id})`);
@@ -136,20 +206,12 @@ serve(async (req) => {
     const pagesResponse = await fetch(pagesUrl);
     const pagesData = await pagesResponse.json();
 
-    console.log('Pages response status:', pagesResponse.status);
     console.log('Pages count:', pagesData.data?.length || 0);
-    console.log('Pages data:', JSON.stringify(pagesData));
-
-    if (pagesData.error) {
-      console.error('❌ Error fetching pages:', pagesData.error);
-    }
 
     // Initialize Supabase client
     console.log('Step 5: Initializing Supabase client...');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    console.log('Supabase URL:', supabaseUrl);
-    console.log('Service role key:', supabaseKey ? 'Present' : 'Missing');
     
     const supabase = createClient(supabaseUrl, supabaseKey);
     console.log('✓ Supabase client initialized');
@@ -158,13 +220,6 @@ serve(async (req) => {
     const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
     
     console.log('Step 6: Saving Facebook connection to database...');
-    console.log('Connection data:', {
-      store_id: storeId,
-      platform: 'facebook',
-      account_id: meData.id,
-      account_name: meData.name,
-      token_expires_at: expiresAt,
-    });
     
     const { error: fbError } = await supabase
       .from('social_connections')
@@ -183,14 +238,16 @@ serve(async (req) => {
 
     if (fbError) {
       console.error('❌ Error saving Facebook connection:', fbError);
-      console.error('Error details:', JSON.stringify(fbError, null, 2));
-    } else {
-      console.log('✓ Facebook connection saved successfully');
+      return new Response(
+        generateCallbackHtml(false, storeId, 'Erreur de sauvegarde'),
+        { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+      );
     }
+    
+    console.log('✓ Facebook connection saved successfully');
 
     // Check for Instagram Business Account on pages
     console.log('Step 7: Checking for Instagram Business Account...');
-    let instagramFound = false;
     
     for (const page of pagesData.data || []) {
       console.log(`Checking page: ${page.name} (ID: ${page.id})`);
@@ -199,96 +256,55 @@ serve(async (req) => {
       const igResponse = await fetch(igUrl);
       const igData = await igResponse.json();
 
-      console.log('Instagram check response:', JSON.stringify(igData));
-
       if (igData.instagram_business_account) {
-        instagramFound = true;
         const igAccountId = igData.instagram_business_account.id;
         console.log('✓ Instagram Business Account found:', igAccountId);
         
-        // Get Instagram account info
-        console.log('Fetching Instagram account details...');
         const igInfoUrl = `https://graph.facebook.com/v18.0/${igAccountId}?fields=username,followers_count&access_token=${page.access_token}`;
         const igInfoResponse = await fetch(igInfoUrl);
         const igInfo = await igInfoResponse.json();
 
-        console.log('Instagram info:', JSON.stringify(igInfo));
+        if (!igInfo.error) {
+          const { error: igError } = await supabase
+            .from('social_connections')
+            .upsert({
+              store_id: storeId,
+              platform: 'instagram',
+              access_token: page.access_token,
+              token_expires_at: expiresAt,
+              account_id: igAccountId,
+              account_name: igInfo.username,
+              followers_count: igInfo.followers_count || 0,
+              is_connected: true,
+              last_synced_at: new Date().toISOString(),
+            }, {
+              onConflict: 'store_id,platform',
+            });
 
-        if (igInfo.error) {
-          console.error('❌ Error fetching Instagram info:', igInfo.error);
-          continue;
+          if (!igError) {
+            console.log('✓ Instagram connection saved successfully');
+          }
         }
-
-        // Store Instagram connection
-        console.log('Saving Instagram connection to database...');
-        const { error: igError } = await supabase
-          .from('social_connections')
-          .upsert({
-            store_id: storeId,
-            platform: 'instagram',
-            access_token: page.access_token,
-            token_expires_at: expiresAt,
-            account_id: igAccountId,
-            account_name: igInfo.username,
-            followers_count: igInfo.followers_count || 0,
-            is_connected: true,
-            last_synced_at: new Date().toISOString(),
-          }, {
-            onConflict: 'store_id,platform',
-          });
-
-        if (igError) {
-          console.error('❌ Error saving Instagram connection:', igError);
-          console.error('Error details:', JSON.stringify(igError, null, 2));
-        } else {
-          console.log('✓ Instagram connection saved successfully');
-        }
-
-        break; // Use first Instagram account found
-      } else {
-        console.log(`No Instagram Business Account linked to page: ${page.name}`);
+        break;
       }
     }
 
-    if (!instagramFound) {
-      console.log('ℹ️ No Instagram Business Account found on any Facebook Page');
-    }
-
-    // Redirect to OAuth callback page
-    const baseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const redirectUrl = `${baseUrl.replace('.supabase.co', '.lovableproject.com')}/oauth/callback?success=social_connected&storeId=${storeId}`;
-    
-    console.log('Step 8: Redirecting to OAuth callback page...');
-    console.log('Redirect URL:', redirectUrl);
     console.log('=== Facebook OAuth Callback - Success ===');
     
-    return new Response(null, {
-      status: 302,
-      headers: {
-        'Location': redirectUrl,
-      },
-    });
+    return new Response(
+      generateCallbackHtml(true, storeId),
+      { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    );
 
   } catch (error) {
     console.error('=== Facebook OAuth Callback - Error ===');
-    if (error && typeof error === 'object' && 'constructor' in error) {
-      console.error('Error type:', (error as any).constructor.name);
-    }
     console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    try {
-      console.error('Full error object:', JSON.stringify(error, null, 2));
-    } catch {
-      console.error('Full error object: (cannot stringify)');
-    }
     
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
     return new Response(
-      JSON.stringify({ error: errorMessage }), 
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      generateCallbackHtml(false, null, errorMessage),
+      { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
     );
   }
 });
