@@ -52,6 +52,10 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
   });
 
   const handlePublish = async () => {
+    console.log('[ManualPublishTest] handlePublish called');
+    console.log('[ManualPublishTest] selectedPromoId:', selectedPromoId);
+    console.log('[ManualPublishTest] storeId:', storeId);
+    
     if (!selectedPromoId) {
       toast({
         title: "Erreur",
@@ -62,6 +66,8 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
     }
 
     const selectedPromo = promotions?.find(p => p.id === selectedPromoId);
+    console.log('[ManualPublishTest] selectedPromo:', selectedPromo);
+    
     if (!selectedPromo?.video_url) {
       toast({
         title: "Vidéo requise",
@@ -74,6 +80,7 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
     setPublishing(true);
 
     try {
+      console.log('[ManualPublishTest] Calling publish-social-reel...');
       const { data, error } = await supabase.functions.invoke('publish-social-reel', {
         body: {
           promotionId: selectedPromoId,
@@ -81,6 +88,9 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
           platforms: ['facebook'],
         },
       });
+
+      console.log('[ManualPublishTest] Response data:', data);
+      console.log('[ManualPublishTest] Response error:', error);
 
       if (error) throw error;
 
@@ -99,9 +109,16 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
             variant: "destructive",
           });
         }
+      } else {
+        console.log('[ManualPublishTest] data.success is falsy:', data);
+        toast({
+          title: "Erreur",
+          description: data?.message || "La publication a échoué",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      console.error('Error publishing:', error);
+      console.error('[ManualPublishTest] Error publishing:', error);
       toast({
         title: "Erreur",
         description: error instanceof Error ? error.message : "Impossible de publier la promotion",
@@ -113,6 +130,10 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
   };
 
   const handlePublishPost = async () => {
+    console.log('[ManualPublishTest] handlePublishPost called');
+    console.log('[ManualPublishTest] selectedPromoId:', selectedPromoId);
+    console.log('[ManualPublishTest] storeId:', storeId);
+    
     if (!selectedPromoId) {
       toast({
         title: "Erreur",
@@ -123,6 +144,8 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
     }
 
     const selectedPromo = promotions?.find(p => p.id === selectedPromoId);
+    console.log('[ManualPublishTest] selectedPromo:', selectedPromo);
+    
     if (!selectedPromo?.image_url) {
       toast({
         title: "Image requise",
@@ -135,6 +158,7 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
     setPublishingPost(true);
 
     try {
+      console.log('[ManualPublishTest] Calling publish-social-post...');
       const { data, error } = await supabase.functions.invoke('publish-social-post', {
         body: {
           promotionId: selectedPromoId,
@@ -142,6 +166,9 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
           platforms: ['facebook'],
         },
       });
+
+      console.log('[ManualPublishTest] Response data:', data);
+      console.log('[ManualPublishTest] Response error:', error);
 
       if (error) throw error;
 
@@ -160,9 +187,16 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
             variant: "destructive",
           });
         }
+      } else {
+        console.log('[ManualPublishTest] data.success is falsy:', data);
+        toast({
+          title: "Erreur",
+          description: data?.message || "La publication a échoué",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      console.error('Error publishing post:', error);
+      console.error('[ManualPublishTest] Error publishing post:', error);
       toast({
         title: "Erreur",
         description: error instanceof Error ? error.message : "Impossible de publier la promotion",
