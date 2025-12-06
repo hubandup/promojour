@@ -31,7 +31,14 @@ import logoPromoJour from "@/assets/logo-promojour.svg";
 export default function Landing() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { profile } = useUserData();
+  const { profile, loading } = useUserData();
+  
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (!loading && profile) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [profile, loading, navigate]);
   
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -45,6 +52,24 @@ export default function Landing() {
       navigate("/auth");
     }
   };
+
+  // Show loading state while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  // Don't render landing if user is authenticated (will redirect)
+  if (profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
