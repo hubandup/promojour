@@ -246,25 +246,41 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Step 6: Store Facebook connection
+    // Step 6: Store Facebook connection using PAGE token (not user token!)
+    // IMPORTANT: For publishing to Facebook Pages, we MUST use the Page access token
     const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
     
-    log('INFO', 'Step 6: Saving Facebook connection to database', {
+    // Get the first page and its access token
+    const firstPage = pagesData.data?.[0];
+    
+    if (!firstPage || !firstPage.access_token) {
+      log('ERROR', 'No Facebook Page found or no page access token', {
+        pagesCount: pagesData.data?.length || 0,
+        hasFirstPage: !!firstPage,
+        hasPageToken: !!firstPage?.access_token,
+      });
+      return redirectTo(getRedirectUrl(false, storeId, 'Aucune Page Facebook trouvée. Vous devez avoir une Page Facebook pour publier des promotions.'));
+    }
+    
+    log('INFO', 'Step 6: Saving Facebook connection to database with PAGE token', {
       storeId,
-      accountId: meData.id,
-      accountName: meData.name,
+      pageId: firstPage.id,
+      pageName: firstPage.name,
+      userId: meData.id,
+      userName: meData.name,
       expiresAt,
     });
     
+    // Save the PAGE access token (not the user token!) - this is required for publishing
     const { error: fbError, data: insertData } = await supabase
       .from('social_connections')
       .upsert({
         store_id: storeId,
         platform: 'facebook',
-        access_token: accessToken,
+        access_token: firstPage.access_token, // PAGE token, not user token!
         token_expires_at: expiresAt,
-        account_id: meData.id,
-        account_name: meData.name,
+        account_id: firstPage.id, // Page ID, not user ID
+        account_name: firstPage.name, // Page name, not user name
         is_connected: true,
         last_synced_at: new Date().toISOString(),
       }, {
@@ -282,7 +298,7 @@ serve(async (req) => {
       return redirectTo(getRedirectUrl(false, storeId, 'Erreur de sauvegarde'));
     }
     
-    log('INFO', 'Facebook connection saved successfully', { insertData });
+    log('INFO', 'Facebook connection saved successfully with PAGE token', { insertData });
 
     // Step 7: Check for Instagram Business Account on pages
     log('INFO', 'Step 7: Checking for Instagram Business Account');
