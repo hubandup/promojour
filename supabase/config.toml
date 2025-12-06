@@ -38,3 +38,6 @@ verify_jwt = true
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.distribute-campaign-promotions]
+verify_jwt = false
