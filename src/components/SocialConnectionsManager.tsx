@@ -2,11 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useSocialConnections } from "@/hooks/use-social-connections";
+import { useSocialConnectionLimits } from "@/hooks/use-social-connection-limits";
 import { useToast } from "@/hooks/use-toast";
-import { Facebook, Instagram, MapPin, AlertCircle, ExternalLink, CheckCircle2 } from "lucide-react";
+import { Facebook, Instagram, MapPin, AlertCircle, ExternalLink, CheckCircle2, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface SocialConnectionsManagerProps {
   storeId: string;
@@ -15,12 +16,36 @@ interface SocialConnectionsManagerProps {
 
 export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'instagram', 'google_business'] }: SocialConnectionsManagerProps) {
   const { connections, loading, refetch } = useSocialConnections(storeId);
+  const { canAddSocialConnection, maxSocialNetworksPerStore, isFreeOrg } = useSocialConnectionLimits(storeId);
   const { toast } = useToast();
   const [showConfigGuide, setShowConfigGuide] = useState(false);
+  const [connectionLimitReached, setConnectionLimitReached] = useState(false);
+  const [limitMessage, setLimitMessage] = useState<string | null>(null);
   
   const redirectUri = "https://rrcrfwhblesarezabsfo.supabase.co/functions/v1/facebook-oauth-callback";
 
-  const handleConnectFacebook = () => {
+  // Check connection limits when component mounts or connections change
+  useEffect(() => {
+    const checkLimits = async () => {
+      const { allowed, reason } = await canAddSocialConnection();
+      setConnectionLimitReached(!allowed);
+      setLimitMessage(allowed ? null : reason || null);
+    };
+    checkLimits();
+  }, [connections, canAddSocialConnection]);
+
+  const handleConnectFacebook = async () => {
+    // Check if adding a new connection is allowed
+    const { allowed, reason } = await canAddSocialConnection();
+    if (!allowed) {
+      toast({
+        title: "Limite atteinte",
+        description: reason,
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Build the OAuth init URL with store_id as query param
     // The edge function will redirect to Facebook OAuth
     const SUPABASE_URL = 'https://rrcrfwhblesarezabsfo.supabase.co';
@@ -81,6 +106,16 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
 
   return (
     <div className="space-y-4">
+      {/* Free tier limit warning */}
+      {connectionLimitReached && isFreeOrg && (
+        <Alert variant="destructive">
+          <Lock className="h-4 w-4" />
+          <AlertTitle>Limite du forfait Free atteinte</AlertTitle>
+          <AlertDescription>
+            {limitMessage || `Votre forfait Free est limité à ${maxSocialNetworksPerStore} réseau social par magasin. Passez au forfait Pro pour connecter plus de réseaux.`}
+          </AlertDescription>
+        </Alert>
+      )}
       {showConfigGuide && (
         <Alert>
           <AlertCircle className="h-4 w-4" />

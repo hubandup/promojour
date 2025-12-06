@@ -24,10 +24,11 @@ import { useUserData } from "@/hooks/use-user-data";
  */
 
 export interface PermissionLimits {
-  maxStores: number;
+  maxStores: number | null; // null = unlimited
   maxSimultaneousPromos: number | null; // null = unlimited
   maxPlanningDays: number | null; // null = unlimited
-  maxSocialNetworks: number | null; // null = unlimited
+  maxValidityDays: number | null; // null = unlimited, for Free tier max 15 days
+  maxSocialNetworksPerStore: number | null; // null = unlimited, Free = 1
   maxUsers: number | null; // null = unlimited
   canManageUsers: boolean;
   canConnectSocialAtOrgLevel: boolean;
@@ -40,6 +41,7 @@ export interface Permissions {
   canEditPromotions: boolean;
   canDeletePromotions: boolean;
   canEditOwnPromotionsOnly: boolean; // store_manager: only promos for their store
+  canEditArchivedPromotions: boolean; // Archived promos are read-only (always false)
   
   // Stores
   canViewStores: boolean;
@@ -59,7 +61,7 @@ export interface Permissions {
   canViewSocialConnections: boolean;
   canManageSocialConnections: boolean;
   canManageOwnStoreSocialOnly: boolean; // store_manager
-  canConnectSocialAtOrgLevel: boolean; // Centrale = false
+  canConnectSocialAtOrgLevel: boolean; // Always false - social is ALWAYS at store level
   
   // QR Codes
   canViewQRCodes: boolean;
@@ -85,30 +87,33 @@ const FREE_LIMITS: PermissionLimits = {
   maxStores: 1,
   maxSimultaneousPromos: 7,
   maxPlanningDays: 15,
-  maxSocialNetworks: 1,
+  maxValidityDays: 15,
+  maxSocialNetworksPerStore: 1, // Free = max 1 social connection per store
   maxUsers: null, // No user management
   canManageUsers: false,
-  canConnectSocialAtOrgLevel: false, // Social is at store level
+  canConnectSocialAtOrgLevel: false, // Social is ALWAYS at store level
 };
 
 const PRO_LIMITS: PermissionLimits = {
   maxStores: 5,
   maxSimultaneousPromos: null, // Unlimited
   maxPlanningDays: null, // Unlimited
-  maxSocialNetworks: null, // Unlimited
+  maxValidityDays: null, // Unlimited
+  maxSocialNetworksPerStore: null, // Unlimited social connections per store
   maxUsers: 5,
   canManageUsers: true,
-  canConnectSocialAtOrgLevel: false, // Social is at store level
+  canConnectSocialAtOrgLevel: false, // Social is ALWAYS at store level
 };
 
 const CENTRAL_LIMITS: PermissionLimits = {
   maxStores: null, // Unlimited
   maxSimultaneousPromos: null, // Unlimited
   maxPlanningDays: null, // Unlimited
-  maxSocialNetworks: null, // Stores connect their own social
+  maxValidityDays: null, // Unlimited
+  maxSocialNetworksPerStore: null, // Unlimited - stores connect their own social
   maxUsers: null, // Unlimited
   canManageUsers: true,
-  canConnectSocialAtOrgLevel: false, // Centrale does NOT connect social networks
+  canConnectSocialAtOrgLevel: false, // Centrale does NOT connect social networks - ONLY via stores
 };
 
 function getLimitsForAccountType(accountType: 'free' | 'store' | 'central'): PermissionLimits {
@@ -152,6 +157,7 @@ export function usePermissions(): Permissions & { loading: boolean } {
         canEditPromotions: false,
         canDeletePromotions: false,
         canEditOwnPromotionsOnly: false,
+        canEditArchivedPromotions: false, // Archived promos are always read-only
         
         canViewStores: true,
         canViewAllStores: true,
@@ -168,7 +174,7 @@ export function usePermissions(): Permissions & { loading: boolean } {
         canViewSocialConnections: true,
         canManageSocialConnections: false,
         canManageOwnStoreSocialOnly: false,
-        canConnectSocialAtOrgLevel: false,
+        canConnectSocialAtOrgLevel: false, // Always false - social at store level only
         
         canViewQRCodes: accountType !== 'free',
         canDownloadQRCodes: false,
@@ -186,17 +192,19 @@ export function usePermissions(): Permissions & { loading: boolean } {
       };
     }
 
-    // Store Manager role - CRUD on own store/promos only
+    // Store Manager role - CRUD on own store/promos only (franchisee pattern)
+    // Franchised stores: inherit central promos, can add own promos, connect own social
     if (role === 'store_manager') {
       return {
-        canViewPromotions: true, // Can view all org promos (inheritance)
-        canCreatePromotions: true, // Can create for own store
+        canViewPromotions: true, // Can view all org promos (central inheritance)
+        canCreatePromotions: true, // Can create for own store (not visible to others)
         canEditPromotions: true, // Only own store promos
         canDeletePromotions: true, // Only own store promos
         canEditOwnPromotionsOnly: true,
+        canEditArchivedPromotions: false, // Archived promos are always read-only
         
         canViewStores: true,
-        canViewAllStores: false, // Only sees their store
+        canViewAllStores: false, // Only sees their assigned store
         canCreateStores: false,
         canEditStores: true, // Only own store
         canDeleteStores: false,
@@ -208,9 +216,9 @@ export function usePermissions(): Permissions & { loading: boolean } {
         canDeleteCampaigns: false,
         
         canViewSocialConnections: true,
-        canManageSocialConnections: true, // Only for own store
+        canManageSocialConnections: true, // Can connect own store's social networks
         canManageOwnStoreSocialOnly: true,
-        canConnectSocialAtOrgLevel: false,
+        canConnectSocialAtOrgLevel: false, // Social is always at store level
         
         canViewQRCodes: true,
         canDownloadQRCodes: true,
@@ -236,6 +244,7 @@ export function usePermissions(): Permissions & { loading: boolean } {
         canEditPromotions: true,
         canDeletePromotions: true,
         canEditOwnPromotionsOnly: false,
+        canEditArchivedPromotions: false, // Archived promos are always read-only
         
         canViewStores: true,
         canViewAllStores: true,
@@ -278,6 +287,7 @@ export function usePermissions(): Permissions & { loading: boolean } {
         canEditPromotions: true,
         canDeletePromotions: true,
         canEditOwnPromotionsOnly: false,
+        canEditArchivedPromotions: false, // Archived promos are always read-only (can duplicate only)
         
         canViewStores: true,
         canViewAllStores: true,
@@ -294,7 +304,7 @@ export function usePermissions(): Permissions & { loading: boolean } {
         canViewSocialConnections: true,
         canManageSocialConnections: true,
         canManageOwnStoreSocialOnly: false,
-        canConnectSocialAtOrgLevel: false, // Always at store level, never at org level
+        canConnectSocialAtOrgLevel: false, // Always at store level, NEVER at org level
         
         canViewQRCodes: accountType !== 'free',
         canDownloadQRCodes: accountType !== 'free',
@@ -319,6 +329,7 @@ export function usePermissions(): Permissions & { loading: boolean } {
       canEditPromotions: false,
       canDeletePromotions: false,
       canEditOwnPromotionsOnly: false,
+      canEditArchivedPromotions: false,
       
       canViewStores: true,
       canViewAllStores: true,
