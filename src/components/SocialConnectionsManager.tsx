@@ -22,79 +22,76 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
 
   const handleConnectFacebook = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('facebook-oauth-init', {
-        body: { storeId }
-      });
+      // Build the OAuth init URL with store_id as query param
+      // This will redirect directly to Facebook (GET request = redirect)
+      const SUPABASE_URL = 'https://rrcrfwhblesarezabsfo.supabase.co';
+      const oauthInitUrl = `${SUPABASE_URL}/functions/v1/facebook-oauth-init?store_id=${storeId}`;
+      
+      // Open popup that navigates directly to the edge function (which will redirect to Facebook)
+      const width = 600;
+      const height = 700;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      
+      const popup = window.open(
+        oauthInitUrl,
+        'facebook_oauth',
+        `width=${width},height=${height},left=${left},top=${top},popup=yes`
+      );
 
-      if (error) throw error;
-
-      if (data?.authUrl) {
-        // Ouvrir OAuth dans une popup pour éviter ERR_BLOCKED_BY_RESPONSE
-        const width = 600;
-        const height = 700;
-        const left = window.screenX + (window.outerWidth - width) / 2;
-        const top = window.screenY + (window.outerHeight - height) / 2;
-        
-        const popup = window.open(
-          data.authUrl,
-          'facebook_oauth',
-          `width=${width},height=${height},left=${left},top=${top},popup=yes`
-        );
-
-        if (!popup) {
-          toast({
-            title: "Erreur",
-            description: "Veuillez autoriser les popups pour ce site",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        let messageReceived = false;
-
-        // Écouter les messages de la popup
-        const handleMessage = (event: MessageEvent) => {
-          // Accepter les messages de n'importe quelle origine (popup OAuth)
-          if (event.data?.type === 'oauth_success' || event.data?.type === 'oauth_error') {
-            messageReceived = true;
-            window.removeEventListener('message', handleMessage);
-            
-            if (event.data.type === 'oauth_success') {
-              toast({
-                title: "Connexion réussie",
-                description: "Votre compte Facebook a été connecté",
-              });
-              refetch();
-            } else {
-              toast({
-                title: "Erreur",
-                description: event.data.error === 'oauth_denied' 
-                  ? "Vous avez annulé la connexion Facebook"
-                  : "Une erreur s'est produite lors de la connexion",
-                variant: "destructive",
-              });
-            }
-          }
-        };
-
-        window.addEventListener('message', handleMessage);
-
-        // Vérifier périodiquement si la popup est fermée
-        const checkClosed = setInterval(() => {
-          if (popup.closed) {
-            clearInterval(checkClosed);
-            window.removeEventListener('message', handleMessage);
-            
-            // Si aucun message n'a été reçu, rafraîchir quand même les connexions
-            // (au cas où la connexion a réussi mais le message n'a pas été reçu)
-            if (!messageReceived) {
-              setTimeout(() => {
-                refetch();
-              }, 500);
-            }
-          }
-        }, 300);
+      if (!popup) {
+        toast({
+          title: "Erreur",
+          description: "Veuillez autoriser les popups pour ce site",
+          variant: "destructive",
+        });
+        return;
       }
+
+      let messageReceived = false;
+
+      // Listen for messages from the popup
+      const handleMessage = (event: MessageEvent) => {
+        // Accept OAuth messages from popup
+        if (event.data?.type === 'oauth_success' || event.data?.type === 'oauth_error') {
+          messageReceived = true;
+          window.removeEventListener('message', handleMessage);
+          
+          if (event.data.type === 'oauth_success') {
+            toast({
+              title: "Connexion réussie",
+              description: "Votre compte Facebook a été connecté",
+            });
+            refetch();
+          } else {
+            toast({
+              title: "Erreur",
+              description: event.data.error === 'oauth_denied' 
+                ? "Vous avez annulé la connexion Facebook"
+                : event.data.error || "Une erreur s'est produite lors de la connexion",
+              variant: "destructive",
+            });
+          }
+        }
+      };
+
+      window.addEventListener('message', handleMessage);
+
+      // Check periodically if popup is closed
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', handleMessage);
+          
+          // If no message was received, refresh connections anyway
+          // (in case connection succeeded but message wasn't received)
+          if (!messageReceived) {
+            setTimeout(() => {
+              refetch();
+            }, 500);
+          }
+        }
+      }, 300);
     } catch (error) {
       console.error('Error initiating Facebook OAuth:', error);
       toast({

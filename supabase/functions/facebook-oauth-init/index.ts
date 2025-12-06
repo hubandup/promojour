@@ -16,15 +16,18 @@ serve(async (req) => {
     console.log('Request URL:', req.url);
     
     let storeId: string | null = null;
+    let shouldRedirect = false;
 
-    // Handle both GET (query params) and POST (body) requests
+    // Handle both GET (direct navigation - should redirect) and POST (API call - returns JSON)
     if (req.method === 'GET') {
       const url = new URL(req.url);
       storeId = url.searchParams.get('store_id');
+      shouldRedirect = true; // GET requests should redirect directly to Facebook
     } else if (req.method === 'POST') {
       try {
         const body = await req.json();
         storeId = body.storeId;
+        shouldRedirect = false; // POST requests return JSON for frontend handling
       } catch (e) {
         console.error('Failed to parse request body:', e);
       }
@@ -32,6 +35,12 @@ serve(async (req) => {
     
     if (!storeId) {
       console.error('ERROR: Store ID is required but not provided');
+      if (shouldRedirect) {
+        return new Response(
+          `<!DOCTYPE html><html><body><h1>Erreur</h1><p>Store ID manquant</p></body></html>`,
+          { headers: { 'Content-Type': 'text/html; charset=utf-8' }, status: 400 }
+        );
+      }
       throw new Error('Store ID is required');
     }
 
@@ -48,11 +57,16 @@ serve(async (req) => {
     
     if (!FACEBOOK_APP_ID) {
       console.error('ERROR: Facebook App ID not configured in environment variables');
+      if (shouldRedirect) {
+        return new Response(
+          `<!DOCTYPE html><html><body><h1>Erreur</h1><p>Facebook App ID non configuré</p></body></html>`,
+          { headers: { 'Content-Type': 'text/html; charset=utf-8' }, status: 500 }
+        );
+      }
       throw new Error('Facebook App ID not configured');
     }
 
     // Facebook OAuth scopes for Instagram and Facebook Pages
-    // Instagram Business Accounts are managed through Facebook Pages permissions
     const scopes = [
       'pages_show_list',
       'pages_read_engagement',
@@ -73,6 +87,18 @@ serve(async (req) => {
     console.log('✓ OAuth URL generated:', oauthUrl.toString());
     console.log('=== Facebook OAuth Init - Success ===');
 
+    // For GET requests (direct popup navigation), redirect to Facebook
+    if (shouldRedirect) {
+      console.log('Redirecting to Facebook OAuth...');
+      return new Response(null, {
+        status: 302,
+        headers: {
+          'Location': oauthUrl.toString(),
+        },
+      });
+    }
+
+    // For POST requests (API calls), return JSON with auth URL
     return new Response(
       JSON.stringify({ authUrl: oauthUrl.toString() }), 
       {
