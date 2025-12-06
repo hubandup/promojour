@@ -931,6 +931,15 @@ export type Database = {
         Args: { org_id: string }
         Returns: number
       }
+      get_public_org_data: {
+        Args: { org_id: string }
+        Returns: {
+          cover_image_url: string
+          id: string
+          logo_url: string
+          name: string
+        }[]
+      }
       get_public_store_data: {
         Args: { store_id: string }
         Returns: {

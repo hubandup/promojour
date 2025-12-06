@@ -25,6 +25,35 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    // Authenticate user from JWT token
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('[SYNC-MERCHANT] No authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Authorization required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create client with user's token to verify identity
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+    if (userError || !user) {
+      console.error('[SYNC-MERCHANT] User authentication failed:', userError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    console.log('[SYNC-MERCHANT] Authenticated user:', user.id);
+
     const { storeId } = await req.json();
 
     if (!storeId) {
@@ -34,9 +63,48 @@ serve(async (req) => {
       );
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Create service role client for database operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify user has access to this store's organization
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('organization_id')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      console.error('[SYNC-MERCHANT] Failed to get user profile:', profileError?.message);
+      return new Response(
+        JSON.stringify({ error: 'User profile not found' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify the store belongs to the user's organization
+    const { data: store, error: storeError } = await supabase
+      .from('stores')
+      .select('id, name, website_url, organization_id')
+      .eq('id', storeId)
+      .single();
+
+    if (storeError || !store) {
+      console.error('[SYNC-MERCHANT] Store not found:', storeError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Store not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (store.organization_id !== profile.organization_id) {
+      console.error('[SYNC-MERCHANT] User does not have access to this store');
+      return new Response(
+        JSON.stringify({ error: 'Access denied to this store' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('[SYNC-MERCHANT] User authorized for store:', storeId);
 
     // Get Google Merchant account for this store
     const { data: merchantAccount, error: accountError } = await supabase
@@ -71,13 +139,6 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Get store info for product links
-    const { data: store } = await supabase
-      .from('stores')
-      .select('name, website_url')
-      .eq('id', storeId)
-      .single();
 
     const results = [];
 
