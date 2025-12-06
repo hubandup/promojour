@@ -15,10 +15,20 @@ serve(async (req) => {
     console.log('Request method:', req.method);
     console.log('Request URL:', req.url);
     
-    const body = await req.json();
-    console.log('Request body:', JSON.stringify(body));
-    
-    const { storeId } = body;
+    let storeId: string | null = null;
+
+    // Handle both GET (query params) and POST (body) requests
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      storeId = url.searchParams.get('store_id');
+    } else if (req.method === 'POST') {
+      try {
+        const body = await req.json();
+        storeId = body.storeId;
+      } catch (e) {
+        console.error('Failed to parse request body:', e);
+      }
+    }
     
     if (!storeId) {
       console.error('ERROR: Store ID is required but not provided');
@@ -76,11 +86,6 @@ serve(async (req) => {
     }
     console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    try {
-      console.error('Full error object:', JSON.stringify(error, null, 2));
-    } catch {
-      console.error('Full error object: (cannot stringify)');
-    }
     
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
