@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import logoPromoJour from "@/assets/logo-promojour.svg";
 import { useUserData } from "@/hooks/use-user-data";
 import { useStores } from "@/hooks/use-stores";
+import { usePermissions } from "@/hooks/use-permissions";
 
 const settingsItems = [
   { title: "Réglages", url: "/settings", icon: Settings },
@@ -26,6 +27,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const { isStoreManager, isFree, loading: userLoading } = useUserData();
   const { stores, loading: storesLoading } = useStores();
+  const { canViewCampaigns, canEditOrgSettings } = usePermissions();
 
   // Déterminer si on affiche "Mon magasin" ou "Mes Magasins"
   const showSingleStore = isStoreManager || (isFree && stores.length === 1);
@@ -33,11 +35,12 @@ export function AppSidebar() {
                    isStoreManager ? "/mon-magasin" : 
                    "/stores";
 
+  // Build menu items based on permissions
   const menuItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Promotions", url: "/promotions", icon: Tag },
-    // Campagnes temporairement désactivé pour debug
-    // ...(!isFree ? [{ title: "Campagnes", url: "/campaigns", icon: CalendarDays }] : []),
+    // Campagnes only visible for Pro and Centrale (not Free)
+    ...(canViewCampaigns ? [{ title: "Campagnes", url: "/campaigns", icon: CalendarDays }] : []),
     { title: "Statistiques", url: "/stats", icon: BarChart3 },
     { 
       title: showSingleStore ? "Mon magasin" : "Mes Magasins", 
@@ -45,6 +48,11 @@ export function AppSidebar() {
       icon: Store 
     },
   ];
+
+  // Settings items - filter based on permissions
+  const filteredSettingsItems = canEditOrgSettings 
+    ? settingsItems 
+    : settingsItems.filter(item => item.url !== "/settings");
 
   const handleLogout = async () => {
     try {
@@ -88,28 +96,30 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Configuration</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {settingsItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      className={({ isActive }) =>
-                        isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""
-                      }
-                    >
-                      <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {filteredSettingsItems.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Configuration</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {filteredSettingsItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        className={({ isActive }) =>
+                          isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""
+                        }
+                      >
+                        <item.icon className="w-4 h-4" />
+                        <span>{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter>
