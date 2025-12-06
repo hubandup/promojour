@@ -26,8 +26,14 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
     const SUPABASE_URL = 'https://rrcrfwhblesarezabsfo.supabase.co';
     const oauthInitUrl = `${SUPABASE_URL}/functions/v1/facebook-oauth-init?store_id=${storeId}`;
     
-    // Full page redirect to Facebook OAuth (not popup/iframe)
-    window.location.href = oauthInitUrl;
+    // Check if we're in an iframe (e.g., Lovable preview)
+    // If so, open in a new tab because Facebook blocks iframe OAuth
+    if (window.self !== window.top) {
+      window.open(oauthInitUrl, '_blank');
+    } else {
+      // Full page redirect to Facebook OAuth
+      window.location.href = oauthInitUrl;
+    }
   };
 
   const handleDisconnect = async (platform: 'facebook' | 'instagram' | 'google_business') => {
