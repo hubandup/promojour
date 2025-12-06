@@ -214,86 +214,112 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
       )}
       
       {platforms.includes('facebook') && (
-        <div>
-          {isReallyConnected(facebookConnection) ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Badge variant="default" className="gap-1">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Connecté
-                </Badge>
-                {facebookConnection.account_name && (
-                  <span className="text-sm text-muted-foreground">
-                    {facebookConnection.account_name}
-                  </span>
-                )}
+        <Card className="glass-card border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-3 text-base">
+              <div className="w-10 h-10 rounded-lg bg-[#1877F2]/10 flex items-center justify-center">
+                <Facebook className="h-6 w-6 text-[#1877F2]" />
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDisconnect('facebook')}
-              >
-                Déconnecter
+              Facebook
+            </CardTitle>
+            <CardDescription>
+              Publiez vos promotions sur votre page Facebook
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isReallyConnected(facebookConnection) ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Badge variant="default" className="gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Connecté
+                  </Badge>
+                  {facebookConnection.account_name && (
+                    <span className="text-sm text-muted-foreground">
+                      {facebookConnection.account_name}
+                    </span>
+                  )}
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDisconnect('facebook')}
+                >
+                  Déconnecter
+                </Button>
+              </div>
+            ) : (
+              <Button onClick={handleConnectFacebook}>
+                <Facebook className="mr-2 h-4 w-4" />
+                Connecter Facebook
               </Button>
-            </div>
-          ) : (
-            <Button onClick={handleConnectFacebook}>
-              <Facebook className="mr-2 h-4 w-4" />
-              Connecter Facebook
-            </Button>
-          )}
-        </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {platforms.includes('instagram') && (
-        <div>
-          {isReallyConnected(instagramConnection) ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Badge variant="default" className="gap-1">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Connecté
-                </Badge>
-                {instagramConnection?.account_name && (
-                  <span className="text-sm text-muted-foreground">
-                    @{instagramConnection.account_name}
-                  </span>
-                )}
-                {instagramConnection?.followers_count && instagramConnection.followers_count > 0 && (
-                  <span className="text-sm text-muted-foreground">
-                    • {instagramConnection.followers_count} abonnés
-                  </span>
+        <Card className="glass-card border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-3 text-base">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#833AB4]/10 via-[#FD1D1D]/10 to-[#F77737]/10 flex items-center justify-center">
+                <Instagram className="h-6 w-6 text-[#E4405F]" />
+              </div>
+              Instagram
+            </CardTitle>
+            <CardDescription>
+              Publiez vos promotions en Reels sur Instagram
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isReallyConnected(instagramConnection) ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Badge variant="default" className="gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Connecté
+                  </Badge>
+                  {instagramConnection?.account_name && (
+                    <span className="text-sm text-muted-foreground">
+                      @{instagramConnection.account_name}
+                    </span>
+                  )}
+                  {instagramConnection?.followers_count && instagramConnection.followers_count > 0 && (
+                    <span className="text-sm text-muted-foreground">
+                      • {instagramConnection.followers_count} abonnés
+                    </span>
+                  )}
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDisconnect('instagram')}
+                >
+                  Déconnecter
+                </Button>
+              </div>
+            ) : (
+              <div>
+                {isReallyConnected(facebookConnection) ? (
+                  <p className="text-sm text-muted-foreground">
+                    Instagram se connecte automatiquement avec Facebook.
+                    {!instagramConnection && " Aucun compte Instagram Business trouvé sur cette page Facebook."}
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Connectez d'abord votre page Facebook pour accéder à Instagram
+                    </p>
+                    <Button onClick={handleConnectFacebook} variant="outline">
+                      <Facebook className="mr-2 h-4 w-4" />
+                      Connecter via Facebook
+                    </Button>
+                  </div>
                 )}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDisconnect('instagram')}
-              >
-                Déconnecter
-              </Button>
-            </div>
-          ) : (
-            <div>
-              {isReallyConnected(facebookConnection) ? (
-                <p className="text-sm text-muted-foreground">
-                  Instagram se connecte automatiquement avec Facebook.
-                  {!instagramConnection && " Aucun compte Instagram Business trouvé sur cette page Facebook."}
-                </p>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Connectez d'abord votre page Facebook pour accéder à Instagram
-                  </p>
-                  <Button onClick={handleConnectFacebook} variant="outline">
-                    <Facebook className="mr-2 h-4 w-4" />
-                    Connecter via Facebook
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {platforms.includes('google_business') && (
