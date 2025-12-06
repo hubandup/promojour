@@ -6,79 +6,36 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Generate HTML response that communicates with the opener window
-function generateCallbackHtml(success: boolean, storeId: string | null, errorMessage?: string) {
-  const message = success 
-    ? { type: 'oauth_success', platform: 'facebook', storeId }
-    : { type: 'oauth_error', error: errorMessage || 'unknown_error', storeId };
+// Get the frontend URL based on environment
+function getFrontendUrl(): string {
+  // Production URL
+  return 'https://promojour.lovable.app';
+}
+
+// Generate redirect URL to the store page
+function getRedirectUrl(success: boolean, storeId: string | null, errorMessage?: string): string {
+  const baseUrl = getFrontendUrl();
   
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>${success ? 'Connexion réussie' : 'Erreur de connexion'}</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-    .container {
-      text-align: center;
-      padding: 2rem;
-      background: rgba(255,255,255,0.1);
-      border-radius: 16px;
-      backdrop-filter: blur(10px);
-    }
-    .icon {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-    }
-    h1 { margin: 0 0 0.5rem; font-size: 1.5rem; }
-    p { margin: 0; opacity: 0.9; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="icon">${success ? '✓' : '✕'}</div>
-    <h1>${success ? 'Connexion réussie !' : 'Erreur de connexion'}</h1>
-    <p>${success ? 'Votre compte Facebook a été connecté.' : (errorMessage || 'Une erreur est survenue.')}</p>
-    <p style="margin-top: 1rem; font-size: 0.875rem;">Cette fenêtre va se fermer...</p>
-  </div>
-  <script>
-    (function() {
-      const message = ${JSON.stringify(message)};
-      
-      // Try to send message to opener
-      if (window.opener) {
-        try {
-          window.opener.postMessage(message, '*');
-        } catch (e) {
-          console.error('Failed to post message:', e);
-        }
-      }
-      
-      // Close window after delay
-      setTimeout(function() {
-        window.close();
-      }, 2000);
-      
-      // Fallback: if window doesn't close, show redirect link
-      setTimeout(function() {
-        if (!window.closed) {
-          document.body.innerHTML += '<p style="margin-top: 2rem;"><a href="/" style="color: white;">Cliquez ici pour continuer</a></p>';
-        }
-      }, 3000);
-    })();
-  </script>
-</body>
-</html>
-`;
+  if (success && storeId) {
+    // Redirect to store page with success message
+    return `${baseUrl}/stores/${storeId}?tab=connexions&oauth=success&platform=facebook`;
+  } else if (storeId) {
+    // Redirect to store page with error message
+    const error = encodeURIComponent(errorMessage || 'Erreur de connexion');
+    return `${baseUrl}/stores/${storeId}?tab=connexions&oauth=error&platform=facebook&error=${error}`;
+  } else {
+    // Fallback to dashboard with error
+    const error = encodeURIComponent(errorMessage || 'Erreur de connexion');
+    return `${baseUrl}/dashboard?oauth=error&platform=facebook&error=${error}`;
+  }
+}
+
+// Helper to create redirect response
+function redirectTo(url: string): Response {
+  return new Response(null, {
+    status: 302,
+    headers: { 'Location': url },
+  });
 }
 
 serve(async (req) => {
@@ -111,18 +68,12 @@ serve(async (req) => {
         error_description: errorDescription,
       });
       
-      return new Response(
-        generateCallbackHtml(false, storeId, errorDescription || errorReason || 'Connexion annulée'),
-        { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-      );
+      return redirectTo(getRedirectUrl(false, storeId, errorDescription || errorReason || 'Connexion annulée'));
     }
 
     if (!code || !storeId) {
       console.error('❌ Missing required parameters:', { code: !!code, storeId: !!storeId });
-      return new Response(
-        generateCallbackHtml(false, storeId, 'Paramètres manquants'),
-        { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-      );
+      return redirectTo(getRedirectUrl(false, storeId, 'Paramètres manquants'));
     }
 
     console.log('✓ All required parameters present');
@@ -155,10 +106,7 @@ serve(async (req) => {
     if (!tokenResponse.ok || !tokenData.access_token) {
       console.error('❌ Failed to get access token:', tokenData);
       const fbError = tokenData.error?.message || 'Échec de récupération du token';
-      return new Response(
-        generateCallbackHtml(false, storeId, fbError),
-        { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-      );
+      return redirectTo(getRedirectUrl(false, storeId, fbError));
     }
 
     console.log('✓ Short-lived token obtained');
@@ -192,10 +140,7 @@ serve(async (req) => {
 
     if (meData.error) {
       console.error('❌ Error fetching user info:', meData.error);
-      return new Response(
-        generateCallbackHtml(false, storeId, meData.error.message),
-        { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-      );
+      return redirectTo(getRedirectUrl(false, storeId, meData.error.message));
     }
 
     console.log('✓ User info obtained:', meData.name, `(ID: ${meData.id})`);
@@ -238,10 +183,7 @@ serve(async (req) => {
 
     if (fbError) {
       console.error('❌ Error saving Facebook connection:', fbError);
-      return new Response(
-        generateCallbackHtml(false, storeId, 'Erreur de sauvegarde'),
-        { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-      );
+      return redirectTo(getRedirectUrl(false, storeId, 'Erreur de sauvegarde'));
     }
     
     console.log('✓ Facebook connection saved successfully');
@@ -291,10 +233,7 @@ serve(async (req) => {
 
     console.log('=== Facebook OAuth Callback - Success ===');
     
-    return new Response(
-      generateCallbackHtml(true, storeId),
-      { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-    );
+    return redirectTo(getRedirectUrl(true, storeId));
 
   } catch (error) {
     console.error('=== Facebook OAuth Callback - Error ===');
@@ -302,9 +241,6 @@ serve(async (req) => {
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     
     const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-    return new Response(
-      generateCallbackHtml(false, null, errorMessage),
-      { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-    );
+    return redirectTo(getRedirectUrl(false, null, errorMessage));
   }
 });

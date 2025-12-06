@@ -107,17 +107,26 @@ const StoreDetail = () => {
   }, [store]);
 
   useEffect(() => {
-    // Check for OAuth callback success/error
+    // Check for OAuth callback parameters
     const params = new URLSearchParams(window.location.search);
-    const success = params.get('success');
-    const error = params.get('error');
+    const oauth = params.get('oauth');
+    const platform = params.get('platform');
+    const tab = params.get('tab');
+    const errorMsg = params.get('error');
 
-    if (success === 'social_connected') {
-      toast.success('Compte connecté avec succès !');
+    // Switch to connexions tab if specified
+    if (tab === 'connexions') {
+      setActiveTab('connexions');
+    }
+
+    // Handle OAuth success/error
+    if (oauth === 'success' && platform) {
+      const platformName = platform === 'facebook' ? 'Facebook' : platform === 'instagram' ? 'Instagram' : platform;
+      toast.success(`Connexion ${platformName} réussie !`);
       // Clean URL
       window.history.replaceState({}, '', window.location.pathname);
-    } else if (error === 'oauth_denied') {
-      toast.error('Connexion annulée');
+    } else if (oauth === 'error') {
+      toast.error(errorMsg ? decodeURIComponent(errorMsg) : 'Erreur de connexion');
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
