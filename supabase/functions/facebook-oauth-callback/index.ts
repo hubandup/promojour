@@ -6,6 +6,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to log with timestamp and structure
+function log(level: 'INFO' | 'ERROR' | 'DEBUG' | 'WARN', message: string, data?: any) {
+  const timestamp = new Date().toISOString();
+  const logEntry = {
+    timestamp,
+    level,
+    function: 'facebook-oauth-callback',
+    message,
+    ...(data && { data }),
+  };
+  console.log(JSON.stringify(logEntry, null, 2));
+}
+
 // Get the frontend URL based on environment
 function getFrontendUrl(): string {
   // Production URL
@@ -17,14 +30,11 @@ function getRedirectUrl(success: boolean, storeId: string | null, errorMessage?:
   const baseUrl = getFrontendUrl();
   
   if (success && storeId) {
-    // Redirect to store page with success message
     return `${baseUrl}/stores/${storeId}?tab=connexions&oauth=success&platform=facebook`;
   } else if (storeId) {
-    // Redirect to store page with error message
     const error = encodeURIComponent(errorMessage || 'Erreur de connexion');
     return `${baseUrl}/stores/${storeId}?tab=connexions&oauth=error&platform=facebook&error=${error}`;
   } else {
-    // Fallback to dashboard with error
     const error = encodeURIComponent(errorMessage || 'Erreur de connexion');
     return `${baseUrl}/dashboard?oauth=error&platform=facebook&error=${error}`;
   }
@@ -32,10 +42,38 @@ function getRedirectUrl(success: boolean, storeId: string | null, errorMessage?:
 
 // Helper to create redirect response
 function redirectTo(url: string): Response {
+  log('INFO', 'Redirecting to', { url });
   return new Response(null, {
     status: 302,
     headers: { 'Location': url },
   });
+}
+
+// Helper to log and make fetch requests
+async function fetchWithLogging(url: string, options?: RequestInit): Promise<{ response: Response; data: any }> {
+  log('DEBUG', 'Making HTTP request', { 
+    url: url.replace(/access_token=[^&]+/, 'access_token=***REDACTED***'),
+    method: options?.method || 'GET',
+  });
+  
+  const response = await fetch(url, options);
+  const responseText = await response.text();
+  
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    data = { rawText: responseText };
+  }
+  
+  log('DEBUG', 'HTTP response received', {
+    status: response.status,
+    statusText: response.statusText,
+    headers: Object.fromEntries(response.headers.entries()),
+    body: data,
+  });
+  
+  return { response, data };
 }
 
 serve(async (req) => {
@@ -44,8 +82,12 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== Facebook OAuth Callback - Starting ===');
-    console.log('Request URL:', req.url);
+    log('INFO', '=== Facebook OAuth Callback - Starting ===');
+    log('DEBUG', 'Request details', {
+      method: req.method,
+      url: req.url,
+      headers: Object.fromEntries(req.headers.entries()),
+    });
     
     const url = new URL(req.url);
     const code = url.searchParams.get('code');
@@ -54,119 +96,167 @@ serve(async (req) => {
     const errorReason = url.searchParams.get('error_reason');
     const errorDescription = url.searchParams.get('error_description');
 
-    console.log('Query parameters:');
-    console.log('- code:', code ? `Present (${code.substring(0, 10)}...)` : 'Missing');
-    console.log('- state (storeId):', storeId);
-    console.log('- error:', error);
-    console.log('- error_reason:', errorReason);
-    console.log('- error_description:', errorDescription);
+    log('DEBUG', 'Query parameters from Facebook', {
+      code: code ? `${code.substring(0, 20)}...` : 'MISSING',
+      state: storeId,
+      error,
+      error_reason: errorReason,
+      error_description: errorDescription,
+      allParams: Object.fromEntries(url.searchParams.entries()),
+    });
 
     if (error) {
-      console.error('❌ OAuth error from Facebook:', {
+      log('ERROR', 'OAuth error returned by Facebook', {
         error,
         error_reason: errorReason,
         error_description: errorDescription,
+        storeId,
       });
       
       return redirectTo(getRedirectUrl(false, storeId, errorDescription || errorReason || 'Connexion annulée'));
     }
 
     if (!code || !storeId) {
-      console.error('❌ Missing required parameters:', { code: !!code, storeId: !!storeId });
+      log('ERROR', 'Missing required parameters', { 
+        hasCode: !!code, 
+        hasStoreId: !!storeId,
+        storeId,
+      });
       return redirectTo(getRedirectUrl(false, storeId, 'Paramètres manquants'));
     }
 
-    console.log('✓ All required parameters present');
+    log('INFO', 'All required parameters present, proceeding with token exchange');
 
     const FACEBOOK_APP_ID = Deno.env.get('FACEBOOK_APP_ID');
     const FACEBOOK_APP_SECRET = Deno.env.get('FACEBOOK_APP_SECRET');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const redirectUri = `${SUPABASE_URL}/functions/v1/facebook-oauth-callback`;
 
-    console.log('Environment check:');
-    console.log('- FACEBOOK_APP_ID:', FACEBOOK_APP_ID ? 'Present' : 'Missing');
-    console.log('- FACEBOOK_APP_SECRET:', FACEBOOK_APP_SECRET ? 'Present' : 'Missing');
-    console.log('- SUPABASE_URL:', SUPABASE_URL);
-    console.log('- Redirect URI:', redirectUri);
+    log('DEBUG', 'Environment configuration', {
+      FACEBOOK_APP_ID: FACEBOOK_APP_ID ? `${FACEBOOK_APP_ID.substring(0, 8)}...` : 'MISSING',
+      FACEBOOK_APP_SECRET: FACEBOOK_APP_SECRET ? 'Present (hidden)' : 'MISSING',
+      SUPABASE_URL,
+      redirectUri,
+    });
 
-    // Exchange code for access token
+    if (!FACEBOOK_APP_ID || !FACEBOOK_APP_SECRET) {
+      log('ERROR', 'Missing Facebook credentials', {
+        hasAppId: !!FACEBOOK_APP_ID,
+        hasAppSecret: !!FACEBOOK_APP_SECRET,
+      });
+      return redirectTo(getRedirectUrl(false, storeId, 'Configuration Facebook manquante'));
+    }
+
+    // Step 1: Exchange code for access token
+    log('INFO', 'Step 1: Exchanging authorization code for short-lived token');
+    
     const tokenUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token');
-    tokenUrl.searchParams.set('client_id', FACEBOOK_APP_ID!);
-    tokenUrl.searchParams.set('client_secret', FACEBOOK_APP_SECRET!);
+    tokenUrl.searchParams.set('client_id', FACEBOOK_APP_ID);
+    tokenUrl.searchParams.set('client_secret', FACEBOOK_APP_SECRET);
     tokenUrl.searchParams.set('redirect_uri', redirectUri);
     tokenUrl.searchParams.set('code', code);
 
-    console.log('Step 1: Exchanging authorization code for short-lived token...');
-    
-    const tokenResponse = await fetch(tokenUrl.toString());
-    const tokenData = await tokenResponse.json();
+    log('DEBUG', 'Token exchange request', {
+      url: tokenUrl.toString().replace(/client_secret=[^&]+/, 'client_secret=***REDACTED***').replace(/code=[^&]+/, 'code=***REDACTED***'),
+      params: {
+        client_id: FACEBOOK_APP_ID,
+        redirect_uri: redirectUri,
+        code: `${code.substring(0, 20)}...`,
+      },
+    });
 
-    console.log('Token response status:', tokenResponse.status);
+    const { response: tokenResponse, data: tokenData } = await fetchWithLogging(tokenUrl.toString());
 
     if (!tokenResponse.ok || !tokenData.access_token) {
-      console.error('❌ Failed to get access token:', tokenData);
-      const fbError = tokenData.error?.message || 'Échec de récupération du token';
+      log('ERROR', 'Failed to get access token from Facebook', {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        responseBody: tokenData,
+        facebookError: tokenData.error,
+        facebookErrorMessage: tokenData.error?.message,
+        facebookErrorType: tokenData.error?.type,
+        facebookErrorCode: tokenData.error?.code,
+        facebookErrorSubcode: tokenData.error?.error_subcode,
+        facebookFbtraceId: tokenData.error?.fbtrace_id,
+      });
+      
+      const fbError = tokenData.error?.message || `HTTP ${tokenResponse.status}: Échec de récupération du token`;
       return redirectTo(getRedirectUrl(false, storeId, fbError));
     }
 
-    console.log('✓ Short-lived token obtained');
+    log('INFO', 'Short-lived token obtained successfully');
     const shortLivedToken = tokenData.access_token;
 
-    // Exchange short-lived token for long-lived token
+    // Step 2: Exchange for long-lived token
+    log('INFO', 'Step 2: Exchanging for long-lived token');
+    
     const longLivedUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token');
     longLivedUrl.searchParams.set('grant_type', 'fb_exchange_token');
-    longLivedUrl.searchParams.set('client_id', FACEBOOK_APP_ID!);
-    longLivedUrl.searchParams.set('client_secret', FACEBOOK_APP_SECRET!);
+    longLivedUrl.searchParams.set('client_id', FACEBOOK_APP_ID);
+    longLivedUrl.searchParams.set('client_secret', FACEBOOK_APP_SECRET);
     longLivedUrl.searchParams.set('fb_exchange_token', shortLivedToken);
 
-    console.log('Step 2: Exchanging for long-lived token...');
-    const longLivedResponse = await fetch(longLivedUrl.toString());
-    const longLivedData = await longLivedResponse.json();
-
-    console.log('Long-lived token response status:', longLivedResponse.status);
+    const { response: longLivedResponse, data: longLivedData } = await fetchWithLogging(longLivedUrl.toString());
 
     const accessToken = longLivedData.access_token || shortLivedToken;
     const expiresIn = longLivedData.expires_in || tokenData.expires_in || 5184000;
     
-    console.log('✓ Using token type:', longLivedData.access_token ? 'long-lived' : 'short-lived');
+    log('INFO', 'Token exchange result', {
+      usedLongLivedToken: !!longLivedData.access_token,
+      expiresIn,
+      longLivedStatus: longLivedResponse.status,
+    });
 
-    // Get user info
-    console.log('Step 3: Fetching user info...');
+    // Step 3: Get user info
+    log('INFO', 'Step 3: Fetching user info');
+    
     const meUrl = `https://graph.facebook.com/v18.0/me?access_token=${accessToken}`;
-    const meResponse = await fetch(meUrl);
-    const meData = await meResponse.json();
-
-    console.log('User info response status:', meResponse.status);
+    const { response: meResponse, data: meData } = await fetchWithLogging(meUrl);
 
     if (meData.error) {
-      console.error('❌ Error fetching user info:', meData.error);
+      log('ERROR', 'Error fetching user info', {
+        error: meData.error,
+        errorMessage: meData.error?.message,
+        errorType: meData.error?.type,
+        errorCode: meData.error?.code,
+      });
       return redirectTo(getRedirectUrl(false, storeId, meData.error.message));
     }
 
-    console.log('✓ User info obtained:', meData.name, `(ID: ${meData.id})`);
+    log('INFO', 'User info obtained', {
+      userId: meData.id,
+      userName: meData.name,
+    });
 
-    // Get Facebook Pages
-    console.log('Step 4: Fetching Facebook Pages...');
+    // Step 4: Get Facebook Pages
+    log('INFO', 'Step 4: Fetching Facebook Pages');
+    
     const pagesUrl = `https://graph.facebook.com/v18.0/me/accounts?access_token=${accessToken}`;
-    const pagesResponse = await fetch(pagesUrl);
-    const pagesData = await pagesResponse.json();
+    const { response: pagesResponse, data: pagesData } = await fetchWithLogging(pagesUrl);
 
-    console.log('Pages count:', pagesData.data?.length || 0);
+    log('INFO', 'Facebook Pages retrieved', {
+      pagesCount: pagesData.data?.length || 0,
+      pages: pagesData.data?.map((p: any) => ({ id: p.id, name: p.name })) || [],
+    });
 
-    // Initialize Supabase client
-    console.log('Step 5: Initializing Supabase client...');
+    // Step 5: Initialize Supabase client
+    log('INFO', 'Step 5: Initializing Supabase client');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
     const supabase = createClient(supabaseUrl, supabaseKey);
-    console.log('✓ Supabase client initialized');
 
-    // Store Facebook connection
+    // Step 6: Store Facebook connection
     const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
     
-    console.log('Step 6: Saving Facebook connection to database...');
+    log('INFO', 'Step 6: Saving Facebook connection to database', {
+      storeId,
+      accountId: meData.id,
+      accountName: meData.name,
+      expiresAt,
+    });
     
-    const { error: fbError } = await supabase
+    const { error: fbError, data: insertData } = await supabase
       .from('social_connections')
       .upsert({
         store_id: storeId,
@@ -179,35 +269,45 @@ serve(async (req) => {
         last_synced_at: new Date().toISOString(),
       }, {
         onConflict: 'store_id,platform',
-      });
+      })
+      .select();
 
     if (fbError) {
-      console.error('❌ Error saving Facebook connection:', fbError);
+      log('ERROR', 'Error saving Facebook connection to database', {
+        error: fbError,
+        errorMessage: fbError.message,
+        errorCode: fbError.code,
+        errorDetails: fbError.details,
+      });
       return redirectTo(getRedirectUrl(false, storeId, 'Erreur de sauvegarde'));
     }
     
-    console.log('✓ Facebook connection saved successfully');
+    log('INFO', 'Facebook connection saved successfully', { insertData });
 
-    // Check for Instagram Business Account on pages
-    console.log('Step 7: Checking for Instagram Business Account...');
+    // Step 7: Check for Instagram Business Account on pages
+    log('INFO', 'Step 7: Checking for Instagram Business Account');
     
     for (const page of pagesData.data || []) {
-      console.log(`Checking page: ${page.name} (ID: ${page.id})`);
+      log('DEBUG', `Checking page for Instagram`, { pageId: page.id, pageName: page.name });
       
       const igUrl = `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`;
-      const igResponse = await fetch(igUrl);
-      const igData = await igResponse.json();
+      const { response: igResponse, data: igData } = await fetchWithLogging(igUrl);
 
       if (igData.instagram_business_account) {
         const igAccountId = igData.instagram_business_account.id;
-        console.log('✓ Instagram Business Account found:', igAccountId);
+        log('INFO', 'Instagram Business Account found', { igAccountId, pageId: page.id });
         
         const igInfoUrl = `https://graph.facebook.com/v18.0/${igAccountId}?fields=username,followers_count&access_token=${page.access_token}`;
-        const igInfoResponse = await fetch(igInfoUrl);
-        const igInfo = await igInfoResponse.json();
+        const { response: igInfoResponse, data: igInfo } = await fetchWithLogging(igInfoUrl);
 
         if (!igInfo.error) {
-          const { error: igError } = await supabase
+          log('INFO', 'Saving Instagram connection', {
+            igAccountId,
+            username: igInfo.username,
+            followersCount: igInfo.followers_count,
+          });
+          
+          const { error: igError, data: igInsertData } = await supabase
             .from('social_connections')
             .upsert({
               store_id: storeId,
@@ -221,24 +321,31 @@ serve(async (req) => {
               last_synced_at: new Date().toISOString(),
             }, {
               onConflict: 'store_id,platform',
-            });
+            })
+            .select();
 
           if (!igError) {
-            console.log('✓ Instagram connection saved successfully');
+            log('INFO', 'Instagram connection saved successfully', { igInsertData });
+          } else {
+            log('WARN', 'Failed to save Instagram connection', { error: igError });
           }
+        } else {
+          log('WARN', 'Error fetching Instagram account info', { error: igInfo.error });
         }
         break;
       }
     }
 
-    console.log('=== Facebook OAuth Callback - Success ===');
+    log('INFO', '=== Facebook OAuth Callback - SUCCESS ===', { storeId });
     
     return redirectTo(getRedirectUrl(true, storeId));
 
   } catch (error) {
-    console.error('=== Facebook OAuth Callback - Error ===');
-    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    log('ERROR', '=== Facebook OAuth Callback - FAILED ===', {
+      errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorStack: error instanceof Error ? error.stack : 'No stack trace',
+    });
     
     const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
     return redirectTo(getRedirectUrl(false, null, errorMessage));

@@ -5,15 +5,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to log with timestamp
+function log(level: 'INFO' | 'ERROR' | 'DEBUG', message: string, data?: any) {
+  const timestamp = new Date().toISOString();
+  const logEntry = {
+    timestamp,
+    level,
+    function: 'facebook-oauth-init',
+    message,
+    ...(data && { data }),
+  };
+  console.log(JSON.stringify(logEntry, null, 2));
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('=== Facebook OAuth Init - Starting ===');
-    console.log('Request method:', req.method);
-    console.log('Request URL:', req.url);
+    log('INFO', '=== Facebook OAuth Init - Starting ===');
+    log('DEBUG', 'Request details', {
+      method: req.method,
+      url: req.url,
+      headers: Object.fromEntries(req.headers.entries()),
+    });
     
     let storeId: string | null = null;
     let shouldRedirect = false;
@@ -23,18 +39,20 @@ serve(async (req) => {
       const url = new URL(req.url);
       storeId = url.searchParams.get('store_id');
       shouldRedirect = true; // GET requests should redirect directly to Facebook
+      log('DEBUG', 'GET request - will redirect to Facebook', { storeId });
     } else if (req.method === 'POST') {
       try {
         const body = await req.json();
         storeId = body.storeId;
         shouldRedirect = false; // POST requests return JSON for frontend handling
+        log('DEBUG', 'POST request - will return JSON', { storeId });
       } catch (e) {
-        console.error('Failed to parse request body:', e);
+        log('ERROR', 'Failed to parse request body', { error: e instanceof Error ? e.message : 'Unknown' });
       }
     }
     
     if (!storeId) {
-      console.error('ERROR: Store ID is required but not provided');
+      log('ERROR', 'Store ID is required but not provided');
       if (shouldRedirect) {
         return new Response(
           `<!DOCTYPE html><html><body><h1>Erreur</h1><p>Store ID manquant</p></body></html>`,
@@ -44,19 +62,19 @@ serve(async (req) => {
       throw new Error('Store ID is required');
     }
 
-    console.log('✓ Store ID:', storeId);
-
     const FACEBOOK_APP_ID = Deno.env.get('FACEBOOK_APP_ID');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const redirectUri = `${SUPABASE_URL}/functions/v1/facebook-oauth-callback`;
     
-    console.log('Environment check:');
-    console.log('- FACEBOOK_APP_ID:', FACEBOOK_APP_ID ? `Present (${FACEBOOK_APP_ID.substring(0, 4)}...)` : 'Missing');
-    console.log('- SUPABASE_URL:', SUPABASE_URL);
-    console.log('- Redirect URI:', redirectUri);
+    log('DEBUG', 'Environment configuration', {
+      FACEBOOK_APP_ID: FACEBOOK_APP_ID ? `${FACEBOOK_APP_ID.substring(0, 8)}...` : 'MISSING',
+      SUPABASE_URL,
+      redirectUri,
+      storeId,
+    });
     
     if (!FACEBOOK_APP_ID) {
-      console.error('ERROR: Facebook App ID not configured in environment variables');
+      log('ERROR', 'Facebook App ID not configured in environment variables');
       if (shouldRedirect) {
         return new Response(
           `<!DOCTYPE html><html><body><h1>Erreur</h1><p>Facebook App ID non configuré</p></body></html>`,
@@ -74,7 +92,7 @@ serve(async (req) => {
       'business_management',
     ].join(',');
 
-    console.log('OAuth scopes requested:', scopes);
+    log('DEBUG', 'OAuth scopes', { scopes });
 
     // Build OAuth URL
     const oauthUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth');
@@ -84,12 +102,20 @@ serve(async (req) => {
     oauthUrl.searchParams.set('response_type', 'code');
     oauthUrl.searchParams.set('state', storeId); // Pass store ID in state
 
-    console.log('✓ OAuth URL generated:', oauthUrl.toString());
-    console.log('=== Facebook OAuth Init - Success ===');
+    log('INFO', 'OAuth URL generated', {
+      url: oauthUrl.toString(),
+      params: {
+        client_id: FACEBOOK_APP_ID,
+        redirect_uri: redirectUri,
+        scope: scopes,
+        response_type: 'code',
+        state: storeId,
+      },
+    });
 
     // For GET requests (direct popup navigation), redirect to Facebook
     if (shouldRedirect) {
-      console.log('Redirecting to Facebook OAuth...');
+      log('INFO', 'Redirecting to Facebook OAuth...', { redirectUrl: oauthUrl.toString() });
       return new Response(null, {
         status: 302,
         headers: {
@@ -99,6 +125,7 @@ serve(async (req) => {
     }
 
     // For POST requests (API calls), return JSON with auth URL
+    log('INFO', 'Returning auth URL as JSON');
     return new Response(
       JSON.stringify({ authUrl: oauthUrl.toString() }), 
       {
@@ -106,12 +133,11 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('=== Facebook OAuth Init - Error ===');
-    if (error && typeof error === 'object' && 'constructor' in error) {
-      console.error('Error type:', (error as any).constructor.name);
-    }
-    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    log('ERROR', '=== Facebook OAuth Init - FAILED ===', {
+      errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorStack: error instanceof Error ? error.stack : 'No stack trace',
+    });
     
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
