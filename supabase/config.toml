@@ -7,7 +7,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.publish-social-reel]
-verify_jwt = false
+verify_jwt = true
+
+[functions.publish-social-post]
+verify_jwt = true
 
 [functions.create-checkout]
 verify_jwt = true

@@ -931,6 +931,25 @@ export type Database = {
         Args: { org_id: string }
         Returns: number
       }
+      get_public_store_data: {
+        Args: { store_id: string }
+        Returns: {
+          address_line1: string
+          address_line2: string
+          city: string
+          country: string
+          cover_image_url: string
+          description: string
+          google_maps_url: string
+          id: string
+          is_active: boolean
+          logo_url: string
+          name: string
+          opening_hours: Json
+          postal_code: string
+          website_url: string
+        }[]
+      }
       get_store_manager_stores: {
         Args: { _user_id: string }
         Returns: {

@@ -12,15 +12,57 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    // Verify user authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header provided');
+    }
+    
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
+    const token = authHeader.replace('Bearer ', '');
+    const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
+    
+    if (userError || !userData.user) {
+      throw new Error('User not authenticated');
+    }
+    
     const { promotionId, storeId, platforms, campaignId } = await req.json();
 
     if (!promotionId || !storeId || !platforms || !Array.isArray(platforms)) {
       throw new Error('Missing required parameters: promotionId, storeId, and platforms');
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Use service role for data operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Verify user has access to this store's organization
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('organization_id')
+      .eq('id', userData.user.id)
+      .single();
+    
+    if (profileError || !userProfile) {
+      throw new Error('User profile not found');
+    }
+    
+    const { data: store, error: storeError } = await supabase
+      .from('stores')
+      .select('organization_id')
+      .eq('id', storeId)
+      .single();
+    
+    if (storeError || !store) {
+      throw new Error('Store not found');
+    }
+    
+    if (store.organization_id !== userProfile.organization_id) {
+      throw new Error('Access denied: You do not have permission to publish to this store');
+    }
 
     // Fetch promotion details
     const { data: promotion, error: promoError } = await supabase
