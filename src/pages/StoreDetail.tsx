@@ -866,15 +866,16 @@ const StoreDetail = () => {
                   <div>
                     <CardTitle>Promotions actives</CardTitle>
                     <CardDescription>
-                      Promotions visibles dans ce magasin
+                      Promotions visibles dans ce magasin (centrales + locales)
                     </CardDescription>
                   </div>
                   <Button
                     onClick={() => setCreatePromotionOpen(true)}
                     className="rounded-xl"
+                    title="Créer une promotion locale pour ce magasin uniquement"
                   >
                     <Plus className="mr-2 h-4 w-4" />
-                    Ajouter une promotion
+                    Promotion locale
                   </Button>
                 </CardHeader>
                 <CardContent>
@@ -891,7 +892,11 @@ const StoreDetail = () => {
                   ) : (
                     <div className="space-y-4">
                       {promotions.map((promo) => (
-                        <Card key={promo.id} className="border-border/50 hover:shadow-md transition-smooth">
+                        <Card 
+                          key={promo.id} 
+                          className="border-border/50 hover:shadow-md transition-smooth cursor-pointer"
+                          onClick={() => navigate(`/promotions/${promo.id}`)}
+                        >
                           <CardContent className="p-4">
                             <div className="flex gap-4">
                               {(promo.image_url || promo.video_url) && (
@@ -921,9 +926,16 @@ const StoreDetail = () => {
                                       </p>
                                     )}
                                   </div>
-                                  <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20">
-                                    Actif
-                                  </Badge>
+                                  <div className="flex items-center gap-2">
+                                    {promo.store_id && (
+                                      <Badge variant="outline" className="bg-blue-500/10 text-blue-700 border-blue-500/20 text-xs">
+                                        Local
+                                      </Badge>
+                                    )}
+                                    <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20">
+                                      Actif
+                                    </Badge>
+                                  </div>
                                 </div>
                                 <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
                                   <div className="flex items-center gap-1">
