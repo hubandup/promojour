@@ -50,38 +50,50 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
           return;
         }
 
+        let messageReceived = false;
+
         // Écouter les messages de la popup
         const handleMessage = (event: MessageEvent) => {
-          if (event.origin !== window.location.origin) return;
-          
-          if (event.data.type === 'oauth_success') {
+          // Accepter les messages de n'importe quelle origine (popup OAuth)
+          if (event.data?.type === 'oauth_success' || event.data?.type === 'oauth_error') {
+            messageReceived = true;
             window.removeEventListener('message', handleMessage);
-            toast({
-              title: "Connexion réussie",
-              description: "Votre compte Facebook a été connecté",
-            });
-            refetch();
-          } else if (event.data.type === 'oauth_error') {
-            window.removeEventListener('message', handleMessage);
-            toast({
-              title: "Erreur",
-              description: event.data.error === 'oauth_denied' 
-                ? "Vous avez annulé la connexion Facebook"
-                : "Une erreur s'est produite lors de la connexion",
-              variant: "destructive",
-            });
+            
+            if (event.data.type === 'oauth_success') {
+              toast({
+                title: "Connexion réussie",
+                description: "Votre compte Facebook a été connecté",
+              });
+              refetch();
+            } else {
+              toast({
+                title: "Erreur",
+                description: event.data.error === 'oauth_denied' 
+                  ? "Vous avez annulé la connexion Facebook"
+                  : "Une erreur s'est produite lors de la connexion",
+                variant: "destructive",
+              });
+            }
           }
         };
 
         window.addEventListener('message', handleMessage);
 
-        // Nettoyer l'écouteur si la popup est fermée manuellement
+        // Vérifier périodiquement si la popup est fermée
         const checkClosed = setInterval(() => {
           if (popup.closed) {
             clearInterval(checkClosed);
             window.removeEventListener('message', handleMessage);
+            
+            // Si aucun message n'a été reçu, rafraîchir quand même les connexions
+            // (au cas où la connexion a réussi mais le message n'a pas été reçu)
+            if (!messageReceived) {
+              setTimeout(() => {
+                refetch();
+              }, 500);
+            }
           }
-        }, 500);
+        }, 300);
       }
     } catch (error) {
       console.error('Error initiating Facebook OAuth:', error);
