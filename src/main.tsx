@@ -4,18 +4,39 @@ import "./index.css";
 
 // Suppress errors from browser extensions (Honey, PayPal, etc.)
 const extensionPatterns = [
-  /chrome-extension:/,
-  /moz-extension:/,
-  /514\.js/,
-  /optibutton\.js/,
-  /kwift/,
-  /frame\.js.*makeProxyStores/,
-  /runtime\/sendMessage/,
-  /message channel closed/,
+  /chrome-extension:/i,
+  /moz-extension:/i,
+  /514\.js/i,
+  /optibutton\.js/i,
+  /kwift/i,
+  /frame\.js/i,
+  /makeProxyStores/i,
+  /createProxyStore/i,
+  /getInitialState/i,
+  /runtime\/sendMessage/i,
+  /message channel closed/i,
+  /sw_iframe\.html/i,
 ];
 
 const isExtensionError = (message: string): boolean => {
+  if (!message) return false;
   return extensionPatterns.some((pattern) => pattern.test(message));
+};
+
+// Override console.error to filter extension errors
+const originalConsoleError = console.error;
+console.error = (...args: unknown[]) => {
+  const message = args.map(arg => String(arg)).join(' ');
+  if (isExtensionError(message)) return;
+  originalConsoleError.apply(console, args);
+};
+
+// Override console.warn to filter extension warnings
+const originalConsoleWarn = console.warn;
+console.warn = (...args: unknown[]) => {
+  const message = args.map(arg => String(arg)).join(' ');
+  if (isExtensionError(message)) return;
+  originalConsoleWarn.apply(console, args);
 };
 
 // Handle uncaught errors
@@ -33,7 +54,7 @@ window.addEventListener("error", (event) => {
     event.stopPropagation();
     return true;
   }
-});
+}, true);
 
 // Handle unhandled promise rejections
 window.addEventListener("unhandledrejection", (event) => {
@@ -46,6 +67,6 @@ window.addEventListener("unhandledrejection", (event) => {
     event.stopPropagation();
     return;
   }
-});
+}, true);
 
 createRoot(document.getElementById("root")!).render(<App />);
