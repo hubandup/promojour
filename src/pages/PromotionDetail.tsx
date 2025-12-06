@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Eye, MousePointer, Share2, Calendar, TrendingUp } from "lucide-react";
+import { ArrowLeft, Eye, MousePointer, Share2, Calendar, TrendingUp, Send, Loader2, Image as ImageIcon, Video } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import { EditPromotionDialog } from "@/components/EditPromotionDialog";
@@ -14,6 +14,8 @@ import { fr } from "date-fns/locale";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BarcodeDisplay } from "@/components/BarcodeDisplay";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
+import { useQuery } from "@tanstack/react-query";
 
 const PromotionDetail = () => {
   const { id } = useParams();
@@ -21,6 +23,114 @@ const PromotionDetail = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [promotion, setPromotion] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [publishing, setPublishing] = useState(false);
+
+  // Récupérer les magasins avec connexion Facebook pour cette organisation
+  const { data: storesWithFacebook } = useQuery({
+    queryKey: ['stores-with-facebook', promotion?.organization_id],
+    queryFn: async () => {
+      if (!promotion?.organization_id) return [];
+      
+      const { data: stores } = await supabase
+        .from('stores')
+        .select('id, name')
+        .eq('organization_id', promotion.organization_id);
+      
+      if (!stores) return [];
+      
+      // Vérifier quels magasins ont Facebook connecté
+      const storesWithConnections = await Promise.all(
+        stores.map(async (store) => {
+          const { data: connections } = await supabase
+            .from('social_connections')
+            .select('platform, is_connected')
+            .eq('store_id', store.id)
+            .eq('platform', 'facebook')
+            .eq('is_connected', true);
+          
+          return {
+            ...store,
+            hasFacebook: connections && connections.length > 0
+          };
+        })
+      );
+      
+      return storesWithConnections.filter(s => s.hasFacebook);
+    },
+    enabled: !!promotion?.organization_id,
+  });
+
+  const handlePublishReel = async (storeId: string, storeName: string) => {
+    if (!promotion?.video_url) {
+      toast.error("Cette promotion n'a pas de vidéo pour un Reel");
+      return;
+    }
+    
+    setPublishing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('publish-social-reel', {
+        body: {
+          promotionId: id,
+          storeId: storeId,
+          platforms: ['facebook'],
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        const fbResult = data.results?.find((r: any) => r.platform === 'facebook');
+        if (fbResult?.success) {
+          toast.success(`Reel publié sur Facebook via ${storeName}`);
+        } else {
+          toast.error(fbResult?.error || "Échec de la publication");
+        }
+      } else {
+        toast.error(data?.message || "Échec de la publication");
+      }
+    } catch (error) {
+      console.error('Error publishing reel:', error);
+      toast.error(error instanceof Error ? error.message : "Impossible de publier");
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handlePublishPost = async (storeId: string, storeName: string) => {
+    if (!promotion?.image_url) {
+      toast.error("Cette promotion n'a pas d'image pour un Post");
+      return;
+    }
+    
+    setPublishing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('publish-social-post', {
+        body: {
+          promotionId: id,
+          storeId: storeId,
+          platforms: ['facebook'],
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        const fbResult = data.results?.find((r: any) => r.platform === 'facebook');
+        if (fbResult?.success) {
+          toast.success(`Post publié sur Facebook via ${storeName}`);
+        } else {
+          toast.error(fbResult?.error || "Échec de la publication");
+        }
+      } else {
+        toast.error(data?.message || "Échec de la publication");
+      }
+    } catch (error) {
+      console.error('Error publishing post:', error);
+      toast.error(error instanceof Error ? error.message : "Impossible de publier");
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -140,6 +250,56 @@ const PromotionDetail = () => {
           <p className="text-muted-foreground">{promotion.category || "Non catégorisé"}</p>
         </div>
         <div className="flex gap-2">
+          {storesWithFacebook && storesWithFacebook.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="rounded-xl hover:shadow-md transition-smooth"
+                  disabled={publishing}
+                >
+                  {publishing ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4 mr-2" />
+                  )}
+                  Publier maintenant
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                {storesWithFacebook.map((store) => (
+                  <div key={store.id}>
+                    <DropdownMenuLabel className="text-xs text-muted-foreground">
+                      {store.name}
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem 
+                      onClick={() => handlePublishReel(store.id, store.name)}
+                      disabled={!promotion?.video_url}
+                      className="cursor-pointer"
+                    >
+                      <Video className="w-4 h-4 mr-2" />
+                      Reel (vidéo)
+                      {!promotion?.video_url && (
+                        <span className="ml-auto text-xs text-muted-foreground">Pas de vidéo</span>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handlePublishPost(store.id, store.name)}
+                      disabled={!promotion?.image_url}
+                      className="cursor-pointer"
+                    >
+                      <ImageIcon className="w-4 h-4 mr-2" />
+                      Post (image)
+                      {!promotion?.image_url && (
+                        <span className="ml-auto text-xs text-muted-foreground">Pas d'image</span>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </div>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           <Button variant="outline" className="rounded-xl hover:shadow-md transition-smooth">
             <Share2 className="w-4 h-4 mr-2" />
             Partager
