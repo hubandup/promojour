@@ -55,17 +55,18 @@ export function useStores() {
         return;
       }
 
-      // Use stores_with_contact view for conditional access to email/phone
-      // Only admins, editors, and store managers see contact info
+      // Utiliser la table stores directement (RLS appliqué)
+      // Les infos de contact (email/phone) ne sont plus exposées au frontend
+      // Pour accéder aux contacts, utiliser une Edge Function avec service_role
       const { data, error } = await supabase
-        .from('stores_with_contact' as any)
+        .from('stores')
         .select('*')
         .eq('organization_id', profile.organization_id)
         .eq('is_active', true)
         .order('name');
 
       if (error) throw error;
-      setStores((data as unknown as Store[]) || []);
+      setStores(data || []);
     } catch (error) {
       console.error('Error fetching stores:', error);
       toast({
