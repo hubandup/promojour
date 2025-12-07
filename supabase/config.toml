@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.distribute-campaign-promotions]
 verify_jwt = false
+
+[functions.get-store-contacts]
+verify_jwt = true
