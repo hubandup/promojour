@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,11 +9,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useStores } from "@/hooks/use-stores";
+import { useStoreContacts } from "@/hooks/use-store-contacts";
 import { MapPin, Phone, Mail, Clock, Edit, Plus, Search, Store as StoreIcon, Eye, Grid3x3, List, CheckCircle2, XCircle, Instagram, Facebook } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
 interface StoreFormData {
   id?: string;
   name: string;
@@ -28,7 +28,15 @@ interface StoreFormData {
 const Stores = () => {
   const navigate = useNavigate();
   const { stores, loading, refetch } = useStores();
+  const { contacts } = useStoreContacts();
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+  
+  // Créer un map des contacts par store_id pour accès rapide
+  const contactsMap = useMemo(() => {
+    const map = new Map<string, { email: string | null; phone: string | null }>();
+    contacts.forEach(c => map.set(c.id, { email: c.email, phone: c.phone }));
+    return map;
+  }, [contacts]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<StoreFormData | null>(null);
@@ -226,6 +234,9 @@ const Stores = () => {
                 const hasInstagram = Math.random() > 0.5;
                 const hasFacebook = Math.random() > 0.5;
                 const hasGMB = Math.random() > 0.5;
+                
+                // Récupérer les contacts depuis l'Edge Function (admins/éditeurs uniquement)
+                const storeContact = contactsMap.get(store.id);
 
                 return (
                   <TableRow key={store.id} className="hover:bg-muted/50">
@@ -241,8 +252,8 @@ const Stores = () => {
                           >
                             {store.name}
                           </p>
-                          {store.phone && (
-                            <p className="text-xs text-muted-foreground">{store.phone}</p>
+                          {storeContact?.phone && (
+                            <p className="text-xs text-muted-foreground">{storeContact.phone}</p>
                           )}
                         </div>
                       </div>
@@ -332,26 +343,32 @@ const Stores = () => {
                   <p className="text-sm text-muted-foreground line-clamp-2">{store.description}</p>
                 )}
                 
-                <div className="space-y-2 text-sm">
-                  {store.address_line1 && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <MapPin className="w-4 h-4 flex-shrink-0" />
-                      <span className="truncate">{store.address_line1}</span>
+                {/* Récupérer les contacts depuis l'Edge Function (admins/éditeurs uniquement) */}
+                {(() => {
+                  const storeContact = contactsMap.get(store.id);
+                  return (
+                    <div className="space-y-2 text-sm">
+                      {store.address_line1 && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <MapPin className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">{store.address_line1}</span>
+                        </div>
+                      )}
+                      {storeContact?.phone && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Phone className="w-4 h-4 flex-shrink-0" />
+                          <span>{storeContact.phone}</span>
+                        </div>
+                      )}
+                      {storeContact?.email && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Mail className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">{storeContact.email}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {store.phone && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Phone className="w-4 h-4 flex-shrink-0" />
-                      <span>{store.phone}</span>
-                    </div>
-                  )}
-                  {store.email && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Mail className="w-4 h-4 flex-shrink-0" />
-                      <span className="truncate">{store.email}</span>
-                    </div>
-                  )}
-                </div>
+                  );
+                })()}
 
                 <div className="flex gap-2 mt-4">
                   <Button
