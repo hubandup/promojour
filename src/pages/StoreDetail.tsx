@@ -1078,54 +1078,32 @@ const StoreDetail = () => {
                     );
                   })()}
 
-                  {/* Instagram */}
-                  {(() => {
-                    const igConnection = connections?.find(c => c.platform === 'instagram');
-                    const isConnected = igConnection?.is_connected && igConnection?.access_token;
-                    return (
-                      <Card className="glass-card border-border/50 hover:shadow-lg transition-smooth cursor-pointer group">
-                        <CardContent className="p-6">
-                          <div className="flex items-start justify-between gap-4 mb-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] flex items-center justify-center">
-                                <Instagram className="h-6 w-6 text-white" />
-                              </div>
-                              <div>
-                                <div className="font-semibold">Instagram</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {isConnected && (
-                                    <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20 mt-1">
-                                      Connecté
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
+                  {/* Instagram - Coming Soon */}
+                  <Card className="glass-card border-border/50 opacity-60">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] flex items-center justify-center">
+                            <Instagram className="h-6 w-6 text-white" />
                           </div>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            Publiez vos promotions en Reels sur Instagram
-                          </p>
-                          {isConnected ? (
-                            <Button 
-                              onClick={() => openDisconnectDialog('instagram')}
-                              variant="outline" 
-                              className="w-full text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
-                            >
-                              Déconnecter
-                            </Button>
-                          ) : (
-                            <Button 
-                              onClick={() => setOpenPlatformDialog('instagram')}
-                              variant="outline" 
-                              className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                            >
-                              Connecter
-                            </Button>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })()}
+                          <div>
+                            <div className="font-semibold">Instagram</div>
+                            <Badge variant="secondary" className="text-xs mt-1">Prochainement</Badge>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Publiez vos promotions en Reels sur Instagram
+                      </p>
+                      <Button 
+                        disabled
+                        variant="outline" 
+                        className="w-full"
+                      >
+                        Prochainement
+                      </Button>
+                    </CardContent>
+                  </Card>
 
                   {/* WhatsApp */}
                   <Card className="glass-card border-border/50 opacity-60">
@@ -1203,6 +1181,35 @@ const StoreDetail = () => {
                       </div>
                       <p className="text-sm text-muted-foreground mb-4">
                         Synchronisez votre fiche d'établissement avec Google
+                      </p>
+                      <Button 
+                        disabled
+                        variant="outline" 
+                        className="w-full"
+                      >
+                        Prochainement
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* TikTok - Coming Soon */}
+                  <Card className="glass-card border-border/50 opacity-60">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-black/10 flex items-center justify-center">
+                            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="font-semibold">TikTok</div>
+                            <Badge variant="secondary" className="text-xs mt-1">Prochainement</Badge>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Publiez vos promotions en vidéos courtes sur TikTok
                       </p>
                       <Button 
                         disabled
