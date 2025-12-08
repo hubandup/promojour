@@ -133,12 +133,17 @@ const StoreDetail = () => {
         instagram: 'Instagram',
       };
 
+      // Fermer le dialog d'abord
+      setDisconnectDialogOpen(false);
+      setPlatformToDisconnect(null);
+      
+      // Refetch les connexions pour mettre à jour l'UI
+      await refetchConnections();
+      
       toast.success(`Le compte ${platformNames[platformToDisconnect]} a été déconnecté`);
-      refetchConnections();
     } catch (error) {
       console.error('Error disconnecting:', error);
       toast.error("Impossible de déconnecter le compte");
-    } finally {
       setDisconnectDialogOpen(false);
       setPlatformToDisconnect(null);
     }
