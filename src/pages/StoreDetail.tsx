@@ -1027,9 +1027,9 @@ const StoreDetail = () => {
                   </p>
                 </div>
 
-                {/* Grid des plateformes */}
+                {/* Grid des plateformes - Actives en premier */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Facebook */}
+                  {/* Facebook - Active */}
                   {(() => {
                     const fbConnection = connections?.find(c => c.platform === 'facebook');
                     const isConnected = fbConnection?.is_connected && fbConnection?.access_token;
@@ -1078,61 +1078,56 @@ const StoreDetail = () => {
                     );
                   })()}
 
-                  {/* Instagram - Coming Soon */}
-                  <Card className="glass-card border-border/50 opacity-60">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between gap-4 mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] flex items-center justify-center">
-                            <Instagram className="h-6 w-6 text-white" />
+                  {/* Google My Business - Active */}
+                  {(() => {
+                    const gmbConnection = connections?.find(c => c.platform === 'google_business');
+                    const isConnected = gmbConnection?.is_connected && gmbConnection?.access_token;
+                    return (
+                      <Card className="glass-card border-border/50 hover:shadow-lg transition-smooth cursor-pointer group">
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between gap-4 mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-xl bg-[#4285F4]/10 flex items-center justify-center">
+                                <img src={googleMyBusinessLogo} alt="Google My Business" className="h-6 w-6" />
+                              </div>
+                              <div>
+                                <div className="font-semibold">Google My Business</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {isConnected && (
+                                    <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20 mt-1">
+                                      Connecté
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="font-semibold">Instagram</div>
-                            <Badge variant="secondary" className="text-xs mt-1">Prochainement</Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Publiez vos promotions en Reels sur Instagram
-                      </p>
-                      <Button 
-                        disabled
-                        variant="outline" 
-                        className="w-full"
-                      >
-                        Prochainement
-                      </Button>
-                    </CardContent>
-                  </Card>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Synchronisez votre fiche d'établissement avec Google
+                          </p>
+                          {isConnected ? (
+                            <Button 
+                              onClick={() => setOpenPlatformDialog('google-my-business')}
+                              variant="outline" 
+                              className="w-full text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              Déconnecter
+                            </Button>
+                          ) : (
+                            <Button 
+                              onClick={() => setOpenPlatformDialog('google-my-business')}
+                              variant="outline" 
+                              className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                            >
+                              Connecter
+                            </Button>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })()}
 
-                  {/* WhatsApp */}
-                  <Card className="glass-card border-border/50 opacity-60">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between gap-4 mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-xl bg-[#25D366]/10 flex items-center justify-center">
-                            <img src={whatsappLogo} alt="WhatsApp" className="h-6 w-6" />
-                          </div>
-                          <div>
-                            <div className="font-semibold">WhatsApp</div>
-                            <Badge variant="secondary" className="text-xs mt-1">Prochainement</Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Publiez vos promotions sur WhatsApp Business
-                      </p>
-                      <Button 
-                        disabled
-                        variant="outline" 
-                        className="w-full"
-                      >
-                        Prochainement
-                      </Button>
-                    </CardContent>
-                  </Card>
-
-                  {/* Google Merchant Center */}
+                  {/* Google Merchant Center - Active */}
                   <Card className="glass-card border-border/50 hover:shadow-lg transition-smooth cursor-pointer group">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between gap-4 mb-4">
@@ -1165,22 +1160,22 @@ const StoreDetail = () => {
                     </CardContent>
                   </Card>
 
-                  {/* Google My Business */}
+                  {/* Instagram - Coming Soon */}
                   <Card className="glass-card border-border/50 opacity-60">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between gap-4 mb-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-xl bg-[#4285F4]/10 flex items-center justify-center">
-                            <img src={googleMyBusinessLogo} alt="Google My Business" className="h-6 w-6" />
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] flex items-center justify-center">
+                            <Instagram className="h-6 w-6 text-white" />
                           </div>
                           <div>
-                            <div className="font-semibold">Google My Business</div>
+                            <div className="font-semibold">Instagram</div>
                             <Badge variant="secondary" className="text-xs mt-1">Prochainement</Badge>
                           </div>
                         </div>
                       </div>
                       <p className="text-sm text-muted-foreground mb-4">
-                        Synchronisez votre fiche d'établissement avec Google
+                        Publiez vos promotions en Reels sur Instagram
                       </p>
                       <Button 
                         disabled
@@ -1210,6 +1205,34 @@ const StoreDetail = () => {
                       </div>
                       <p className="text-sm text-muted-foreground mb-4">
                         Publiez vos promotions en vidéos courtes sur TikTok
+                      </p>
+                      <Button 
+                        disabled
+                        variant="outline" 
+                        className="w-full"
+                      >
+                        Prochainement
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* WhatsApp - Coming Soon */}
+                  {/* WhatsApp - Coming Soon */}
+                  <Card className="glass-card border-border/50 opacity-60">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-[#25D366]/10 flex items-center justify-center">
+                            <img src={whatsappLogo} alt="WhatsApp" className="h-6 w-6" />
+                          </div>
+                          <div>
+                            <div className="font-semibold">WhatsApp</div>
+                            <Badge variant="secondary" className="text-xs mt-1">Prochainement</Badge>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Publiez vos promotions sur WhatsApp Business
                       </p>
                       <Button 
                         disabled
