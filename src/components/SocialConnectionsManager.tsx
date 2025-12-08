@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSocialConnections } from "@/hooks/use-social-connections";
 import { useSocialConnectionLimits } from "@/hooks/use-social-connection-limits";
 import { useToast } from "@/hooks/use-toast";
-import { Facebook, Instagram, MapPin, AlertCircle, ExternalLink, CheckCircle2, Lock } from "lucide-react";
+import { Facebook, Instagram, MapPin, AlertCircle, ExternalLink, CheckCircle2, Lock, Music2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -282,45 +282,49 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
       )}
 
       {platforms.includes('google_business') && (
-        <Card className="glass-card border-border/50">
+        <Card className="glass-card border-border/50 opacity-60">
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[#4285F4]/10 flex items-center justify-center">
                 <MapPin className="h-6 w-6 text-[#4285F4]" />
               </div>
               Google My Business
+              <Badge variant="secondary" className="ml-2">Prochainement</Badge>
             </CardTitle>
             <CardDescription>
               Synchronisez votre fiche d'établissement avec Google
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {isReallyConnected(gmbConnection) ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge variant="default">Connecté</Badge>
-                  {gmbConnection.account_name && (
-                    <span className="text-sm text-muted-foreground">
-                      {gmbConnection.account_name}
-                    </span>
-                  )}
-                </div>
-                <Button
-                  variant="outline"
-                  onClick={() => openDisconnectDialog('google_business')}
-                >
-                  Déconnecter
-                </Button>
-              </div>
-            ) : (
-              <Button variant="outline" disabled>
-                <MapPin className="mr-2 h-4 w-4" />
-                Bientôt disponible
-              </Button>
-            )}
+            <Button variant="outline" disabled>
+              <MapPin className="mr-2 h-4 w-4" />
+              Prochainement
+            </Button>
           </CardContent>
         </Card>
       )}
+
+      {/* TikTok - Coming Soon */}
+      <Card className="glass-card border-border/50 opacity-60">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-3 text-base">
+            <div className="w-10 h-10 rounded-lg bg-black/10 flex items-center justify-center">
+              <Music2 className="h-6 w-6 text-black" />
+            </div>
+            TikTok
+            <Badge variant="secondary" className="ml-2">Prochainement</Badge>
+          </CardTitle>
+          <CardDescription>
+            Publiez vos promotions en vidéos courtes sur TikTok
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="outline" disabled>
+            <Music2 className="mr-2 h-4 w-4" />
+            Prochainement
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Confirmation Dialog */}
       <AlertDialog open={disconnectDialogOpen} onOpenChange={setDisconnectDialogOpen}>
