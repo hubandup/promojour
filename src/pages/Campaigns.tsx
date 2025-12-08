@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCampaigns } from "@/hooks/use-campaigns";
 import { CreateCampaignDialog } from "@/components/CreateCampaignDialog";
 import { EditCampaignDialog } from "@/components/EditCampaignDialog";
+import { InfoCard } from "@/components/InfoCard";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -98,22 +99,12 @@ const Campaigns = () => {
       </div>
 
       {/* Info Card */}
-      <Card className="glass-card border-primary/30 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent shadow-glow">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0 shadow-md">
-              <TrendingUp className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 className="font-bold text-lg mb-2">Qu'est-ce qu'une campagne ?</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Une campagne vous permet de planifier la publication automatique de plusieurs promotions sur une période définie. 
-                Définissez le nombre de promotions par jour et laissez PromoJour gérer la diffusion !
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <InfoCard
+        icon={TrendingUp}
+        title="Qu'est-ce qu'une campagne ?"
+        description="Une campagne vous permet de planifier la publication automatique de plusieurs promotions sur une période définie. Définissez le nombre de promotions par jour et laissez PromoJour gérer la diffusion !"
+        variant="primary"
+      />
 
       {/* Campaigns List */}
       {loading ? (

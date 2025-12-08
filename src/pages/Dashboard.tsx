@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Tag, Eye, Users, Plus, Instagram, Facebook, Store as StoreIcon, MousePointerClick, AlertTriangle } from "lucide-react";
 import { CreatePromotionDialog } from "@/components/CreatePromotionDialog";
+import { InfoCard } from "@/components/InfoCard";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { useUserData } from "@/hooks/use-user-data";
 import { usePromotions } from "@/hooks/use-promotions";
@@ -122,32 +123,22 @@ const Dashboard = () => {
         </Button>
       </div>
 
-      {/* Warning Alert - Same style as Campaigns info card */}
+      {/* Warning Alert */}
       {showWarning && (
-        <Card className="glass-card border-yellow/30 bg-gradient-to-br from-yellow/10 via-orange/5 to-transparent shadow-glow">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow to-orange flex items-center justify-center flex-shrink-0 shadow-md">
-                <AlertTriangle className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-lg mb-2">Attention à votre visibilité</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {activePromotions.length < MIN_ACTIVE_PROMOTIONS && `Vous avez moins de ${MIN_ACTIVE_PROMOTIONS} promotions actives. `}
-                  {scheduledPromotions.length < MIN_UPCOMING_PROMOTIONS && `Vous avez moins de ${MIN_UPCOMING_PROMOTIONS} promotions à venir. `}
-                  Pensez à ajouter de nouvelles promotions pour maintenir votre visibilité.
-                </p>
-                <Button 
-                  className="mt-4 bg-gradient-to-r from-yellow to-orange text-white hover:opacity-90 shadow-md"
-                  onClick={() => setCreateDialogOpen(true)}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nouvelle promotion
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <InfoCard
+          icon={AlertTriangle}
+          title="Attention à votre visibilité"
+          description={`${activePromotions.length < MIN_ACTIVE_PROMOTIONS ? `Vous avez moins de ${MIN_ACTIVE_PROMOTIONS} promotions actives. ` : ''}${scheduledPromotions.length < MIN_UPCOMING_PROMOTIONS ? `Vous avez moins de ${MIN_UPCOMING_PROMOTIONS} promotions à venir. ` : ''}Pensez à ajouter de nouvelles promotions pour maintenir votre visibilité.`}
+          variant="warning"
+        >
+          <Button 
+            className="mt-4 bg-gradient-to-r from-yellow to-orange text-white hover:opacity-90 shadow-md"
+            onClick={() => setCreateDialogOpen(true)}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nouvelle promotion
+          </Button>
+        </InfoCard>
       )}
 
       {/* Onboarding Checklist */}
