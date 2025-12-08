@@ -115,6 +115,12 @@ const StoreDetail = () => {
   const handleDisconnect = async () => {
     if (!platformToDisconnect || !id) return;
     
+    const platformNames: Record<string, string> = {
+      facebook: 'Facebook',
+      instagram: 'Instagram',
+    };
+    const platformName = platformNames[platformToDisconnect];
+    
     try {
       const { error } = await supabase
         .from('social_connections')
@@ -128,19 +134,14 @@ const StoreDetail = () => {
 
       if (error) throw error;
 
-      const platformNames = {
-        facebook: 'Facebook',
-        instagram: 'Instagram',
-      };
-
-      // Fermer le dialog d'abord
+      // Fermer le dialog
       setDisconnectDialogOpen(false);
       setPlatformToDisconnect(null);
       
       // Refetch les connexions pour mettre à jour l'UI
       await refetchConnections();
       
-      toast.success(`Le compte ${platformNames[platformToDisconnect]} a été déconnecté`);
+      toast.success(`Le compte ${platformName} a été déconnecté`);
     } catch (error) {
       console.error('Error disconnecting:', error);
       toast.error("Impossible de déconnecter le compte");
