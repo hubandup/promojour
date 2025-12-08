@@ -130,13 +130,20 @@ const Dashboard = () => {
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow to-orange flex items-center justify-center flex-shrink-0 shadow-md">
                 <AlertTriangle className="w-6 h-6 text-white" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h3 className="font-bold text-lg mb-2">Attention à votre visibilité</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {activePromotions.length < MIN_ACTIVE_PROMOTIONS && `Vous avez moins de ${MIN_ACTIVE_PROMOTIONS} promotions actives. `}
                   {scheduledPromotions.length < MIN_UPCOMING_PROMOTIONS && `Vous avez moins de ${MIN_UPCOMING_PROMOTIONS} promotions à venir. `}
                   Pensez à ajouter de nouvelles promotions pour maintenir votre visibilité.
                 </p>
+                <Button 
+                  className="mt-4 bg-gradient-to-r from-yellow to-orange text-white hover:opacity-90 shadow-md"
+                  onClick={() => setCreateDialogOpen(true)}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nouvelle promotion
+                </Button>
               </div>
             </div>
           </CardContent>
