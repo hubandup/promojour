@@ -259,57 +259,24 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
       )}
 
       {platforms.includes('instagram') && (
-        <Card className="glass-card border-border/50">
+        <Card className="glass-card border-border/50 opacity-60">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-3 text-base">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#833AB4]/10 via-[#FD1D1D]/10 to-[#F77737]/10 flex items-center justify-center">
                 <Instagram className="h-6 w-6 text-[#E4405F]" />
               </div>
               Instagram
+              <Badge variant="secondary" className="ml-2">Prochainement</Badge>
             </CardTitle>
             <CardDescription>
               Publiez vos promotions en Reels sur Instagram
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {isReallyConnected(instagramConnection) ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge variant="default" className="gap-1">
-                    <CheckCircle2 className="h-3 w-3" />
-                    Connecté
-                  </Badge>
-                  {instagramConnection?.account_name && (
-                    <span className="text-sm text-muted-foreground">
-                      @{instagramConnection.account_name}
-                    </span>
-                  )}
-                  {instagramConnection?.followers_count && instagramConnection.followers_count > 0 && (
-                    <span className="text-sm text-muted-foreground">
-                      • {instagramConnection.followers_count} abonnés
-                    </span>
-                  )}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => openDisconnectDialog('instagram')}
-                >
-                  Déconnecter
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <Button onClick={handleConnectInstagram}>
-                  <Instagram className="mr-2 h-4 w-4" />
-                  Connecter Instagram
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  Nécessite un compte Instagram Business lié à une Page Facebook
-                </p>
-              </div>
-            )}
+            <Button variant="outline" disabled>
+              <Instagram className="mr-2 h-4 w-4" />
+              Prochainement
+            </Button>
           </CardContent>
         </Card>
       )}
