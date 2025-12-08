@@ -2,9 +2,8 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Tag, Eye, Users, Plus, Instagram, Facebook, Store as StoreIcon, MousePointerClick } from "lucide-react";
+import { TrendingUp, Tag, Eye, Users, Plus, Instagram, Facebook, Store as StoreIcon, MousePointerClick, AlertTriangle } from "lucide-react";
 import { CreatePromotionDialog } from "@/components/CreatePromotionDialog";
-import { InfoAlert } from "@/components/InfoAlert";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { useUserData } from "@/hooks/use-user-data";
 import { usePromotions } from "@/hooks/use-promotions";
@@ -123,12 +122,25 @@ const Dashboard = () => {
         </Button>
       </div>
 
-      {/* Warning Alert */}
+      {/* Warning Alert - Same style as Campaigns info card */}
       {showWarning && (
-        <InfoAlert
-          type="warning"
-          message={`${activePromotions.length < MIN_ACTIVE_PROMOTIONS ? `Vous avez moins de ${MIN_ACTIVE_PROMOTIONS} promotions actives. ` : ''}${scheduledPromotions.length < MIN_UPCOMING_PROMOTIONS ? `Vous avez moins de ${MIN_UPCOMING_PROMOTIONS} promotions à venir. ` : ''}Pensez à ajouter de nouvelles promotions pour maintenir votre visibilité.`}
-        />
+        <Card className="glass-card border-yellow/30 bg-gradient-to-br from-yellow/10 via-orange/5 to-transparent shadow-glow">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow to-orange flex items-center justify-center flex-shrink-0 shadow-md">
+                <AlertTriangle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg mb-2">Attention à votre visibilité</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {activePromotions.length < MIN_ACTIVE_PROMOTIONS && `Vous avez moins de ${MIN_ACTIVE_PROMOTIONS} promotions actives. `}
+                  {scheduledPromotions.length < MIN_UPCOMING_PROMOTIONS && `Vous avez moins de ${MIN_UPCOMING_PROMOTIONS} promotions à venir. `}
+                  Pensez à ajouter de nouvelles promotions pour maintenir votre visibilité.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Onboarding Checklist */}
