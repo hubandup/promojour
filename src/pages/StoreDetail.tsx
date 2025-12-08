@@ -1232,7 +1232,7 @@ const StoreDetail = () => {
                       action: {
                         label: "Connecter mon compte Facebook",
                         onClick: () => {
-                          window.location.href = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/facebook-oauth-init?store_id=${id}`;
+                          window.location.href = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/facebook-oauth-init?store_id=${id}&platform=facebook`;
                         }
                       }
                     }
@@ -1264,7 +1264,7 @@ const StoreDetail = () => {
                       action: {
                         label: "Connecter mon compte Instagram",
                         onClick: () => {
-                          window.location.href = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/facebook-oauth-init?store_id=${id}`;
+                          window.location.href = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/facebook-oauth-init?store_id=${id}&platform=instagram`;
                         }
                       }
                     }

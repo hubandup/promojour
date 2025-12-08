@@ -46,7 +46,7 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
     checkLimits();
   }, [connections, canAddSocialConnection]);
 
-  const handleConnectFacebook = async () => {
+  const handleConnect = async (platform: 'facebook' | 'instagram' | 'both') => {
     // Check if adding a new connection is allowed
     const { allowed, reason } = await canAddSocialConnection();
     if (!allowed) {
@@ -58,10 +58,9 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
       return;
     }
 
-    // Build the OAuth init URL with store_id as query param
-    // The edge function will redirect to Facebook OAuth
+    // Build the OAuth init URL with store_id and platform as query params
     const SUPABASE_URL = 'https://rrcrfwhblesarezabsfo.supabase.co';
-    const oauthInitUrl = `${SUPABASE_URL}/functions/v1/facebook-oauth-init?store_id=${storeId}`;
+    const oauthInitUrl = `${SUPABASE_URL}/functions/v1/facebook-oauth-init?store_id=${storeId}&platform=${platform}`;
     
     // Check if we're in an iframe (e.g., Lovable preview)
     // If so, open in a new tab because Facebook blocks iframe OAuth
@@ -72,6 +71,9 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
       window.location.href = oauthInitUrl;
     }
   };
+
+  const handleConnectFacebook = () => handleConnect('facebook');
+  const handleConnectInstagram = () => handleConnect('instagram');
 
   const openDisconnectDialog = (platform: 'facebook' | 'instagram' | 'google_business') => {
     setPlatformToDisconnect(platform);
@@ -298,23 +300,14 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
                 </Button>
               </div>
             ) : (
-              <div>
-                {isReallyConnected(facebookConnection) ? (
-                  <p className="text-sm text-muted-foreground">
-                    Instagram se connecte automatiquement avec Facebook.
-                    {!instagramConnection && " Aucun compte Instagram Business trouvé sur cette page Facebook."}
-                  </p>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Connectez d'abord votre page Facebook pour accéder à Instagram
-                    </p>
-                    <Button onClick={handleConnectFacebook} variant="outline">
-                      <Facebook className="mr-2 h-4 w-4" />
-                      Connecter via Facebook
-                    </Button>
-                  </div>
-                )}
+              <div className="flex flex-col gap-2">
+                <Button onClick={handleConnectInstagram}>
+                  <Instagram className="mr-2 h-4 w-4" />
+                  Connecter Instagram
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Nécessite un compte Instagram Business lié à une Page Facebook
+                </p>
               </div>
             )}
           </CardContent>
