@@ -87,20 +87,15 @@ serve(async (req) => {
       throw new Error('Facebook App ID not configured');
     }
 
-    // Facebook OAuth scopes - include Instagram scopes when needed
-    const baseScopes = [
+    // Facebook OAuth scopes - Instagram Business API uses Facebook Page permissions
+    // instagram_basic and instagram_content_publish require App Review approval
+    // Instead, we use pages_read_engagement which grants access to Instagram Business accounts linked to Pages
+    const scopes = [
       'pages_show_list',
-      'pages_read_engagement',
+      'pages_read_engagement', 
       'pages_manage_posts',
       'business_management',
-    ];
-    
-    // Add Instagram scopes if connecting Instagram
-    if (targetPlatform === 'instagram' || targetPlatform === 'both') {
-      baseScopes.push('instagram_basic', 'instagram_content_publish');
-    }
-    
-    const scopes = baseScopes.join(',');
+    ].join(',');
 
     log('DEBUG', 'OAuth scopes', { scopes, targetPlatform });
 
