@@ -1004,7 +1004,7 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string | null
           description?: string | null
-          email?: never
+          email?: string | null
           google_maps_url?: string | null
           id?: string | null
           is_active?: boolean | null
@@ -1012,7 +1012,7 @@ export type Database = {
           name?: string | null
           opening_hours?: Json | null
           organization_id?: string | null
-          phone?: never
+          phone?: string | null
           postal_code?: string | null
           qr_code_url?: string | null
           updated_at?: string | null
@@ -1026,7 +1026,7 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string | null
           description?: string | null
-          email?: never
+          email?: string | null
           google_maps_url?: string | null
           id?: string | null
           is_active?: boolean | null
@@ -1034,7 +1034,7 @@ export type Database = {
           name?: string | null
           opening_hours?: Json | null
           organization_id?: string | null
-          phone?: never
+          phone?: string | null
           postal_code?: string | null
           qr_code_url?: string | null
           updated_at?: string | null
