@@ -210,8 +210,9 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
                   )}
                 </div>
                 <Button
-                  variant="destructive"
+                  variant="outline"
                   size="sm"
+                  className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
                   onClick={() => handleDisconnect('facebook')}
                 >
                   Déconnecter
@@ -260,8 +261,9 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
                   )}
                 </div>
                 <Button
-                  variant="destructive"
+                  variant="outline"
                   size="sm"
+                  className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
                   onClick={() => handleDisconnect('instagram')}
                 >
                   Déconnecter
