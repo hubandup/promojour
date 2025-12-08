@@ -1350,6 +1350,48 @@ const StoreDetail = () => {
                   ]
                 }}
               />
+
+              <PlatformConnectionDialog
+                open={openPlatformDialog === 'google-my-business'}
+                onOpenChange={(open) => !open && setOpenPlatformDialog(null)}
+                platform={{
+                  name: "Google My Business",
+                  logo: <img src={googleMyBusinessLogo} alt="Google My Business" className="h-8 w-8" />,
+                  description: "Synchronisez votre fiche d'établissement avec Google",
+                  isConnected: connections?.find(c => c.platform === 'google_business')?.is_connected,
+                  steps: [
+                    {
+                      title: "Étape 1 : Connecter votre compte Google",
+                      description: "Autorisez PromoJour à accéder à votre fiche Google My Business.",
+                      action: {
+                        label: "Connecter mon compte Google",
+                        onClick: () => {
+                          toast.info("Intégration Google My Business en cours de développement");
+                        }
+                      }
+                    }
+                  ],
+                  about: {
+                    title: "À propos de Google My Business",
+                    items: [
+                      "Synchronisez les informations de votre magasin avec Google",
+                      "Mettez à jour vos horaires, adresse et coordonnées",
+                      "Améliorez votre visibilité sur Google Maps et la recherche Google",
+                      "Un compte Google avec une fiche d'établissement est requis"
+                    ]
+                  },
+                  links: [
+                    {
+                      label: "Créer une fiche d'établissement",
+                      url: "https://business.google.com/"
+                    },
+                    {
+                      label: "Documentation Google",
+                      url: "https://support.google.com/business/"
+                    }
+                  ]
+                }}
+              />
             </TabsContent>
 
             <TabsContent value="stats" className="space-y-6">
