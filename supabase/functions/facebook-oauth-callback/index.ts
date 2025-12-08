@@ -91,18 +91,35 @@ serve(async (req) => {
     
     const url = new URL(req.url);
     const code = url.searchParams.get('code');
-    const storeId = url.searchParams.get('state');
+    const encodedState = url.searchParams.get('state');
     const error = url.searchParams.get('error');
     const errorReason = url.searchParams.get('error_reason');
     const errorDescription = url.searchParams.get('error_description');
 
+    // Decode state to get store_id and target platform
+    let storeId: string | null = null;
+    let targetPlatform: string = 'both';
+    
+    if (encodedState) {
+      try {
+        const stateData = JSON.parse(atob(encodedState));
+        storeId = stateData.store_id;
+        targetPlatform = stateData.platform || 'both';
+        log('DEBUG', 'Decoded state', { storeId, targetPlatform });
+      } catch (e) {
+        // Fallback: treat state as just store_id (old format)
+        storeId = encodedState;
+        log('DEBUG', 'Using state as store_id (legacy format)', { storeId });
+      }
+    }
+
     log('DEBUG', 'Query parameters from Facebook', {
       code: code ? `${code.substring(0, 20)}...` : 'MISSING',
       state: storeId,
+      targetPlatform,
       error,
       error_reason: errorReason,
       error_description: errorDescription,
-      allParams: Object.fromEntries(url.searchParams.entries()),
     });
 
     if (error) {
@@ -246,7 +263,7 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Step 6: Store Facebook connection using PAGE token (not user token!)
+    // Step 6: Store connections based on target platform
     // IMPORTANT: For publishing to Facebook Pages, we MUST use the Page access token
     const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
     
@@ -262,94 +279,113 @@ serve(async (req) => {
       return redirectTo(getRedirectUrl(false, storeId, 'Aucune Page Facebook trouvée. Vous devez avoir une Page Facebook pour publier des promotions.'));
     }
     
-    log('INFO', 'Step 6: Saving Facebook connection to database with PAGE token', {
-      storeId,
-      pageId: firstPage.id,
-      pageName: firstPage.name,
-      userId: meData.id,
-      userName: meData.name,
-      expiresAt,
-    });
-    
-    // Save the PAGE access token (not the user token!) - this is required for publishing
-    const { error: fbError, data: insertData } = await supabase
-      .from('social_connections')
-      .upsert({
-        store_id: storeId,
-        platform: 'facebook',
-        access_token: firstPage.access_token, // PAGE token, not user token!
-        token_expires_at: expiresAt,
-        account_id: firstPage.id, // Page ID, not user ID
-        account_name: firstPage.name, // Page name, not user name
-        is_connected: true,
-        last_synced_at: new Date().toISOString(),
-      }, {
-        onConflict: 'store_id,platform',
-      })
-      .select();
-
-    if (fbError) {
-      log('ERROR', 'Error saving Facebook connection to database', {
-        error: fbError,
-        errorMessage: fbError.message,
-        errorCode: fbError.code,
-        errorDetails: fbError.details,
+    // Only save Facebook connection if target is 'facebook' or 'both'
+    if (targetPlatform === 'facebook' || targetPlatform === 'both') {
+      log('INFO', 'Step 6: Saving Facebook connection to database with PAGE token', {
+        storeId,
+        pageId: firstPage.id,
+        pageName: firstPage.name,
+        userId: meData.id,
+        userName: meData.name,
+        expiresAt,
+        targetPlatform,
       });
-      return redirectTo(getRedirectUrl(false, storeId, 'Erreur de sauvegarde'));
-    }
-    
-    log('INFO', 'Facebook connection saved successfully with PAGE token', { insertData });
-
-    // Step 7: Check for Instagram Business Account on pages
-    log('INFO', 'Step 7: Checking for Instagram Business Account');
-    
-    for (const page of pagesData.data || []) {
-      log('DEBUG', `Checking page for Instagram`, { pageId: page.id, pageName: page.name });
       
-      const igUrl = `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`;
-      const { response: igResponse, data: igData } = await fetchWithLogging(igUrl);
+      // Save the PAGE access token (not the user token!) - this is required for publishing
+      const { error: fbError, data: insertData } = await supabase
+        .from('social_connections')
+        .upsert({
+          store_id: storeId,
+          platform: 'facebook',
+          access_token: firstPage.access_token, // PAGE token, not user token!
+          token_expires_at: expiresAt,
+          account_id: firstPage.id, // Page ID, not user ID
+          account_name: firstPage.name, // Page name, not user name
+          is_connected: true,
+          last_synced_at: new Date().toISOString(),
+        }, {
+          onConflict: 'store_id,platform',
+        })
+        .select();
 
-      if (igData.instagram_business_account) {
-        const igAccountId = igData.instagram_business_account.id;
-        log('INFO', 'Instagram Business Account found', { igAccountId, pageId: page.id });
-        
-        const igInfoUrl = `https://graph.facebook.com/v18.0/${igAccountId}?fields=username,followers_count&access_token=${page.access_token}`;
-        const { response: igInfoResponse, data: igInfo } = await fetchWithLogging(igInfoUrl);
-
-        if (!igInfo.error) {
-          log('INFO', 'Saving Instagram connection', {
-            igAccountId,
-            username: igInfo.username,
-            followersCount: igInfo.followers_count,
-          });
-          
-          const { error: igError, data: igInsertData } = await supabase
-            .from('social_connections')
-            .upsert({
-              store_id: storeId,
-              platform: 'instagram',
-              access_token: page.access_token,
-              token_expires_at: expiresAt,
-              account_id: igAccountId,
-              account_name: igInfo.username,
-              followers_count: igInfo.followers_count || 0,
-              is_connected: true,
-              last_synced_at: new Date().toISOString(),
-            }, {
-              onConflict: 'store_id,platform',
-            })
-            .select();
-
-          if (!igError) {
-            log('INFO', 'Instagram connection saved successfully', { igInsertData });
-          } else {
-            log('WARN', 'Failed to save Instagram connection', { error: igError });
-          }
-        } else {
-          log('WARN', 'Error fetching Instagram account info', { error: igInfo.error });
-        }
-        break;
+      if (fbError) {
+        log('ERROR', 'Error saving Facebook connection to database', {
+          error: fbError,
+          errorMessage: fbError.message,
+          errorCode: fbError.code,
+          errorDetails: fbError.details,
+        });
+        return redirectTo(getRedirectUrl(false, storeId, 'Erreur de sauvegarde'));
       }
+      
+      log('INFO', 'Facebook connection saved successfully with PAGE token', { insertData });
+    } else {
+      log('INFO', 'Skipping Facebook connection save (target platform is instagram only)', { targetPlatform });
+    }
+
+    // Step 7: Check for Instagram Business Account on pages (only if target is 'instagram' or 'both')
+    if (targetPlatform === 'instagram' || targetPlatform === 'both') {
+      log('INFO', 'Step 7: Checking for Instagram Business Account', { targetPlatform });
+      
+      let instagramFound = false;
+      
+      for (const page of pagesData.data || []) {
+        log('DEBUG', `Checking page for Instagram`, { pageId: page.id, pageName: page.name });
+        
+        const igUrl = `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`;
+        const { response: igResponse, data: igData } = await fetchWithLogging(igUrl);
+
+        if (igData.instagram_business_account) {
+          const igAccountId = igData.instagram_business_account.id;
+          log('INFO', 'Instagram Business Account found', { igAccountId, pageId: page.id });
+          
+          const igInfoUrl = `https://graph.facebook.com/v18.0/${igAccountId}?fields=username,followers_count&access_token=${page.access_token}`;
+          const { response: igInfoResponse, data: igInfo } = await fetchWithLogging(igInfoUrl);
+
+          if (!igInfo.error) {
+            log('INFO', 'Saving Instagram connection', {
+              igAccountId,
+              username: igInfo.username,
+              followersCount: igInfo.followers_count,
+            });
+            
+            const { error: igError, data: igInsertData } = await supabase
+              .from('social_connections')
+              .upsert({
+                store_id: storeId,
+                platform: 'instagram',
+                access_token: page.access_token,
+                token_expires_at: expiresAt,
+                account_id: igAccountId,
+                account_name: igInfo.username,
+                followers_count: igInfo.followers_count || 0,
+                is_connected: true,
+                last_synced_at: new Date().toISOString(),
+              }, {
+                onConflict: 'store_id,platform',
+              })
+              .select();
+
+            if (!igError) {
+              log('INFO', 'Instagram connection saved successfully', { igInsertData });
+              instagramFound = true;
+            } else {
+              log('WARN', 'Failed to save Instagram connection', { error: igError });
+            }
+          } else {
+            log('WARN', 'Error fetching Instagram account info', { error: igInfo.error });
+          }
+          break;
+        }
+      }
+      
+      // If only Instagram was requested but no account found, return error
+      if (targetPlatform === 'instagram' && !instagramFound) {
+        log('ERROR', 'No Instagram Business Account found on any Facebook Page');
+        return redirectTo(getRedirectUrl(false, storeId, 'Aucun compte Instagram Business trouvé. Assurez-vous que votre compte Instagram est lié à votre Page Facebook.'));
+      }
+    } else {
+      log('INFO', 'Skipping Instagram check (target platform is facebook only)', { targetPlatform });
     }
 
     log('INFO', '=== Facebook OAuth Callback - SUCCESS ===', { storeId });

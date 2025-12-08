@@ -33,19 +33,22 @@ serve(async (req) => {
     
     let storeId: string | null = null;
     let shouldRedirect = false;
+    let targetPlatform: string = 'both'; // 'facebook', 'instagram', or 'both'
 
     // Handle both GET (direct navigation - should redirect) and POST (API call - returns JSON)
     if (req.method === 'GET') {
       const url = new URL(req.url);
       storeId = url.searchParams.get('store_id');
+      targetPlatform = url.searchParams.get('platform') || 'both';
       shouldRedirect = true; // GET requests should redirect directly to Facebook
-      log('DEBUG', 'GET request - will redirect to Facebook', { storeId });
+      log('DEBUG', 'GET request - will redirect to Facebook', { storeId, targetPlatform });
     } else if (req.method === 'POST') {
       try {
         const body = await req.json();
         storeId = body.storeId;
+        targetPlatform = body.platform || 'both';
         shouldRedirect = false; // POST requests return JSON for frontend handling
-        log('DEBUG', 'POST request - will return JSON', { storeId });
+        log('DEBUG', 'POST request - will return JSON', { storeId, targetPlatform });
       } catch (e) {
         log('ERROR', 'Failed to parse request body', { error: e instanceof Error ? e.message : 'Unknown' });
       }
@@ -84,23 +87,33 @@ serve(async (req) => {
       throw new Error('Facebook App ID not configured');
     }
 
-    // Facebook OAuth scopes for Instagram and Facebook Pages
-    const scopes = [
+    // Facebook OAuth scopes - include Instagram scopes when needed
+    const baseScopes = [
       'pages_show_list',
       'pages_read_engagement',
       'pages_manage_posts',
       'business_management',
-    ].join(',');
+    ];
+    
+    // Add Instagram scopes if connecting Instagram
+    if (targetPlatform === 'instagram' || targetPlatform === 'both') {
+      baseScopes.push('instagram_basic', 'instagram_content_publish');
+    }
+    
+    const scopes = baseScopes.join(',');
 
-    log('DEBUG', 'OAuth scopes', { scopes });
+    log('DEBUG', 'OAuth scopes', { scopes, targetPlatform });
 
-    // Build OAuth URL
+    // Build OAuth URL - encode store_id and platform in state
+    const stateData = JSON.stringify({ store_id: storeId, platform: targetPlatform });
+    const encodedState = btoa(stateData);
+    
     const oauthUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth');
     oauthUrl.searchParams.set('client_id', FACEBOOK_APP_ID);
     oauthUrl.searchParams.set('redirect_uri', redirectUri);
     oauthUrl.searchParams.set('scope', scopes);
     oauthUrl.searchParams.set('response_type', 'code');
-    oauthUrl.searchParams.set('state', storeId); // Pass store ID in state
+    oauthUrl.searchParams.set('state', encodedState); // Pass store ID and platform in encoded state
 
     log('INFO', 'OAuth URL generated', {
       url: oauthUrl.toString(),
