@@ -11,6 +11,7 @@ export interface SocialConnection {
   followers_count: number;
   is_connected: boolean;
   last_synced_at: string | null;
+  access_token: string | null;
 }
 
 export function useSocialConnections(storeId?: string) {
