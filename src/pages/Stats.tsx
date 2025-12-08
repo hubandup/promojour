@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, Eye, MousePointer, Users } from "lucide-react";
+import { TrendingUp, Eye, MousePointer, Users, BarChart3 } from "lucide-react";
+import { InfoCard } from "@/components/InfoCard";
 
 const Stats = () => {
   const topPromos = [
@@ -23,6 +24,14 @@ const Stats = () => {
         <h1 className="text-3xl font-bold">Statistiques</h1>
         <p className="text-muted-foreground">Suivez les performances de vos promotions</p>
       </div>
+
+      {/* Info Card */}
+      <InfoCard
+        icon={BarChart3}
+        title="Analysez vos performances"
+        description="Les statistiques vous permettent de mesurer l'impact de vos promotions sur vos différents canaux de distribution. Utilisez ces données pour optimiser vos futures campagnes."
+        variant="info"
+      />
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

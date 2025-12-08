@@ -7,8 +7,8 @@ import { Plus, Search, AlertCircle, Eye, Pencil, Trash2, BarChart3, LayoutGrid, 
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { InfoCard } from "@/components/InfoCard";
 import {
   Table,
   TableBody,
@@ -339,23 +339,21 @@ const Promotions = () => {
 
       {/* Alerts */}
       {isNearLimit && !isAtLimit && (
-        <Alert className="glass-card border-border/50">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Attention : Vous approchez de la limite de votre abonnement ({promotions.length}/{maxPromotions} promotions).
-            {isFree && " Passez à un abonnement supérieur pour créer plus de promotions."}
-          </AlertDescription>
-        </Alert>
+        <InfoCard
+          icon={AlertCircle}
+          title="Vous approchez de la limite"
+          description={`Vous avez ${promotions.length}/${maxPromotions} promotions.${isFree ? " Passez à un abonnement supérieur pour créer plus de promotions." : ""}`}
+          variant="warning"
+        />
       )}
 
       {isAtLimit && (
-        <Alert variant="destructive" className="glass-card">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Limite atteinte : Vous avez atteint le maximum de {maxPromotions} promotions pour votre abonnement.
-            Veuillez passer à un abonnement supérieur ou supprimer des promotions existantes.
-          </AlertDescription>
-        </Alert>
+        <InfoCard
+          icon={AlertCircle}
+          title="Limite atteinte"
+          description={`Vous avez atteint le maximum de ${maxPromotions} promotions pour votre abonnement. Veuillez passer à un abonnement supérieur ou supprimer des promotions existantes.`}
+          variant="warning"
+        />
       )}
 
       {/* Filters */}
