@@ -7,6 +7,16 @@ import { useToast } from "@/hooks/use-toast";
 import { Facebook, Instagram, MapPin, AlertCircle, ExternalLink, CheckCircle2, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useState, useEffect } from "react";
 
 interface SocialConnectionsManagerProps {
@@ -21,6 +31,8 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
   const [showConfigGuide, setShowConfigGuide] = useState(false);
   const [connectionLimitReached, setConnectionLimitReached] = useState(false);
   const [limitMessage, setLimitMessage] = useState<string | null>(null);
+  const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
+  const [platformToDisconnect, setPlatformToDisconnect] = useState<'facebook' | 'instagram' | 'google_business' | null>(null);
   
   const redirectUri = "https://rrcrfwhblesarezabsfo.supabase.co/functions/v1/facebook-oauth-callback";
 
@@ -61,7 +73,14 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
     }
   };
 
-  const handleDisconnect = async (platform: 'facebook' | 'instagram' | 'google_business') => {
+  const openDisconnectDialog = (platform: 'facebook' | 'instagram' | 'google_business') => {
+    setPlatformToDisconnect(platform);
+    setDisconnectDialogOpen(true);
+  };
+
+  const handleDisconnect = async () => {
+    if (!platformToDisconnect) return;
+    
     try {
       const { error } = await supabase
         .from('social_connections')
@@ -71,13 +90,19 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
           refresh_token: null,
         })
         .eq('store_id', storeId)
-        .eq('platform', platform);
+        .eq('platform', platformToDisconnect);
 
       if (error) throw error;
 
+      const platformNames = {
+        facebook: 'Facebook',
+        instagram: 'Instagram',
+        google_business: 'Google My Business'
+      };
+
       toast({
         title: "Déconnexion réussie",
-        description: `Le compte ${platform} a été déconnecté`,
+        description: `Le compte ${platformNames[platformToDisconnect]} a été déconnecté`,
       });
 
       refetch();
@@ -88,6 +113,9 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
         description: "Impossible de déconnecter le compte",
         variant: "destructive",
       });
+    } finally {
+      setDisconnectDialogOpen(false);
+      setPlatformToDisconnect(null);
     }
   };
 
@@ -213,7 +241,7 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
                   variant="outline"
                   size="sm"
                   className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => handleDisconnect('facebook')}
+                  onClick={() => openDisconnectDialog('facebook')}
                 >
                   Déconnecter
                 </Button>
@@ -264,7 +292,7 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
                   variant="outline"
                   size="sm"
                   className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => handleDisconnect('instagram')}
+                  onClick={() => openDisconnectDialog('instagram')}
                 >
                   Déconnecter
                 </Button>
@@ -319,7 +347,7 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
                 </div>
                 <Button
                   variant="outline"
-                  onClick={() => handleDisconnect('google_business')}
+                  onClick={() => openDisconnectDialog('google_business')}
                 >
                   Déconnecter
                 </Button>
@@ -333,6 +361,27 @@ export function SocialConnectionsManager({ storeId, platforms = ['facebook', 'in
           </CardContent>
         </Card>
       )}
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={disconnectDialogOpen} onOpenChange={setDisconnectDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la déconnexion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir déconnecter ce compte ? Vous devrez vous reconnecter pour publier à nouveau sur cette plateforme.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDisconnect}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Déconnecter
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
