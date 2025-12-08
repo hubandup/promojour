@@ -44,3 +44,9 @@ verify_jwt = false
 
 [functions.get-store-contacts]
 verify_jwt = true
+
+[functions.google-mybusiness-oauth-init]
+verify_jwt = false
+
+[functions.google-mybusiness-oauth-callback]
+verify_jwt = false

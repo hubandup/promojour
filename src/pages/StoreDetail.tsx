@@ -89,7 +89,7 @@ const StoreDetail = () => {
   const [editingHours, setEditingHours] = useState(false);
   const [createPromotionOpen, setCreatePromotionOpen] = useState(false);
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
-  const [platformToDisconnect, setPlatformToDisconnect] = useState<'facebook' | 'instagram' | null>(null);
+  const [platformToDisconnect, setPlatformToDisconnect] = useState<'facebook' | 'instagram' | 'google_business' | null>(null);
 
   // Horaires par défaut
   const defaultHours = {
@@ -106,8 +106,65 @@ const StoreDetail = () => {
 
   const { connections = [], loading: connectionsLoading, refetch: refetchConnections } = useSocialConnections(id);
   const { account: googleMerchantAccount, initiateOAuth: initiateGoogleOAuth } = useGoogleMerchant(id!);
+  const [gmbConnecting, setGmbConnecting] = useState(false);
 
-  const openDisconnectDialog = (platform: 'facebook' | 'instagram') => {
+  const initiateGoogleMyBusinessOAuth = async () => {
+    if (!id) return;
+    
+    setGmbConnecting(true);
+    try {
+      const response = await supabase.functions.invoke('google-mybusiness-oauth-init', {
+        body: { storeId: id }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to initiate OAuth');
+      }
+
+      const { authUrl } = response.data;
+      
+      if (!authUrl) {
+        throw new Error('No auth URL returned');
+      }
+
+      // Open OAuth popup
+      const popup = window.open(authUrl, 'google-mybusiness-oauth', 'width=600,height=700');
+      
+      // Listen for message from popup
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data?.platform === 'google_business') {
+          window.removeEventListener('message', handleMessage);
+          setGmbConnecting(false);
+          setOpenPlatformDialog(null);
+          
+          if (event.data.success) {
+            toast.success('Connexion Google My Business réussie !');
+            refetchConnections();
+          } else {
+            toast.error(event.data.error || 'Erreur de connexion');
+          }
+        }
+      };
+      
+      window.addEventListener('message', handleMessage);
+      
+      // Clean up if popup is closed
+      const checkPopup = setInterval(() => {
+        if (popup?.closed) {
+          clearInterval(checkPopup);
+          window.removeEventListener('message', handleMessage);
+          setGmbConnecting(false);
+        }
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error initiating Google My Business OAuth:', error);
+      toast.error('Erreur lors de l\'initialisation de la connexion Google');
+      setGmbConnecting(false);
+    }
+  };
+
+  const openDisconnectDialog = (platform: 'facebook' | 'instagram' | 'google_business') => {
     setPlatformToDisconnect(platform);
     setDisconnectDialogOpen(true);
   };
@@ -118,6 +175,7 @@ const StoreDetail = () => {
     const platformNames: Record<string, string> = {
       facebook: 'Facebook',
       instagram: 'Instagram',
+      google_business: 'Google My Business',
     };
     const platformName = platformNames[platformToDisconnect];
     
@@ -1093,11 +1151,15 @@ const StoreDetail = () => {
                               <div>
                                 <div className="font-semibold">Google My Business</div>
                                 <div className="text-xs text-muted-foreground">
-                                  {isConnected && (
+                                  {isConnected ? (
                                     <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20 mt-1">
                                       Connecté
                                     </Badge>
-                                  )}
+                                  ) : gmbConnecting ? (
+                                    <Badge variant="secondary" className="mt-1">
+                                      Connexion...
+                                    </Badge>
+                                  ) : null}
                                 </div>
                               </div>
                             </div>
@@ -1107,7 +1169,7 @@ const StoreDetail = () => {
                           </p>
                           {isConnected ? (
                             <Button 
-                              onClick={() => setOpenPlatformDialog('google-my-business')}
+                              onClick={() => openDisconnectDialog('google_business')}
                               variant="outline" 
                               className="w-full text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
                             >
@@ -1118,8 +1180,9 @@ const StoreDetail = () => {
                               onClick={() => setOpenPlatformDialog('google-my-business')}
                               variant="outline" 
                               className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                              disabled={gmbConnecting}
                             >
-                              Connecter
+                              {gmbConnecting ? 'Connexion...' : 'Connecter'}
                             </Button>
                           )}
                         </CardContent>
@@ -1362,12 +1425,10 @@ const StoreDetail = () => {
                   steps: [
                     {
                       title: "Étape 1 : Connecter votre compte Google",
-                      description: "Autorisez PromoJour à accéder à votre fiche Google My Business.",
+                      description: "Autorisez PromoJour à accéder à votre fiche Google My Business. Vous devez avoir créé une fiche d'établissement sur Google Business Profile.",
                       action: {
-                        label: "Connecter mon compte Google",
-                        onClick: () => {
-                          toast.info("Intégration Google My Business en cours de développement");
-                        }
+                        label: gmbConnecting ? "Connexion en cours..." : "Connecter mon compte Google",
+                        onClick: () => initiateGoogleMyBusinessOAuth()
                       }
                     }
                   ],
