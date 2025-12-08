@@ -975,70 +975,102 @@ const StoreDetail = () => {
                 {/* Grid des plateformes */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Facebook */}
-                  <Card className="glass-card border-border/50 hover:shadow-lg transition-smooth cursor-pointer group">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between gap-4 mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-xl bg-[#1877F2]/10 flex items-center justify-center">
-                            <Facebook className="h-6 w-6 text-[#1877F2]" />
-                          </div>
-                          <div>
-                            <div className="font-semibold">Facebook</div>
-                            <div className="text-xs text-muted-foreground">
-                              {connections?.find(c => c.platform === 'facebook')?.is_connected && (
-                                <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20 mt-1">
-                                  Connecté
-                                </Badge>
-                              )}
+                  {(() => {
+                    const fbConnection = connections?.find(c => c.platform === 'facebook');
+                    const isConnected = fbConnection?.is_connected && fbConnection?.access_token;
+                    return (
+                      <Card className="glass-card border-border/50 hover:shadow-lg transition-smooth cursor-pointer group">
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between gap-4 mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-xl bg-[#1877F2]/10 flex items-center justify-center">
+                                <Facebook className="h-6 w-6 text-[#1877F2]" />
+                              </div>
+                              <div>
+                                <div className="font-semibold">Facebook</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {isConnected && (
+                                    <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20 mt-1">
+                                      Connecté
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Publiez vos promotions sur votre page Facebook
-                      </p>
-                      <Button 
-                        onClick={() => setOpenPlatformDialog('facebook')}
-                        variant="outline" 
-                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                      >
-                        Connecter
-                      </Button>
-                    </CardContent>
-                  </Card>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Publiez vos promotions sur votre page Facebook
+                          </p>
+                          {isConnected ? (
+                            <Button 
+                              onClick={() => setOpenPlatformDialog('facebook')}
+                              variant="outline" 
+                              className="w-full text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              Déconnecter
+                            </Button>
+                          ) : (
+                            <Button 
+                              onClick={() => setOpenPlatformDialog('facebook')}
+                              variant="outline" 
+                              className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                            >
+                              Connecter
+                            </Button>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })()}
 
                   {/* Instagram */}
-                  <Card className="glass-card border-border/50 hover:shadow-lg transition-smooth cursor-pointer group">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between gap-4 mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] flex items-center justify-center">
-                            <Instagram className="h-6 w-6 text-white" />
-                          </div>
-                          <div>
-                            <div className="font-semibold">Instagram</div>
-                            <div className="text-xs text-muted-foreground">
-                              {connections?.find(c => c.platform === 'instagram')?.is_connected && (
-                                <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20 mt-1">
-                                  Connecté
-                                </Badge>
-                              )}
+                  {(() => {
+                    const igConnection = connections?.find(c => c.platform === 'instagram');
+                    const isConnected = igConnection?.is_connected && igConnection?.access_token;
+                    return (
+                      <Card className="glass-card border-border/50 hover:shadow-lg transition-smooth cursor-pointer group">
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between gap-4 mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] flex items-center justify-center">
+                                <Instagram className="h-6 w-6 text-white" />
+                              </div>
+                              <div>
+                                <div className="font-semibold">Instagram</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {isConnected && (
+                                    <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20 mt-1">
+                                      Connecté
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Publiez vos promotions en Reels sur Instagram
-                      </p>
-                      <Button 
-                        onClick={() => setOpenPlatformDialog('instagram')}
-                        variant="outline" 
-                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                      >
-                        Connecter
-                      </Button>
-                    </CardContent>
-                  </Card>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Publiez vos promotions en Reels sur Instagram
+                          </p>
+                          {isConnected ? (
+                            <Button 
+                              onClick={() => setOpenPlatformDialog('instagram')}
+                              variant="outline" 
+                              className="w-full text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              Déconnecter
+                            </Button>
+                          ) : (
+                            <Button 
+                              onClick={() => setOpenPlatformDialog('instagram')}
+                              variant="outline" 
+                              className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                            >
+                              Connecter
+                            </Button>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })()}
 
                   {/* WhatsApp */}
                   <Card className="glass-card border-border/50 opacity-60">
