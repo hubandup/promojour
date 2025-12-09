@@ -59,3 +59,6 @@ verify_jwt = true
 
 [functions.get-payment-method]
 verify_jwt = true
+
+[functions.check-promotion-alerts]
+verify_jwt = false

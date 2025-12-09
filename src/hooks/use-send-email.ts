@@ -41,8 +41,9 @@ export const useSendEmail = () => {
     return data;
   };
 
-  // Template ID Brevo par défaut
+  // Template IDs Brevo
   const BREVO_TEMPLATE_ID = 52;
+  const BREVO_ALERT_TEMPLATE_ID = 53;
 
   // Pre-built email templates using Brevo template 52
   const sendWelcomeEmail = async (to: string, firstName: string) => {
