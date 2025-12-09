@@ -50,3 +50,12 @@ verify_jwt = false
 
 [functions.google-mybusiness-oauth-callback]
 verify_jwt = false
+
+[functions.send-email]
+verify_jwt = true
+
+[functions.get-invoices]
+verify_jwt = true
+
+[functions.get-payment-method]
+verify_jwt = true
