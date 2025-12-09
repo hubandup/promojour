@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Store, Check } from "lucide-react";
+import { useSendEmail } from "@/hooks/use-send-email";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ const Auth = () => {
   const [storeName, setStoreName] = useState("");
   const [forgotPassword, setForgotPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("signin");
+  const { sendWelcomeEmail } = useSendEmail();
   
   // Plan from URL params
   const plan = searchParams.get("plan") || "free";
@@ -74,6 +76,16 @@ const Auth = () => {
       if (data.user && data.session) {
         toast.success("Compte créé avec succès !");
         
+        // Send welcome email
+        const firstName = name.split(' ')[0] || name;
+        try {
+          await sendWelcomeEmail(email, firstName);
+          console.log("[AUTH] Welcome email sent to:", email);
+        } catch (emailError) {
+          console.error("[AUTH] Failed to send welcome email:", emailError);
+          // Don't block the signup flow if email fails
+        }
+        
         // Navigate based on plan
         if (plan === "pro" || plan === "centrale") {
           navigate(`/checkout?plan=${plan}&storeName=${encodeURIComponent(storeName)}`);
@@ -82,6 +94,15 @@ const Auth = () => {
         }
       } else if (data.user && !data.session) {
         // User created but needs email confirmation
+        // Send welcome email anyway
+        const firstName = name.split(' ')[0] || name;
+        try {
+          await sendWelcomeEmail(email, firstName);
+          console.log("[AUTH] Welcome email sent to:", email);
+        } catch (emailError) {
+          console.error("[AUTH] Failed to send welcome email:", emailError);
+        }
+        
         toast.success("Compte créé ! Vérifiez votre email pour confirmer.", {
           duration: 5000
         });
