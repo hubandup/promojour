@@ -46,6 +46,8 @@ interface StoreData {
   city: string | null;
   postal_code: string | null;
   country: string | null;
+  email: string | null;
+  phone: string | null;
   is_active: boolean;
   created_at: string;
   organization_name: string;
@@ -304,6 +306,8 @@ const SuperAdmin = () => {
       "Code postal": store.postal_code || '-',
       "Ville": store.city || '-',
       "Pays": store.country || 'France',
+      "Email": store.email || '-',
+      "Téléphone": store.phone || '-',
       "Statut": store.is_active ? 'Actif' : 'Inactif',
       "Promotions": store.promotions_count,
       "Réseaux sociaux": store.social_connections_count,
