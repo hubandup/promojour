@@ -27,6 +27,7 @@ import StoreReels from "./pages/StoreReels";
 import StoreFrontend from "./pages/StoreFrontend";
 import Settings from "./pages/Settings";
 import Account from "./pages/Account";
+import SuperAdmin from "./pages/SuperAdmin";
 import LegalNotice from "./pages/LegalNotice";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -188,6 +189,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <Account />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/super-admin"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <SuperAdmin />
                 </AppLayout>
               </ProtectedRoute>
             }
