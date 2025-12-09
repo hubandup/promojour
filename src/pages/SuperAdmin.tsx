@@ -41,7 +41,11 @@ interface Organization {
 interface StoreData {
   id: string;
   name: string;
+  address_line1: string | null;
+  address_line2: string | null;
   city: string | null;
+  postal_code: string | null;
+  country: string | null;
   is_active: boolean;
   created_at: string;
   organization_name: string;
@@ -295,7 +299,11 @@ const SuperAdmin = () => {
     const data = filteredStores.map(store => ({
       "Nom": store.name,
       "Organisation": store.organization_name,
+      "Adresse": store.address_line1 || '-',
+      "Complément": store.address_line2 || '',
+      "Code postal": store.postal_code || '-',
       "Ville": store.city || '-',
+      "Pays": store.country || 'France',
       "Statut": store.is_active ? 'Actif' : 'Inactif',
       "Promotions": store.promotions_count,
       "Réseaux sociaux": store.social_connections_count,
