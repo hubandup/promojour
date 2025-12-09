@@ -321,6 +321,27 @@ const SuperAdmin = () => {
     toast.success("Export XLS téléchargé");
   };
 
+  const handleChangeAccountType = async (orgId: string, newType: 'free' | 'store' | 'central') => {
+    try {
+      const { error } = await supabase
+        .from('organizations')
+        .update({ account_type: newType })
+        .eq('id', orgId);
+
+      if (error) throw error;
+
+      setOrganizations(prev => 
+        prev.map(org => org.id === orgId ? { ...org, account_type: newType } : org)
+      );
+
+      const typeLabels = { free: 'Free', store: 'Pro', central: 'Centrale' };
+      toast.success(`Type d'abonnement modifié en "${typeLabels[newType]}"`);
+    } catch (error: any) {
+      console.error('Error updating account type:', error);
+      toast.error("Erreur lors de la modification du type d'abonnement");
+    }
+  };
+
   const getAccountTypeBadge = (type: 'free' | 'store' | 'central') => {
     const configs = {
       free: { label: 'Free', variant: 'secondary' as const },
@@ -520,7 +541,27 @@ const SuperAdmin = () => {
                         />
                       </TableCell>
                       <TableCell className="font-medium">{org.name}</TableCell>
-                      <TableCell>{getAccountTypeBadge(org.account_type)}</TableCell>
+                      <TableCell>
+                        <Select 
+                          value={org.account_type} 
+                          onValueChange={(value: 'free' | 'store' | 'central') => handleChangeAccountType(org.id, value)}
+                        >
+                          <SelectTrigger className="w-[120px] h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="free">
+                              <Badge variant="secondary">Free</Badge>
+                            </SelectItem>
+                            <SelectItem value="store">
+                              <Badge variant="default">Pro</Badge>
+                            </SelectItem>
+                            <SelectItem value="central">
+                              <Badge variant="destructive">Centrale</Badge>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
                       <TableCell>
                         <Badge variant={org.subscription_status === 'active' ? 'default' : 'secondary'}>
                           {org.subscription_status || 'N/A'}
