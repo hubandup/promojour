@@ -44,7 +44,7 @@ const Auth = () => {
         redirectPath = `/onboarding?storeName=${encodeURIComponent(storeName)}`;
       }
 
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -56,18 +56,49 @@ const Auth = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Handle specific error for existing user
+        if (error.message.includes("already registered") || error.message.includes("User already registered")) {
+          toast.error("Cet email est déjà utilisé. Veuillez vous connecter.", {
+            action: {
+              label: "Se connecter",
+              onClick: () => setActiveTab("signin")
+            }
+          });
+          return;
+        }
+        throw error;
+      }
 
-      toast.success("Compte créé avec succès !");
-      
-      // Navigate based on plan
-      if (plan === "pro" || plan === "centrale") {
-        navigate(`/checkout?plan=${plan}&storeName=${encodeURIComponent(storeName)}`);
+      // Check if user was actually created (not just a fake signup for existing user)
+      if (data.user && data.session) {
+        toast.success("Compte créé avec succès !");
+        
+        // Navigate based on plan
+        if (plan === "pro" || plan === "centrale") {
+          navigate(`/checkout?plan=${plan}&storeName=${encodeURIComponent(storeName)}`);
+        } else {
+          navigate(`/onboarding${storeName ? `?storeName=${encodeURIComponent(storeName)}` : ""}`);
+        }
+      } else if (data.user && !data.session) {
+        // User created but needs email confirmation
+        toast.success("Compte créé ! Vérifiez votre email pour confirmer.", {
+          duration: 5000
+        });
       } else {
-        navigate(`/onboarding${storeName ? `?storeName=${encodeURIComponent(storeName)}` : ""}`);
+        // User already exists (Supabase returns empty user/session for security)
+        toast.error("Cet email est déjà utilisé. Veuillez vous connecter.", {
+          action: {
+            label: "Se connecter",
+            onClick: () => setActiveTab("signin")
+          }
+        });
       }
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de l'inscription");
+      const message = error.message?.includes("already") 
+        ? "Cet email est déjà utilisé. Veuillez vous connecter."
+        : error.message || "Erreur lors de l'inscription";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
