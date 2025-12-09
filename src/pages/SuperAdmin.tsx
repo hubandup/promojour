@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserData } from "@/hooks/use-user-data";
@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { 
   Building2, 
@@ -16,10 +18,14 @@ import {
   Users, 
   Tag, 
   Trash2, 
-  ShieldCheck
+  ShieldCheck,
+  Search,
+  Download,
+  Filter
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import * as XLSX from "xlsx";
 
 interface Organization {
   id: string;
@@ -51,6 +57,13 @@ const SuperAdmin = () => {
   const [loading, setLoading] = useState(true);
   const [selectedOrgs, setSelectedOrgs] = useState<string[]>([]);
   const [selectedStores, setSelectedStores] = useState<string[]>([]);
+  
+  // Filters
+  const [orgSearch, setOrgSearch] = useState("");
+  const [orgTypeFilter, setOrgTypeFilter] = useState<string>("all");
+  const [storeSearch, setStoreSearch] = useState("");
+  const [storeStatusFilter, setStoreStatusFilter] = useState<string>("all");
+  
   const [stats, setStats] = useState({
     totalOrgs: 0,
     totalStores: 0,
@@ -238,6 +251,64 @@ const SuperAdmin = () => {
     }
   };
 
+  // Filtered data
+  const filteredOrgs = useMemo(() => {
+    return organizations.filter(org => {
+      const matchesSearch = org.name.toLowerCase().includes(orgSearch.toLowerCase());
+      const matchesType = orgTypeFilter === "all" || org.account_type === orgTypeFilter;
+      return matchesSearch && matchesType;
+    });
+  }, [organizations, orgSearch, orgTypeFilter]);
+
+  const filteredStores = useMemo(() => {
+    return stores.filter(store => {
+      const matchesSearch = store.name.toLowerCase().includes(storeSearch.toLowerCase()) ||
+                           store.organization_name.toLowerCase().includes(storeSearch.toLowerCase()) ||
+                           (store.city?.toLowerCase().includes(storeSearch.toLowerCase()) ?? false);
+      const matchesStatus = storeStatusFilter === "all" || 
+                           (storeStatusFilter === "active" && store.is_active) ||
+                           (storeStatusFilter === "inactive" && !store.is_active);
+      return matchesSearch && matchesStatus;
+    });
+  }, [stores, storeSearch, storeStatusFilter]);
+
+  // Export functions
+  const exportOrgsToXLS = () => {
+    const data = filteredOrgs.map(org => ({
+      "Nom": org.name,
+      "Type": org.account_type === 'free' ? 'Free' : org.account_type === 'store' ? 'Pro' : 'Centrale',
+      "Statut": org.subscription_status || 'N/A',
+      "Magasins": org.stores_count,
+      "Promotions": org.promotions_count,
+      "Utilisateurs": org.users_count,
+      "Créé le": format(new Date(org.created_at), 'dd/MM/yyyy', { locale: fr })
+    }));
+    
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Organisations");
+    XLSX.writeFile(wb, `organisations_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+    toast.success("Export XLS téléchargé");
+  };
+
+  const exportStoresToXLS = () => {
+    const data = filteredStores.map(store => ({
+      "Nom": store.name,
+      "Organisation": store.organization_name,
+      "Ville": store.city || '-',
+      "Statut": store.is_active ? 'Actif' : 'Inactif',
+      "Promotions": store.promotions_count,
+      "Réseaux sociaux": store.social_connections_count,
+      "Créé le": format(new Date(store.created_at), 'dd/MM/yyyy', { locale: fr })
+    }));
+    
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Magasins");
+    XLSX.writeFile(wb, `magasins_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+    toast.success("Export XLS téléchargé");
+  };
+
   const getAccountTypeBadge = (type: 'free' | 'store' | 'central') => {
     const configs = {
       free: { label: 'Free', variant: 'secondary' as const },
@@ -342,38 +413,70 @@ const SuperAdmin = () => {
 
         <TabsContent value="organizations">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Toutes les organisations</CardTitle>
-                <CardDescription>Liste de tous les comptes créés sur PromoJour</CardDescription>
+            <CardHeader className="space-y-4">
+              <div className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Toutes les organisations</CardTitle>
+                  <CardDescription>Liste de tous les comptes créés sur PromoJour</CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={exportOrgsToXLS} className="gap-2">
+                    <Download className="w-4 h-4" />
+                    Export XLS
+                  </Button>
+                  {selectedOrgs.length > 0 && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm" className="gap-2">
+                          <Trash2 className="w-4 h-4" />
+                          Supprimer ({selectedOrgs.length})
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Supprimer {selectedOrgs.length} organisation(s) ?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Cette action supprimera définitivement les organisations sélectionnées et toutes leurs données associées. Cette action est irréversible.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={handleDeleteSelectedOrgs}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Supprimer
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
               </div>
-              {selectedOrgs.length > 0 && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm" className="gap-2">
-                      <Trash2 className="w-4 h-4" />
-                      Supprimer ({selectedOrgs.length})
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Supprimer {selectedOrgs.length} organisation(s) ?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Cette action supprimera définitivement les organisations sélectionnées et toutes leurs données associées. Cette action est irréversible.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={handleDeleteSelectedOrgs}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        Supprimer
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
+              {/* Filters */}
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher par nom..."
+                    value={orgSearch}
+                    onChange={(e) => setOrgSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={orgTypeFilter} onValueChange={setOrgTypeFilter}>
+                  <SelectTrigger className="w-[150px]">
+                    <Filter className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les types</SelectItem>
+                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="store">Pro</SelectItem>
+                    <SelectItem value="central">Centrale</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -396,7 +499,7 @@ const SuperAdmin = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {organizations.map((org) => (
+                  {filteredOrgs.map((org) => (
                     <TableRow key={org.id} className={selectedOrgs.includes(org.id) ? 'bg-muted/50' : ''}>
                       <TableCell>
                         <Checkbox 
@@ -453,38 +556,69 @@ const SuperAdmin = () => {
 
         <TabsContent value="stores">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Tous les magasins</CardTitle>
-                <CardDescription>Liste de tous les magasins enregistrés</CardDescription>
+            <CardHeader className="space-y-4">
+              <div className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Tous les magasins</CardTitle>
+                  <CardDescription>Liste de tous les magasins enregistrés</CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={exportStoresToXLS} className="gap-2">
+                    <Download className="w-4 h-4" />
+                    Export XLS
+                  </Button>
+                  {selectedStores.length > 0 && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm" className="gap-2">
+                          <Trash2 className="w-4 h-4" />
+                          Supprimer ({selectedStores.length})
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Supprimer {selectedStores.length} magasin(s) ?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Cette action supprimera définitivement les magasins sélectionnés et toutes leurs données associées. Cette action est irréversible.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={handleDeleteSelectedStores}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Supprimer
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
               </div>
-              {selectedStores.length > 0 && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm" className="gap-2">
-                      <Trash2 className="w-4 h-4" />
-                      Supprimer ({selectedStores.length})
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Supprimer {selectedStores.length} magasin(s) ?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Cette action supprimera définitivement les magasins sélectionnés et toutes leurs données associées. Cette action est irréversible.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={handleDeleteSelectedStores}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        Supprimer
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
+              {/* Filters */}
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher par nom, organisation, ville..."
+                    value={storeSearch}
+                    onChange={(e) => setStoreSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={storeStatusFilter} onValueChange={setStoreStatusFilter}>
+                  <SelectTrigger className="w-[150px]">
+                    <Filter className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Statut" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les statuts</SelectItem>
+                    <SelectItem value="active">Actif</SelectItem>
+                    <SelectItem value="inactive">Inactif</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -506,7 +640,7 @@ const SuperAdmin = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {stores.map((store) => (
+                  {filteredStores.map((store) => (
                     <TableRow key={store.id} className={selectedStores.includes(store.id) ? 'bg-muted/50' : ''}>
                       <TableCell>
                         <Checkbox 
