@@ -11,13 +11,16 @@ import logoPromojour from "@/assets/logo-promojour.svg";
 import { 
   Store, 
   Facebook, 
+  Instagram,
   Upload,
   ArrowRight,
   Check,
   Sparkles,
   Globe,
-  Image
+  Image,
+  MessageCircle
 } from "lucide-react";
+import whatsappIcon from "@/assets/whatsapp.svg";
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -487,6 +490,44 @@ const Onboarding = () => {
                       <div className="text-sm text-muted-foreground">Diffusez sur Google Shopping</div>
                     </div>
                     <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Disponible après</span>
+                  </div>
+
+                  {/* Instagram - Coming Soon */}
+                  <div className="w-full p-4 rounded-xl border border-border bg-muted/30 flex items-center gap-4 text-left opacity-50 cursor-not-allowed">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#833AB4] via-[#E1306C] to-[#F77737] flex items-center justify-center">
+                      <Instagram className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold">Instagram</div>
+                      <div className="text-sm text-muted-foreground">Partagez vos promos en Reels</div>
+                    </div>
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Prochainement</span>
+                  </div>
+
+                  {/* WhatsApp - Coming Soon */}
+                  <div className="w-full p-4 rounded-xl border border-border bg-muted/30 flex items-center gap-4 text-left opacity-50 cursor-not-allowed">
+                    <div className="w-12 h-12 rounded-xl bg-[#25D366] flex items-center justify-center">
+                      <img src={whatsappIcon} alt="WhatsApp" className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold">WhatsApp</div>
+                      <div className="text-sm text-muted-foreground">Envoyez vos promos par message</div>
+                    </div>
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Prochainement</span>
+                  </div>
+
+                  {/* TikTok - Coming Soon */}
+                  <div className="w-full p-4 rounded-xl border border-border bg-muted/30 flex items-center gap-4 text-left opacity-50 cursor-not-allowed">
+                    <div className="w-12 h-12 rounded-xl bg-black flex items-center justify-center">
+                      <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold">TikTok</div>
+                      <div className="text-sm text-muted-foreground">Créez des vidéos virales</div>
+                    </div>
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Prochainement</span>
                   </div>
                 </div>
 
