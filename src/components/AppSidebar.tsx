@@ -1,4 +1,4 @@
-import { LayoutDashboard, Tag, CalendarDays, BarChart3, Store, Settings, User, LogOut } from "lucide-react";
+import { LayoutDashboard, Tag, CalendarDays, BarChart3, Store, Settings, User, LogOut, ShieldCheck } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -23,9 +23,13 @@ const settingsItems = [
   { title: "Compte", url: "/account", icon: User },
 ];
 
+const superAdminItems = [
+  { title: "Administration", url: "/super-admin", icon: ShieldCheck },
+];
+
 export function AppSidebar() {
   const navigate = useNavigate();
-  const { isStoreManager, isFree, loading: userLoading } = useUserData();
+  const { isStoreManager, isFree, isSuperAdmin, loading: userLoading } = useUserData();
   const { stores, loading: storesLoading } = useStores();
   const { canViewCampaigns, canEditOrgSettings } = usePermissions();
 
@@ -116,13 +120,38 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-      </SidebarContent>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      )}
 
-      <SidebarFooter>
+      {isSuperAdmin && (
+        <SidebarGroup>
+          <SidebarGroupLabel>Super Admin</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {superAdminItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to={item.url}
+                      className={({ isActive }) =>
+                        isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""
+                      }
+                    >
+                      <item.icon className="w-4 h-4" />
+                      <span>{item.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      )}
+    </SidebarContent>
+
+    <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout}>
