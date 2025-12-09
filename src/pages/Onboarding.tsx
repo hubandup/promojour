@@ -32,6 +32,11 @@ const Onboarding = () => {
   const [postalCode, setPostalCode] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [createdStoreId, setCreatedStoreId] = useState<string | null>(null);
+  
+  // Step 2: Social connections
+  const [facebookConnected, setFacebookConnected] = useState(false);
+  const [facebookConnecting, setFacebookConnecting] = useState(false);
   
   // Step 3: First promotion
   const [promoName, setPromoName] = useState("");
@@ -103,17 +108,18 @@ const Onboarding = () => {
       }
 
       // Create store
-      const { error } = await supabase.from("stores").insert({
+      const { data: storeData, error } = await supabase.from("stores").insert({
         name: storeName,
         address_line1: address,
         city: city,
         postal_code: postalCode,
         logo_url: logoUrl,
         organization_id: profile.organization_id,
-      });
+      }).select('id').single();
 
       if (error) throw error;
 
+      setCreatedStoreId(storeData.id);
       toast.success("Magasin créé avec succès !");
       setStep(2);
     } catch (error: any) {
@@ -131,8 +137,68 @@ const Onboarding = () => {
     setStep(3);
   };
 
-  const handleSocialConnect = (platform: string) => {
-    toast.info(`Connexion ${platform} - Fonctionnalité à venir`);
+  const handleFacebookConnect = async () => {
+    if (!createdStoreId) {
+      toast.error("Veuillez d'abord créer un magasin");
+      return;
+    }
+
+    setFacebookConnecting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Vous devez être connecté");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('facebook-oauth-init', {
+        body: { storeId: createdStoreId, platform: 'facebook' }
+      });
+
+      if (error) throw error;
+
+      const authUrl = data?.authUrl;
+      if (!authUrl) throw new Error("URL d'authentification non reçue");
+
+      // Open in popup or new tab
+      const isInIframe = window.self !== window.top;
+      if (isInIframe) {
+        window.open(authUrl, '_blank');
+        toast.info("Connectez-vous à Facebook dans le nouvel onglet");
+      } else {
+        const popup = window.open(authUrl, 'facebook-oauth', 'width=600,height=700');
+        
+        // Listen for popup close
+        const checkClosed = setInterval(() => {
+          if (popup?.closed) {
+            clearInterval(checkClosed);
+            checkFacebookConnection();
+          }
+        }, 1000);
+      }
+    } catch (error: any) {
+      console.error('Facebook OAuth error:', error);
+      toast.error(error.message || "Erreur lors de la connexion Facebook");
+    } finally {
+      setFacebookConnecting(false);
+    }
+  };
+
+  const checkFacebookConnection = async () => {
+    if (!createdStoreId) return;
+    
+    const { data } = await supabase
+      .from('social_connections')
+      .select('id')
+      .eq('store_id', createdStoreId)
+      .eq('platform', 'facebook')
+      .eq('is_connected', true)
+      .maybeSingle();
+    
+    if (data) {
+      setFacebookConnected(true);
+      toast.success("Facebook connecté avec succès !");
+    }
   };
 
   const handleStep3Submit = async () => {
@@ -351,13 +417,28 @@ const Onboarding = () => {
             {/* Step 2: Social Connections */}
             {step === 2 && (
               <div className="space-y-6">
-                <p className="text-sm text-muted-foreground text-center">
-                  Vous pourrez connecter vos réseaux sociaux depuis les paramètres de votre magasin après l'inscription.
-                </p>
+                {!createdStoreId && (
+                  <p className="text-sm text-muted-foreground text-center">
+                    Vous pourrez connecter vos réseaux sociaux depuis les paramètres de votre magasin après avoir créé un magasin.
+                  </p>
+                )}
+                {createdStoreId && (
+                  <p className="text-sm text-muted-foreground text-center">
+                    Connectez vos comptes pour diffuser automatiquement vos promotions.
+                  </p>
+                )}
 
                 <div className="grid gap-4">
                   {/* Facebook */}
-                  <div className="w-full p-4 rounded-xl border border-border bg-muted/30 flex items-center gap-4 text-left">
+                  <button
+                    onClick={handleFacebookConnect}
+                    disabled={!createdStoreId || facebookConnecting || facebookConnected}
+                    className={`w-full p-4 rounded-xl border flex items-center gap-4 text-left transition-all ${
+                      createdStoreId && !facebookConnected
+                        ? 'border-border hover:border-primary/50 hover:bg-muted/50 cursor-pointer'
+                        : 'border-border bg-muted/30 cursor-not-allowed opacity-70'
+                    } ${facebookConnected ? 'border-green-500/50 bg-green-500/10 opacity-100' : ''}`}
+                  >
                     <div className="w-12 h-12 rounded-xl bg-[#1877F2] flex items-center justify-center">
                       <Facebook className="w-6 h-6 text-white" />
                     </div>
@@ -365,11 +446,19 @@ const Onboarding = () => {
                       <div className="font-semibold">Facebook</div>
                       <div className="text-sm text-muted-foreground">Publiez sur votre page Facebook</div>
                     </div>
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Disponible</span>
-                  </div>
+                    {facebookConnecting ? (
+                      <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded">Connexion...</span>
+                    ) : facebookConnected ? (
+                      <Check className="w-5 h-5 text-green-500" />
+                    ) : createdStoreId ? (
+                      <ArrowRight className="w-5 h-5 text-muted-foreground" />
+                    ) : (
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Créez un magasin</span>
+                    )}
+                  </button>
 
                   {/* Google My Business */}
-                  <div className="w-full p-4 rounded-xl border border-border bg-muted/30 flex items-center gap-4 text-left">
+                  <div className="w-full p-4 rounded-xl border border-border bg-muted/30 flex items-center gap-4 text-left opacity-70">
                     <div className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center bg-white p-1">
                       <img 
                         src="/google-my-business-logo.png" 
@@ -381,11 +470,11 @@ const Onboarding = () => {
                       <div className="font-semibold">Google My Business</div>
                       <div className="text-sm text-muted-foreground">Apparaissez sur Google Maps</div>
                     </div>
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Disponible</span>
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Disponible après</span>
                   </div>
 
                   {/* Google Merchant Center */}
-                  <div className="w-full p-4 rounded-xl border border-border bg-muted/30 flex items-center gap-4 text-left">
+                  <div className="w-full p-4 rounded-xl border border-border bg-muted/30 flex items-center gap-4 text-left opacity-70">
                     <div className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center bg-white p-1">
                       <img 
                         src="/google-merchant-center-logo.png" 
@@ -397,7 +486,7 @@ const Onboarding = () => {
                       <div className="font-semibold">Google Merchant Center</div>
                       <div className="text-sm text-muted-foreground">Diffusez sur Google Shopping</div>
                     </div>
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Disponible</span>
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Disponible après</span>
                   </div>
                 </div>
 
