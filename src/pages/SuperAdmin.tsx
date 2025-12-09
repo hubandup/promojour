@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { 
   Building2, 
@@ -15,9 +16,7 @@ import {
   Users, 
   Tag, 
   Trash2, 
-  Calendar,
-  ShieldCheck,
-  TrendingUp
+  ShieldCheck
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -50,6 +49,8 @@ const SuperAdmin = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [stores, setStores] = useState<StoreData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrgs, setSelectedOrgs] = useState<string[]>([]);
+  const [selectedStores, setSelectedStores] = useState<string[]>([]);
   const [stats, setStats] = useState({
     totalOrgs: 0,
     totalStores: 0,
@@ -158,34 +159,82 @@ const SuperAdmin = () => {
 
   const handleDeleteOrganization = async (orgId: string, orgName: string) => {
     try {
-      // Delete in order: user_roles, profiles, promotions, stores, organization
-      // Note: Due to cascading, most should delete automatically, but we'll be explicit
-
-      // Delete user roles
       await supabase.from('user_roles').delete().eq('organization_id', orgId);
-      
-      // Delete promotions
       await supabase.from('promotions').delete().eq('organization_id', orgId);
-      
-      // Delete campaigns
       await supabase.from('campaigns').delete().eq('organization_id', orgId);
-      
-      // Delete stores (this will cascade to social_connections, store_settings, etc.)
       await supabase.from('stores').delete().eq('organization_id', orgId);
-      
-      // Delete profiles linked to this org
       await supabase.from('profiles').update({ organization_id: null }).eq('organization_id', orgId);
-      
-      // Finally delete the organization
       const { error } = await supabase.from('organizations').delete().eq('id', orgId);
       
       if (error) throw error;
 
       toast.success(`Organisation "${orgName}" supprimée`);
+      setSelectedOrgs(prev => prev.filter(id => id !== orgId));
       fetchData();
     } catch (error) {
       console.error('Error deleting organization:', error);
       toast.error("Erreur lors de la suppression");
+    }
+  };
+
+  const handleDeleteSelectedOrgs = async () => {
+    try {
+      for (const orgId of selectedOrgs) {
+        await supabase.from('user_roles').delete().eq('organization_id', orgId);
+        await supabase.from('promotions').delete().eq('organization_id', orgId);
+        await supabase.from('campaigns').delete().eq('organization_id', orgId);
+        await supabase.from('stores').delete().eq('organization_id', orgId);
+        await supabase.from('profiles').update({ organization_id: null }).eq('organization_id', orgId);
+        await supabase.from('organizations').delete().eq('id', orgId);
+      }
+      toast.success(`${selectedOrgs.length} organisation(s) supprimée(s)`);
+      setSelectedOrgs([]);
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting organizations:', error);
+      toast.error("Erreur lors de la suppression");
+    }
+  };
+
+  const handleDeleteSelectedStores = async () => {
+    try {
+      for (const storeId of selectedStores) {
+        await supabase.from('stores').delete().eq('id', storeId);
+      }
+      toast.success(`${selectedStores.length} magasin(s) supprimé(s)`);
+      setSelectedStores([]);
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting stores:', error);
+      toast.error("Erreur lors de la suppression");
+    }
+  };
+
+  const toggleOrgSelection = (orgId: string) => {
+    setSelectedOrgs(prev => 
+      prev.includes(orgId) ? prev.filter(id => id !== orgId) : [...prev, orgId]
+    );
+  };
+
+  const toggleStoreSelection = (storeId: string) => {
+    setSelectedStores(prev => 
+      prev.includes(storeId) ? prev.filter(id => id !== storeId) : [...prev, storeId]
+    );
+  };
+
+  const toggleAllOrgs = () => {
+    if (selectedOrgs.length === organizations.length) {
+      setSelectedOrgs([]);
+    } else {
+      setSelectedOrgs(organizations.map(o => o.id));
+    }
+  };
+
+  const toggleAllStores = () => {
+    if (selectedStores.length === stores.length) {
+      setSelectedStores([]);
+    } else {
+      setSelectedStores(stores.map(s => s.id));
     }
   };
 
@@ -293,14 +342,49 @@ const SuperAdmin = () => {
 
         <TabsContent value="organizations">
           <Card>
-            <CardHeader>
-              <CardTitle>Toutes les organisations</CardTitle>
-              <CardDescription>Liste de tous les comptes créés sur PromoJour</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Toutes les organisations</CardTitle>
+                <CardDescription>Liste de tous les comptes créés sur PromoJour</CardDescription>
+              </div>
+              {selectedOrgs.length > 0 && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" className="gap-2">
+                      <Trash2 className="w-4 h-4" />
+                      Supprimer ({selectedOrgs.length})
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Supprimer {selectedOrgs.length} organisation(s) ?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Cette action supprimera définitivement les organisations sélectionnées et toutes leurs données associées. Cette action est irréversible.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleDeleteSelectedOrgs}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox 
+                        checked={selectedOrgs.length === organizations.length && organizations.length > 0}
+                        onCheckedChange={toggleAllOrgs}
+                      />
+                    </TableHead>
                     <TableHead>Nom</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Statut</TableHead>
@@ -313,7 +397,13 @@ const SuperAdmin = () => {
                 </TableHeader>
                 <TableBody>
                   {organizations.map((org) => (
-                    <TableRow key={org.id}>
+                    <TableRow key={org.id} className={selectedOrgs.includes(org.id) ? 'bg-muted/50' : ''}>
+                      <TableCell>
+                        <Checkbox 
+                          checked={selectedOrgs.includes(org.id)}
+                          onCheckedChange={() => toggleOrgSelection(org.id)}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">{org.name}</TableCell>
                       <TableCell>{getAccountTypeBadge(org.account_type)}</TableCell>
                       <TableCell>
@@ -363,14 +453,49 @@ const SuperAdmin = () => {
 
         <TabsContent value="stores">
           <Card>
-            <CardHeader>
-              <CardTitle>Tous les magasins</CardTitle>
-              <CardDescription>Liste de tous les magasins enregistrés</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Tous les magasins</CardTitle>
+                <CardDescription>Liste de tous les magasins enregistrés</CardDescription>
+              </div>
+              {selectedStores.length > 0 && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" className="gap-2">
+                      <Trash2 className="w-4 h-4" />
+                      Supprimer ({selectedStores.length})
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Supprimer {selectedStores.length} magasin(s) ?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Cette action supprimera définitivement les magasins sélectionnés et toutes leurs données associées. Cette action est irréversible.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleDeleteSelectedStores}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox 
+                        checked={selectedStores.length === stores.length && stores.length > 0}
+                        onCheckedChange={toggleAllStores}
+                      />
+                    </TableHead>
                     <TableHead>Nom</TableHead>
                     <TableHead>Organisation</TableHead>
                     <TableHead>Ville</TableHead>
@@ -382,7 +507,13 @@ const SuperAdmin = () => {
                 </TableHeader>
                 <TableBody>
                   {stores.map((store) => (
-                    <TableRow key={store.id}>
+                    <TableRow key={store.id} className={selectedStores.includes(store.id) ? 'bg-muted/50' : ''}>
+                      <TableCell>
+                        <Checkbox 
+                          checked={selectedStores.includes(store.id)}
+                          onCheckedChange={() => toggleStoreSelection(store.id)}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">{store.name}</TableCell>
                       <TableCell className="text-muted-foreground">{store.organization_name}</TableCell>
                       <TableCell>{store.city || '-'}</TableCell>
