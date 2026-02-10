@@ -1,7 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, Eye, MousePointer, Users, BarChart3 } from "lucide-react";
+import { TrendingUp, Eye, MousePointer, Users, BarChart3, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { InfoCard } from "@/components/InfoCard";
 import { useStats } from "@/hooks/use-stats";
+import { exportToExcel, exportToCSV } from "@/lib/export-utils";
 
 const Stats = () => {
   const { overview, topPromos, platformStats, loading } = useStats();
@@ -18,9 +21,47 @@ const Stats = () => {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Statistiques</h1>
-        <p className="text-muted-foreground">Suivez les performances de vos promotions</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Statistiques</h1>
+          <p className="text-muted-foreground">Suivez les performances de vos promotions</p>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" disabled={topPromos.length === 0 && platformStats.length === 0}>
+              <Download className="w-4 h-4 mr-2" />
+              Exporter
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => {
+              const data = [
+                { Métrique: "Impressions", Valeur: overview.totalViews, "Évolution": overview.viewsChange },
+                { Métrique: "Clics", Valeur: overview.totalClicks, "Évolution": overview.clicksChange },
+                { Métrique: "Taux de clic (%)", Valeur: overview.clickRate, "Évolution": overview.clickRateChange },
+                { Métrique: "Portée", Valeur: overview.totalReach, "Évolution": overview.reachChange },
+                ...topPromos.map(p => ({ Métrique: `Top - ${p.title}`, Valeur: p.views, "Évolution": p.engagement })),
+                ...platformStats.map(p => ({ Métrique: `Plateforme - ${p.platform}`, Valeur: p.reach, "Évolution": p.engagement })),
+              ];
+              exportToExcel(data, "statistiques");
+            }}>
+              Export Excel (.xlsx)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              const data = [
+                { Métrique: "Impressions", Valeur: overview.totalViews, "Évolution": overview.viewsChange },
+                { Métrique: "Clics", Valeur: overview.totalClicks, "Évolution": overview.clicksChange },
+                { Métrique: "Taux de clic (%)", Valeur: overview.clickRate, "Évolution": overview.clickRateChange },
+                { Métrique: "Portée", Valeur: overview.totalReach, "Évolution": overview.reachChange },
+                ...topPromos.map(p => ({ Métrique: `Top - ${p.title}`, Valeur: p.views, "Évolution": p.engagement })),
+                ...platformStats.map(p => ({ Métrique: `Plateforme - ${p.platform}`, Valeur: p.reach, "Évolution": p.engagement })),
+              ];
+              exportToCSV(data, "statistiques");
+            }}>
+              Export CSV (.csv)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <InfoCard

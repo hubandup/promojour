@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, AlertCircle, Eye, Pencil, Trash2, BarChart3, LayoutGrid, List, X, Copy, Upload, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, Search, AlertCircle, Eye, Pencil, Trash2, BarChart3, LayoutGrid, List, X, Copy, Upload, Calendar as CalendarIcon, Download } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -44,6 +45,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { exportToExcel, exportToCSV } from "@/lib/export-utils";
 
 const Promotions = () => {
   const navigate = useNavigate();
@@ -274,6 +276,44 @@ const Promotions = () => {
               <CalendarIcon className="w-4 h-4" />
             </Button>
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={filteredPromotions.length === 0} className="hidden sm:flex">
+                <Download className="w-4 h-4 mr-2" />
+                Exporter
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => {
+                const data = filteredPromotions.map(p => ({
+                  Titre: p.title,
+                  Statut: p.status,
+                  Catégorie: p.category || "",
+                  "Date début": format(new Date(p.start_date), "dd/MM/yyyy"),
+                  "Date fin": format(new Date(p.end_date), "dd/MM/yyyy"),
+                  Vues: p.views_count,
+                  Clics: p.clicks_count,
+                }));
+                exportToExcel(data, "promotions");
+              }}>
+                Export Excel (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                const data = filteredPromotions.map(p => ({
+                  Titre: p.title,
+                  Statut: p.status,
+                  Catégorie: p.category || "",
+                  "Date début": format(new Date(p.start_date), "dd/MM/yyyy"),
+                  "Date fin": format(new Date(p.end_date), "dd/MM/yyyy"),
+                  Vues: p.views_count,
+                  Clics: p.clicks_count,
+                }));
+                exportToCSV(data, "promotions");
+              }}>
+                Export CSV (.csv)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button 
             variant="outline"
             onClick={() => setBulkImportOpen(true)}
