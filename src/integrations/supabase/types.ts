@@ -211,9 +211,40 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           account_type: Database["public"]["Enums"]["account_type"]
+          branding_color: string | null
           cover_image_url: string | null
           created_at: string
           description: string | null
@@ -228,9 +259,12 @@ export type Database = {
           subscription_status: string | null
           trial_ends_at: string | null
           updated_at: string
+          use_brand_colors: boolean | null
+          use_custom_logo: boolean | null
         }
         Insert: {
           account_type?: Database["public"]["Enums"]["account_type"]
+          branding_color?: string | null
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
@@ -245,9 +279,12 @@ export type Database = {
           subscription_status?: string | null
           trial_ends_at?: string | null
           updated_at?: string
+          use_brand_colors?: boolean | null
+          use_custom_logo?: boolean | null
         }
         Update: {
           account_type?: Database["public"]["Enums"]["account_type"]
+          branding_color?: string | null
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
@@ -262,6 +299,8 @@ export type Database = {
           subscription_status?: string | null
           trial_ends_at?: string | null
           updated_at?: string
+          use_brand_colors?: boolean | null
+          use_custom_logo?: boolean | null
         }
         Relationships: []
       }
@@ -802,6 +841,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          email_notifications: boolean
+          id: string
+          performance_alerts: boolean
+          tips_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_notifications?: boolean
+          id?: string
+          performance_alerts?: boolean
+          tips_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_notifications?: boolean
+          id?: string
+          performance_alerts?: boolean
+          tips_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
