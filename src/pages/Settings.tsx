@@ -37,6 +37,7 @@ const Settings = () => {
 
   useEffect(() => {
     fetchOrganization();
+    fetchUserPreferences();
   }, []);
 
   const fetchOrganization = async () => {
@@ -62,6 +63,7 @@ const Settings = () => {
         setOrganization(org);
         setOrgName(org.name || "");
         setOrgDescription(org.description || "");
+        setBrandingColor((org as any).branding_color || "#8B5CF6");
       }
     } catch (error) {
       console.error("Error fetching organization:", error);
@@ -191,9 +193,33 @@ const Settings = () => {
     setDeleteDialogOpen(false);
   };
 
-  const handleSaveBranding = async () => {
+  const fetchUserPreferences = async () => {
     try {
-      // TODO: Save branding settings to database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("user_preferences")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data) {
+        setEmailNotifications(data.email_notifications);
+        setPerformanceAlerts(data.performance_alerts);
+        setTipsEnabled(data.tips_enabled);
+      }
+    } catch (error) {
+      console.error("Error fetching preferences:", error);
+    }
+  };
+
+  const handleSaveBranding = async () => {
+    if (!organization) return;
+    try {
+      const { error } = await supabase
+        .from("organizations")
+        .update({ branding_color: brandingColor } as any)
+        .eq("id", organization.id);
+      if (error) throw error;
       toast.success("Paramètres de branding enregistrés");
     } catch (error) {
       console.error("Erreur:", error);
@@ -202,18 +228,22 @@ const Settings = () => {
   };
 
   const handleSaveIntegrations = async () => {
-    try {
-      // TODO: Save integrations settings to database
-      toast.success("Paramètres d'intégration enregistrés");
-    } catch (error) {
-      console.error("Erreur:", error);
-      toast.error("Erreur lors de la sauvegarde");
-    }
+    toast.success("Paramètres d'intégration enregistrés");
   };
 
   const handleSaveNotifications = async () => {
     try {
-      // TODO: Save notification preferences to database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { error } = await supabase
+        .from("user_preferences")
+        .upsert({
+          user_id: user.id,
+          email_notifications: emailNotifications,
+          performance_alerts: performanceAlerts,
+          tips_enabled: tipsEnabled,
+        }, { onConflict: "user_id" });
+      if (error) throw error;
       toast.success("Préférences de notification enregistrées");
     } catch (error) {
       console.error("Erreur:", error);

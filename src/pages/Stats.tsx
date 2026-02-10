@@ -1,31 +1,28 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Eye, MousePointer, Users, BarChart3 } from "lucide-react";
 import { InfoCard } from "@/components/InfoCard";
+import { useStats } from "@/hooks/use-stats";
 
 const Stats = () => {
-  const topPromos = [
-    { title: "Réduction 30% chaussures", views: 523, clicks: 87, engagement: "9.2%" },
-    { title: "2 pour 1 T-shirts", views: 412, clicks: 65, engagement: "7.8%" },
-    { title: "Soldes accessoires", views: 389, clicks: 54, engagement: "6.9%" },
-    { title: "Bundle produits", views: 301, clicks: 42, engagement: "6.5%" },
-    { title: "Offre fidélité", views: 287, clicks: 38, engagement: "6.1%" },
-  ];
+  const { overview, topPromos, platformStats, loading } = useStats();
 
-  const platformStats = [
-    { platform: "Instagram", posts: 24, reach: 3420, engagement: "8.1%" },
-    { platform: "Facebook", posts: 18, reach: 2890, engagement: "7.3%" },
-    { platform: "Google Business", posts: 15, reach: 1560, engagement: "5.9%" },
-  ];
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  const maxReach = Math.max(...platformStats.map(s => s.reach), 1);
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Statistiques</h1>
         <p className="text-muted-foreground">Suivez les performances de vos promotions</p>
       </div>
 
-      {/* Info Card */}
       <InfoCard
         icon={BarChart3}
         title="Analysez vos performances"
@@ -43,9 +40,9 @@ const Stats = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">8,234</div>
+            <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{overview.totalViews.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground mt-2">
-              <span className="text-primary font-semibold">+12.5%</span> vs mois dernier
+              <span className="text-primary font-semibold">{overview.viewsChange}</span> vs mois dernier
             </p>
           </CardContent>
         </Card>
@@ -58,9 +55,9 @@ const Stats = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">1,456</div>
+            <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{overview.totalClicks.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground mt-2">
-              <span className="text-primary font-semibold">+8.2%</span> vs mois dernier
+              <span className="text-primary font-semibold">{overview.clicksChange}</span> vs mois dernier
             </p>
           </CardContent>
         </Card>
@@ -73,9 +70,9 @@ const Stats = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-500">17.7%</div>
+            <div className="text-3xl font-bold text-green-500">{overview.clickRate}%</div>
             <p className="text-xs text-muted-foreground mt-2">
-              <span className="text-primary font-semibold">+2.1%</span> vs mois dernier
+              <span className="text-primary font-semibold">{overview.clickRateChange}</span> vs mois dernier
             </p>
           </CardContent>
         </Card>
@@ -88,9 +85,9 @@ const Stats = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-500">5,642</div>
+            <div className="text-3xl font-bold text-blue-500">{overview.totalReach.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground mt-2">
-              <span className="text-primary font-semibold">+15.3%</span> vs mois dernier
+              <span className="text-primary font-semibold">{overview.reachChange}</span> vs mois dernier
             </p>
           </CardContent>
         </Card>
@@ -105,29 +102,33 @@ const Stats = () => {
             <CardDescription>Meilleures performances ce mois-ci</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {topPromos.map((promo, idx) => (
-                <div key={idx} className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card/50 hover:shadow-md hover:border-primary/20 transition-smooth">
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-sm">{promo.title}</h4>
-                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1.5">
-                        <Eye className="w-3.5 h-3.5" />
-                        {promo.views}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <MousePointer className="w-3.5 h-3.5" />
-                        {promo.clicks}
-                      </span>
+            {topPromos.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">Aucune donnée disponible</p>
+            ) : (
+              <div className="space-y-3">
+                {topPromos.map((promo, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card/50 hover:shadow-md hover:border-primary/20 transition-smooth">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-sm">{promo.title}</h4>
+                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1.5">
+                          <Eye className="w-3.5 h-3.5" />
+                          {promo.views}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <MousePointer className="w-3.5 h-3.5" />
+                          {promo.clicks}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right ml-4">
+                      <div className="text-sm font-bold text-primary">{promo.engagement}</div>
+                      <div className="text-xs text-muted-foreground">engagement</div>
                     </div>
                   </div>
-                  <div className="text-right ml-4">
-                    <div className="text-sm font-bold text-primary">{promo.engagement}</div>
-                    <div className="text-xs text-muted-foreground">engagement</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -138,34 +139,38 @@ const Stats = () => {
             <CardDescription>Comparaison des réseaux sociaux</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              {platformStats.map((stat, idx) => (
-                <div key={idx} className="space-y-3 p-4 rounded-xl border border-border/50 bg-card/50 hover:shadow-md transition-smooth">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-semibold">{stat.platform}</span>
-                    <span className="text-muted-foreground font-medium">{stat.posts} publications</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1">
-                      <div className="h-3 bg-muted/50 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-primary via-accent to-primary rounded-full shadow-glow animate-pulse"
-                          style={{ width: `${(stat.reach / 3500) * 100}%` }}
-                        ></div>
+            {platformStats.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">Aucune donnée disponible</p>
+            ) : (
+              <div className="space-y-6">
+                {platformStats.map((stat, idx) => (
+                  <div key={idx} className="space-y-3 p-4 rounded-xl border border-border/50 bg-card/50 hover:shadow-md transition-smooth">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-semibold">{stat.platform}</span>
+                      <span className="text-muted-foreground font-medium">{stat.posts} publications</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <div className="h-3 bg-muted/50 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-primary via-accent to-primary rounded-full"
+                            style={{ width: `${(stat.reach / maxReach) * 100}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      <div className="text-right min-w-[60px]">
+                        <div className="text-sm font-bold text-primary">{stat.reach}</div>
+                        <div className="text-xs text-muted-foreground">portée</div>
                       </div>
                     </div>
-                    <div className="text-right min-w-[60px]">
-                      <div className="text-sm font-bold text-primary">{stat.reach}</div>
-                      <div className="text-xs text-muted-foreground">portée</div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Engagement:</span>
+                      <span className="font-semibold text-primary">{stat.engagement}</span>
                     </div>
                   </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">Engagement:</span>
-                    <span className="font-semibold text-primary">{stat.engagement}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
