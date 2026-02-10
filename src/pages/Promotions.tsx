@@ -231,20 +231,20 @@ const Promotions = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-3xl font-bold">Promotions</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl md:text-3xl font-bold">Promotions</h1>
+            <p className="text-muted-foreground text-sm">
               {loading ? "Chargement..." : `${filteredPromotions.length} promotion${filteredPromotions.length > 1 ? 's' : ''}`}
               {selectedIds.size > 0 && ` · ${selectedIds.size} sélectionnée(s)`}
             </p>
           </div>
           <ProfileBadge variant="compact" />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <div className="flex gap-1 bg-muted/50 p-1 rounded-xl">
             <Button
               variant={viewMode === "grid" ? "secondary" : "ghost"}
@@ -278,17 +278,19 @@ const Promotions = () => {
             variant="outline"
             onClick={() => setBulkImportOpen(true)}
             disabled={loading}
+            className="hidden sm:flex"
           >
             <Upload className="w-4 h-4 mr-2" />
             Import en masse
           </Button>
           <Button 
-            className="gradient-primary text-white shadow-glow"
+            className="gradient-primary text-white shadow-glow flex-1 sm:flex-none"
             onClick={() => setCreateDialogOpen(true)}
             disabled={!canCreatePromo || loading}
           >
             <Plus className="w-4 h-4 mr-2" />
-            Nouvelle promotion
+            <span className="hidden sm:inline">Nouvelle promotion</span>
+            <span className="sm:hidden">Ajouter</span>
           </Button>
         </div>
       </div>
@@ -421,7 +423,7 @@ const Promotions = () => {
 
       {/* Promotions List/Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="glass-card border-border/50">
               <Skeleton className="h-48 w-full" />
@@ -448,7 +450,7 @@ const Promotions = () => {
           }}
         />
       ) : viewMode === "list" ? (
-        <Card className="glass-card border-border/50 overflow-hidden">
+        <div className="responsive-table-wrapper">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-border/50">
@@ -656,9 +658,9 @@ const Promotions = () => {
               ))}
             </TableBody>
           </Table>
-        </Card>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {filteredPromotions.map((promo) => (
             <Card key={promo.id} className="glass-card border-border/50 hover:shadow-glass hover:border-primary/20 transition-smooth overflow-hidden group">
               <div className="h-48 overflow-hidden relative bg-gradient-to-br from-muted/50 to-muted">

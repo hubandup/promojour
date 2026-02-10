@@ -55,16 +55,16 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground text-sm md:text-base">
             {isCentral ? 'Vue centrale - Tous vos magasins' : `Bienvenue ${organization?.name || ''}`}
           </p>
         </div>
-        <Button className="gradient-primary text-white shadow-glow" onClick={() => setCreateDialogOpen(true)}>
+        <Button className="gradient-primary text-white shadow-glow w-full sm:w-auto" onClick={() => setCreateDialogOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Nouvelle promotion
         </Button>
@@ -88,17 +88,17 @@ const Dashboard = () => {
       <OnboardingChecklist />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         {stats.map((stat, idx) => (
           <Card key={idx} className="glass-card hover:shadow-glass transition-smooth border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
-                <stat.icon className={`w-5 h-5 ${stat.color}`} />
+            <CardHeader className="flex flex-row items-center justify-between pb-2 p-4 md:p-6 md:pb-2">
+              <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+                <stat.icon className={`w-4 h-4 md:w-5 md:h-5 ${stat.color}`} />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{stat.value}</div>
+            <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
+              <div className="text-xl md:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{stat.value}</div>
               <p className="text-xs text-muted-foreground mt-2">
                 <span className="text-primary font-semibold">{stat.change}</span>
               </p>
