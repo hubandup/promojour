@@ -155,4 +155,23 @@ All colors MUST be HSL.
       linear-gradient(hsl(var(--foreground) / 0.05) 1px, transparent 1px);
     background-size: 30px 30px;
   }
+
+  /* Safe area for bottom nav on notched devices */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Mobile-responsive table: horizontally scrollable with min-width */
+@media (max-width: 767px) {
+  .responsive-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -1rem;
+    padding: 0 1rem;
+  }
+
+  .responsive-table-wrapper table {
+    min-width: 640px;
+  }
 }
