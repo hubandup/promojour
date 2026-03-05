@@ -1,13 +1,22 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { getCorsHeaders } from '../_shared/cors.ts';
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = [
+  'https://promojour.lovable.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+
+function getSafeOrigin(req: Request): string {
+  const origin = req.headers.get('origin') ?? '';
+  return ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+}
+
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -47,8 +56,8 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${req.headers.get("origin")}/payment-success`,
-      cancel_url: `${req.headers.get("origin")}/payment-canceled`,
+      success_url: `${getSafeOrigin(req)}/payment-success`,
+      cancel_url: `${getSafeOrigin(req)}/payment-canceled`,
     });
 
     return new Response(JSON.stringify({ url: session.url }), {

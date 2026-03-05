@@ -12,13 +12,13 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getCorsHeaders } from '../_shared/cors.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const FRONTEND_URL = 'https://promojour.lovable.app';
+
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -33,7 +33,7 @@ serve(async (req) => {
       console.error('OAuth error:', error);
       return new Response(
         `<html><body><script>
-          window.opener?.postMessage({ success: false, error: '${error}' }, '*');
+          window.opener?.postMessage(${JSON.stringify({ success: false, error: error })}, ${JSON.stringify(FRONTEND_URL)});
           window.close();
         </script></body></html>`,
         { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
@@ -166,7 +166,7 @@ serve(async (req) => {
     // Return success HTML that closes the popup
     return new Response(
       `<html><body><script>
-        window.opener?.postMessage({ success: true, storeId: '${storeId}' }, '*');
+        window.opener?.postMessage(${JSON.stringify({ success: true, storeId: storeId })}, ${JSON.stringify(FRONTEND_URL)});
         window.close();
       </script></body></html>`,
       { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
@@ -177,7 +177,7 @@ serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       `<html><body><script>
-        window.opener?.postMessage({ success: false, error: '${errorMessage}' }, '*');
+        window.opener?.postMessage(${JSON.stringify({ success: false, error: errorMessage })}, ${JSON.stringify(FRONTEND_URL)});
         window.close();
       </script></body></html>`,
       { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }

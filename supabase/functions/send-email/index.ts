@@ -1,11 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { getCorsHeaders } from '../_shared/cors.ts';
 
 const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 interface EmailRequest {
   to: string;
@@ -17,8 +14,14 @@ interface EmailRequest {
   params?: Record<string, string>;
 }
 
+// Allowed Brevo template IDs — update this list when adding new templates
+const ALLOWED_TEMPLATE_IDS = new Set([52, 53]);
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("[SEND-EMAIL] Function started");
+  const corsHeaders = getCorsHeaders(req);
 
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -32,6 +35,23 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const { to, toName, subject, htmlContent, textContent, templateId, params }: EmailRequest = await req.json();
+
+    // Input validation
+    if (!to || !EMAIL_REGEX.test(to)) {
+      return new Response(JSON.stringify({ error: 'Invalid email address' }), {
+        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+    if (templateId !== undefined && !ALLOWED_TEMPLATE_IDS.has(templateId)) {
+      return new Response(JSON.stringify({ error: 'Invalid template ID' }), {
+        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+    if (subject && subject.length > 255) {
+      return new Response(JSON.stringify({ error: 'Subject too long' }), {
+        status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
 
     console.log("[SEND-EMAIL] Sending email to:", to);
 

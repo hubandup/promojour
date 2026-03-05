@@ -1,9 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getCorsHeaders } from '../_shared/cors.ts';
+import { signOAuthState } from '../_shared/hmac.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 // Helper function to log with timestamp
 function log(level: 'INFO' | 'ERROR' | 'DEBUG', message: string, data?: any) {
@@ -19,6 +17,7 @@ function log(level: 'INFO' | 'ERROR' | 'DEBUG', message: string, data?: any) {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -28,7 +27,6 @@ serve(async (req) => {
     log('DEBUG', 'Request details', {
       method: req.method,
       url: req.url,
-      headers: Object.fromEntries(req.headers.entries()),
     });
     
     let storeId: string | null = null;
@@ -99,9 +97,10 @@ serve(async (req) => {
 
     log('DEBUG', 'OAuth scopes', { scopes, targetPlatform });
 
-    // Build OAuth URL - encode store_id and platform in state
-    const stateData = JSON.stringify({ store_id: storeId, platform: targetPlatform });
-    const encodedState = btoa(stateData);
+    // Build OAuth URL - sign state with HMAC-SHA256 to prevent CSRF/tampering
+    const oauthStateSecret = Deno.env.get('OAUTH_STATE_SECRET');
+    if (!oauthStateSecret) throw new Error('OAUTH_STATE_SECRET not configured');
+    const encodedState = await signOAuthState({ store_id: storeId, platform: targetPlatform }, oauthStateSecret);
     
     const oauthUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth');
     oauthUrl.searchParams.set('client_id', FACEBOOK_APP_ID);

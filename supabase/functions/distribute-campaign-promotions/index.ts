@@ -229,16 +229,14 @@ async function processCampaigns() {
 }
 
 Deno.serve(async (req) => {
-  // This function is designed for cron jobs - requires service role key for authorization
-  // Using service role key ensures only trusted server-side calls can trigger distribution
+  // Cron-only function: authenticated via a dedicated CRON_SECRET (never the SERVICE_ROLE_KEY)
   const authHeader = req.headers.get('Authorization');
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  
-  // Verify authorization - must use service role key (not public anon key)
-  if (!authHeader || authHeader !== `Bearer ${serviceRoleKey}`) {
-    console.error('Unauthorized: Invalid or missing service role authorization');
+  const cronSecret = Deno.env.get('CRON_SECRET');
+
+  if (!cronSecret || !authHeader || authHeader !== `Bearer ${cronSecret}`) {
+    console.error('Unauthorized: Invalid or missing cron authorization');
     return new Response(
-      JSON.stringify({ error: 'Unauthorized - requires service role authorization' }),
+      JSON.stringify({ error: 'Unauthorized' }),
       { status: 401, headers: { 'Content-Type': 'application/json' } }
     );
   }

@@ -1,10 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.78.0';
+import { getCorsHeaders } from '../_shared/cors.ts';
+import { verifyOAuthState } from '../_shared/hmac.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 // Helper function to log with timestamp and structure
 function log(level: 'INFO' | 'ERROR' | 'DEBUG' | 'WARN', message: string, data?: any) {
@@ -77,6 +75,7 @@ async function fetchWithLogging(url: string, options?: RequestInit): Promise<{ r
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -86,7 +85,6 @@ serve(async (req) => {
     log('DEBUG', 'Request details', {
       method: req.method,
       url: req.url,
-      headers: Object.fromEntries(req.headers.entries()),
     });
     
     const url = new URL(req.url);
@@ -101,15 +99,19 @@ serve(async (req) => {
     let targetPlatform: string = 'both';
     
     if (encodedState) {
+      const oauthStateSecret = Deno.env.get('OAUTH_STATE_SECRET');
+      if (!oauthStateSecret) {
+        log('ERROR', 'OAUTH_STATE_SECRET not configured');
+        return redirectTo(getRedirectUrl(false, null, 'Configuration manquante'));
+      }
       try {
-        const stateData = JSON.parse(atob(encodedState));
-        storeId = stateData.store_id;
-        targetPlatform = stateData.platform || 'both';
-        log('DEBUG', 'Decoded state', { storeId, targetPlatform });
+        const stateData = await verifyOAuthState(encodedState, oauthStateSecret);
+        storeId = stateData.store_id as string;
+        targetPlatform = (stateData.platform as string) || 'both';
+        log('DEBUG', 'State verified and decoded', { storeId, targetPlatform });
       } catch (e) {
-        // Fallback: treat state as just store_id (old format)
-        storeId = encodedState;
-        log('DEBUG', 'Using state as store_id (legacy format)', { storeId });
+        log('ERROR', 'Invalid or expired OAuth state', { error: e instanceof Error ? e.message : 'Unknown' });
+        return redirectTo(getRedirectUrl(false, null, 'État OAuth invalide ou expiré'));
       }
     }
 
