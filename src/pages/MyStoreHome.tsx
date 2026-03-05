@@ -8,7 +8,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUserData } from "@/hooks/use-user-data";
 import { usePromotions } from "@/hooks/use-promotions";
 import { useSocialConnections } from "@/hooks/use-social-connections";
+import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -18,7 +29,10 @@ const MyStoreHome = () => {
   const { promotions, activePromotions, loading: promosLoading } = usePromotions();
   const [store, setStore] = useState<any>(null);
   const [storeLoading, setStoreLoading] = useState(true);
-  const { connections, loading: connectionsLoading } = useSocialConnections(store?.id);
+  const { connections, loading: connectionsLoading, refetch: refetchConnections } = useSocialConnections(store?.id);
+  const { toast } = useToast();
+  const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
+  const [platformToDisconnect, setPlatformToDisconnect] = useState<'facebook' | 'instagram' | null>(null);
 
   useEffect(() => {
     if (organization?.id) {
@@ -39,6 +53,29 @@ const MyStoreHome = () => {
       console.error("Error fetching store:", e);
     } finally {
       setStoreLoading(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!platformToDisconnect || !store?.id) return;
+    try {
+      const { error } = await supabase
+        .from('social_connections')
+        .update({ is_connected: false, access_token: null, refresh_token: null })
+        .eq('store_id', store.id)
+        .eq('platform', platformToDisconnect);
+      if (error) throw error;
+      toast({
+        title: "Déconnexion réussie",
+        description: `${platformToDisconnect === 'facebook' ? 'Facebook' : 'Instagram'} a été déconnecté`,
+      });
+      refetchConnections();
+    } catch (error) {
+      console.error('Error disconnecting:', error);
+      toast({ title: "Erreur", description: "Impossible de déconnecter le compte", variant: "destructive" });
+    } finally {
+      setDisconnectDialogOpen(false);
+      setPlatformToDisconnect(null);
     }
   };
 
@@ -161,9 +198,14 @@ const MyStoreHome = () => {
               </div>
             </div>
             {facebookConn ? (
-              <div className="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center">
-                <Check className="w-4 h-4 text-green-500" />
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => { setPlatformToDisconnect('facebook'); setDisconnectDialogOpen(true); }}
+              >
+                Déconnecter
+              </Button>
             ) : (
               <Button size="sm" variant="outline" onClick={() => navigate("/settings")}>
                 Connecter
@@ -184,9 +226,14 @@ const MyStoreHome = () => {
               </div>
             </div>
             {instagramConn ? (
-              <div className="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center">
-                <Check className="w-4 h-4 text-green-500" />
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => { setPlatformToDisconnect('instagram'); setDisconnectDialogOpen(true); }}
+              >
+                Déconnecter
+              </Button>
             ) : (
               <Button size="sm" variant="outline" onClick={() => navigate("/settings")}>
                 Connecter
@@ -259,6 +306,26 @@ const MyStoreHome = () => {
           </Button>
         </div>
       )}
+      {/* Disconnect Confirmation Dialog */}
+      <AlertDialog open={disconnectDialogOpen} onOpenChange={setDisconnectDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la déconnexion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir déconnecter ce compte ? Vous devrez vous reconnecter pour publier à nouveau sur cette plateforme.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDisconnect}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Déconnecter
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
