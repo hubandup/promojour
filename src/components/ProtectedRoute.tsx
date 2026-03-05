@@ -11,6 +11,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [isStore, setIsStore] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -49,6 +50,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
       if (!profile?.organization_id) {
         setNeedsOnboarding(false);
+        setIsStore(false);
         return;
       }
 
@@ -58,14 +60,18 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         .eq("id", profile.organization_id)
         .single();
 
+      const storeType = org?.account_type === "store";
+      setIsStore(storeType);
+
       // Only store-type organizations need onboarding check
-      if (org?.account_type === "store" && !org?.onboarding_completed) {
+      if (storeType && !org?.onboarding_completed) {
         setNeedsOnboarding(true);
       } else {
         setNeedsOnboarding(false);
       }
     } catch {
       setNeedsOnboarding(false);
+      setIsStore(false);
     }
   };
 
@@ -84,6 +90,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   // Redirect store users who haven't completed onboarding
   if (needsOnboarding && location.pathname !== "/store-onboarding") {
     return <Navigate to="/store-onboarding" replace />;
+  }
+
+  // Redirect store users from /dashboard to /my-store
+  if (isStore && location.pathname === "/dashboard") {
+    return <Navigate to="/my-store" replace />;
   }
 
   return <>{children}</>;

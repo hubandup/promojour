@@ -68,7 +68,7 @@ const Promotions = () => {
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
 
   const { promotions, loading: promotionsLoading, refetch, deletePromotion } = usePromotions();
-  const { organization, isFree, loading: userLoading } = useUserData();
+  const { organization, isFree, isStore, loading: userLoading } = useUserData();
   const { stores, loading: storesLoading } = useStores();
   const { campaigns, loading: campaignsLoading } = useCampaigns();
   const { mechanics, isLoading: mechanicsLoading } = usePromotionalMechanics();
@@ -80,6 +80,9 @@ const Promotions = () => {
   const { generateBarcode } = useBarcodePreload(eanCodes);
 
   const loading = promotionsLoading || userLoading || storesLoading || campaignsLoading || mechanicsLoading;
+
+  // Force list view for store type
+  const effectiveViewMode = isStore ? "list" : viewMode;
 
   const getMechanicName = (mechanicCode: string) => {
     const mechanic = mechanics.find(m => m.code === mechanicCode);
@@ -238,91 +241,97 @@ const Promotions = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Promotions</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">{isStore ? "Mes Promotions" : "Promotions"}</h1>
             <p className="text-muted-foreground text-sm">
               {loading ? "Chargement..." : `${filteredPromotions.length} promotion${filteredPromotions.length > 1 ? 's' : ''}`}
               {selectedIds.size > 0 && ` · ${selectedIds.size} sélectionnée(s)`}
             </p>
           </div>
-          <ProfileBadge variant="compact" />
+          {!isStore && <ProfileBadge variant="compact" />}
         </div>
         <div className="flex flex-wrap gap-2">
-          <div className="flex gap-1 bg-muted/50 p-1 rounded-xl">
-            <Button
-              variant={viewMode === "grid" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("grid")}
-              className="rounded-lg"
-              title="Vue grille"
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-              className="rounded-lg"
-              title="Vue liste"
-            >
-              <List className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={viewMode === "calendar" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("calendar")}
-              className="rounded-lg"
-              title="Vue calendrier"
-            >
-              <CalendarIcon className="w-4 h-4" />
-            </Button>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" disabled={filteredPromotions.length === 0} className="hidden sm:flex">
-                <Download className="w-4 h-4 mr-2" />
-                Exporter
+          {!isStore && (
+            <div className="flex gap-1 bg-muted/50 p-1 rounded-xl">
+              <Button
+                variant={viewMode === "grid" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("grid")}
+                className="rounded-lg"
+                title="Vue grille"
+              >
+                <LayoutGrid className="w-4 h-4" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => {
-                const data = filteredPromotions.map(p => ({
-                  Titre: p.title,
-                  Statut: p.status,
-                  Catégorie: p.category || "",
-                  "Date début": format(new Date(p.start_date), "dd/MM/yyyy"),
-                  "Date fin": format(new Date(p.end_date), "dd/MM/yyyy"),
-                  Vues: p.views_count,
-                  Clics: p.clicks_count,
-                }));
-                exportToExcel(data, "promotions");
-              }}>
-                Export Excel (.xlsx)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                const data = filteredPromotions.map(p => ({
-                  Titre: p.title,
-                  Statut: p.status,
-                  Catégorie: p.category || "",
-                  "Date début": format(new Date(p.start_date), "dd/MM/yyyy"),
-                  "Date fin": format(new Date(p.end_date), "dd/MM/yyyy"),
-                  Vues: p.views_count,
-                  Clics: p.clicks_count,
-                }));
-                exportToCSV(data, "promotions");
-              }}>
-                Export CSV (.csv)
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button 
-            variant="outline"
-            onClick={() => setBulkImportOpen(true)}
-            disabled={loading}
-            className="hidden sm:flex"
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Import en masse
-          </Button>
+              <Button
+                variant={viewMode === "list" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+                className="rounded-lg"
+                title="Vue liste"
+              >
+                <List className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === "calendar" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("calendar")}
+                className="rounded-lg"
+                title="Vue calendrier"
+              >
+                <CalendarIcon className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+          {!isStore && (
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" disabled={filteredPromotions.length === 0} className="hidden sm:flex">
+                    <Download className="w-4 h-4 mr-2" />
+                    Exporter
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => {
+                    const data = filteredPromotions.map(p => ({
+                      Titre: p.title,
+                      Statut: p.status,
+                      Catégorie: p.category || "",
+                      "Date début": format(new Date(p.start_date), "dd/MM/yyyy"),
+                      "Date fin": format(new Date(p.end_date), "dd/MM/yyyy"),
+                      Vues: p.views_count,
+                      Clics: p.clicks_count,
+                    }));
+                    exportToExcel(data, "promotions");
+                  }}>
+                    Export Excel (.xlsx)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    const data = filteredPromotions.map(p => ({
+                      Titre: p.title,
+                      Statut: p.status,
+                      Catégorie: p.category || "",
+                      "Date début": format(new Date(p.start_date), "dd/MM/yyyy"),
+                      "Date fin": format(new Date(p.end_date), "dd/MM/yyyy"),
+                      Vues: p.views_count,
+                      Clics: p.clicks_count,
+                    }));
+                    exportToCSV(data, "promotions");
+                  }}>
+                    Export CSV (.csv)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button 
+                variant="outline"
+                onClick={() => setBulkImportOpen(true)}
+                disabled={loading}
+                className="hidden sm:flex"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Import en masse
+              </Button>
+            </>
+          )}
           <Button 
             className="gradient-primary text-white shadow-glow flex-1 sm:flex-none"
             onClick={() => setCreateDialogOpen(true)}
@@ -479,9 +488,24 @@ const Promotions = () => {
         </div>
       ) : filteredPromotions.length === 0 ? (
         <Card className="glass-card border-border/50 p-12 text-center">
-          <p className="text-muted-foreground">Aucune promotion trouvée</p>
+          {isStore ? (
+            <div className="space-y-3">
+              <p className="text-muted-foreground">
+                Vous n'avez pas encore de promotion. Créez-en une pour la diffuser sur vos réseaux !
+              </p>
+              <Button
+                className="gradient-primary text-white shadow-glow"
+                onClick={() => setCreateDialogOpen(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Créer ma première promotion
+              </Button>
+            </div>
+          ) : (
+            <p className="text-muted-foreground">Aucune promotion trouvée</p>
+          )}
         </Card>
-      ) : viewMode === "calendar" ? (
+      ) : effectiveViewMode === "calendar" ? (
         <PromotionsCalendar
           promotions={filteredPromotions}
           onPromotionClick={(promo) => {
@@ -489,7 +513,7 @@ const Promotions = () => {
             setEditDialogOpen(true);
           }}
         />
-      ) : viewMode === "list" ? (
+      ) : effectiveViewMode === "list" ? (
         <div className="responsive-table-wrapper">
           <Table>
             <TableHeader>
