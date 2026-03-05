@@ -39,38 +39,30 @@ export function StoreOnboardingStep2({ storeId, onComplete }: Props) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { toast.error("Vous devez être connecté"); return; }
 
-      const { data, error } = await supabase.functions.invoke("facebook-oauth-init", {
-        body: { storeId, platform: "facebook" },
-      });
-      if (error) throw error;
+      // Use the GET endpoint directly to avoid CORS/iframe issues with functions.invoke
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const authUrl = `${supabaseUrl}/functions/v1/facebook-oauth-init?store_id=${encodeURIComponent(storeId)}&platform=facebook`;
 
-      const authUrl = data?.authUrl;
-      if (!authUrl) throw new Error("URL d'authentification non reçue");
-
-      const isInIframe = window.self !== window.top;
-      if (isInIframe) {
-        window.open(authUrl, "_blank");
-        toast.info("Connectez-vous à Facebook dans le nouvel onglet");
-        // Poll for connection
-        const interval = setInterval(async () => {
-          const { data: conn } = await supabase
-            .from("social_connections")
-            .select("id, account_name")
-            .eq("store_id", storeId)
-            .eq("platform", "facebook")
-            .eq("is_connected", true)
-            .maybeSingle();
-          if (conn) {
-            clearInterval(interval);
-            setFacebookConnected(true);
-            setFacebookPageName(conn.account_name);
-            toast.success("Facebook connecté avec succès !");
-          }
-        }, 3000);
-        setTimeout(() => clearInterval(interval), 120000);
-      } else {
-        window.location.href = authUrl;
-      }
+      // Open in new tab and poll for connection
+      window.open(authUrl, "_blank");
+      toast.info("Connectez-vous à Facebook dans le nouvel onglet");
+      
+      const interval = setInterval(async () => {
+        const { data: conn } = await supabase
+          .from("social_connections")
+          .select("id, account_name")
+          .eq("store_id", storeId)
+          .eq("platform", "facebook")
+          .eq("is_connected", true)
+          .maybeSingle();
+        if (conn) {
+          clearInterval(interval);
+          setFacebookConnected(true);
+          setFacebookPageName(conn.account_name);
+          toast.success("Facebook connecté avec succès !");
+        }
+      }, 3000);
+      setTimeout(() => clearInterval(interval), 120000);
     } catch (error: any) {
       toast.error(error.message || "Erreur lors de la connexion Facebook");
     } finally {
