@@ -5,9 +5,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { InfoCard } from "@/components/InfoCard";
 import { useStats } from "@/hooks/use-stats";
 import { exportToExcel, exportToCSV } from "@/lib/export-utils";
+import { useUserData } from "@/hooks/use-user-data";
 
 const Stats = () => {
   const { overview, topPromos, platformStats, loading } = useStats();
+  const { isStore } = useUserData();
 
   if (loading) {
     return (
@@ -18,61 +20,70 @@ const Stats = () => {
   }
 
   const maxReach = Math.max(...platformStats.map(s => s.reach), 1);
+  const displayedPromos = isStore ? topPromos.slice(0, 3) : topPromos;
+  const hasNoData = overview.totalViews === 0 && overview.totalClicks === 0;
+  const emptyText = isStore
+    ? "Publiez votre première promotion pour voir vos statistiques ici"
+    : "Aucune donnée disponible";
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Statistiques</h1>
+          <h1 className="text-3xl font-bold">{isStore ? "Mes Stats" : "Statistiques"}</h1>
           <p className="text-muted-foreground">Suivez les performances de vos promotions</p>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" disabled={topPromos.length === 0 && platformStats.length === 0}>
-              <Download className="w-4 h-4 mr-2" />
-              Exporter
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => {
-              const data = [
-                { Métrique: "Impressions", Valeur: overview.totalViews, "Évolution": overview.viewsChange },
-                { Métrique: "Clics", Valeur: overview.totalClicks, "Évolution": overview.clicksChange },
-                { Métrique: "Taux de clic (%)", Valeur: overview.clickRate, "Évolution": overview.clickRateChange },
-                { Métrique: "Portée", Valeur: overview.totalReach, "Évolution": overview.reachChange },
-                ...topPromos.map(p => ({ Métrique: `Top - ${p.title}`, Valeur: p.views, "Évolution": p.engagement })),
-                ...platformStats.map(p => ({ Métrique: `Plateforme - ${p.platform}`, Valeur: p.reach, "Évolution": p.engagement })),
-              ];
-              exportToExcel(data, "statistiques");
-            }}>
-              Export Excel (.xlsx)
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              const data = [
-                { Métrique: "Impressions", Valeur: overview.totalViews, "Évolution": overview.viewsChange },
-                { Métrique: "Clics", Valeur: overview.totalClicks, "Évolution": overview.clicksChange },
-                { Métrique: "Taux de clic (%)", Valeur: overview.clickRate, "Évolution": overview.clickRateChange },
-                { Métrique: "Portée", Valeur: overview.totalReach, "Évolution": overview.reachChange },
-                ...topPromos.map(p => ({ Métrique: `Top - ${p.title}`, Valeur: p.views, "Évolution": p.engagement })),
-                ...platformStats.map(p => ({ Métrique: `Plateforme - ${p.platform}`, Valeur: p.reach, "Évolution": p.engagement })),
-              ];
-              exportToCSV(data, "statistiques");
-            }}>
-              Export CSV (.csv)
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {!isStore && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={topPromos.length === 0 && platformStats.length === 0}>
+                <Download className="w-4 h-4 mr-2" />
+                Exporter
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => {
+                const data = [
+                  { Métrique: "Impressions", Valeur: overview.totalViews, "Évolution": overview.viewsChange },
+                  { Métrique: "Clics", Valeur: overview.totalClicks, "Évolution": overview.clicksChange },
+                  { Métrique: "Taux de clic (%)", Valeur: overview.clickRate, "Évolution": overview.clickRateChange },
+                  { Métrique: "Portée", Valeur: overview.totalReach, "Évolution": overview.reachChange },
+                  ...topPromos.map(p => ({ Métrique: `Top - ${p.title}`, Valeur: p.views, "Évolution": p.engagement })),
+                  ...platformStats.map(p => ({ Métrique: `Plateforme - ${p.platform}`, Valeur: p.reach, "Évolution": p.engagement })),
+                ];
+                exportToExcel(data, "statistiques");
+              }}>
+                Export Excel (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                const data = [
+                  { Métrique: "Impressions", Valeur: overview.totalViews, "Évolution": overview.viewsChange },
+                  { Métrique: "Clics", Valeur: overview.totalClicks, "Évolution": overview.clicksChange },
+                  { Métrique: "Taux de clic (%)", Valeur: overview.clickRate, "Évolution": overview.clickRateChange },
+                  { Métrique: "Portée", Valeur: overview.totalReach, "Évolution": overview.reachChange },
+                  ...topPromos.map(p => ({ Métrique: `Top - ${p.title}`, Valeur: p.views, "Évolution": p.engagement })),
+                  ...platformStats.map(p => ({ Métrique: `Plateforme - ${p.platform}`, Valeur: p.reach, "Évolution": p.engagement })),
+                ];
+                exportToCSV(data, "statistiques");
+              }}>
+                Export CSV (.csv)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
-      <InfoCard
-        icon={BarChart3}
-        title="Analysez vos performances"
-        description="Les statistiques vous permettent de mesurer l'impact de vos promotions sur vos différents canaux de distribution. Utilisez ces données pour optimiser vos futures campagnes."
-        variant="info"
-      />
+      {!isStore && (
+        <InfoCard
+          icon={BarChart3}
+          title="Analysez vos performances"
+          description="Les statistiques vous permettent de mesurer l'impact de vos promotions sur vos différents canaux de distribution. Utilisez ces données pour optimiser vos futures campagnes."
+          variant="info"
+        />
+      )}
 
       {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${isStore ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-6`}>
         <Card className="glass-card border-border/50 hover:shadow-glass transition-smooth">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Impressions totales</CardTitle>
@@ -118,20 +129,22 @@ const Stats = () => {
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-border/50 hover:shadow-glass transition-smooth">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Portée totale</CardTitle>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-500/5 flex items-center justify-center">
-              <Users className="w-5 h-5 text-blue-500" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-blue-500">{overview.totalReach.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground mt-2">
-              <span className="text-primary font-semibold">{overview.reachChange}</span> vs mois dernier
-            </p>
-          </CardContent>
-        </Card>
+        {!isStore && (
+          <Card className="glass-card border-border/50 hover:shadow-glass transition-smooth">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Portée totale</CardTitle>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-500/5 flex items-center justify-center">
+                <Users className="w-5 h-5 text-blue-500" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-500">{overview.totalReach.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground mt-2">
+                <span className="text-primary font-semibold">{overview.reachChange}</span> vs mois dernier
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Content Grid */}
@@ -139,15 +152,15 @@ const Stats = () => {
         {/* Top Promotions */}
         <Card className="glass-card border-border/50">
           <CardHeader>
-            <CardTitle>Top 5 Promotions</CardTitle>
+            <CardTitle>{isStore ? "Top 3 Promotions" : "Top 5 Promotions"}</CardTitle>
             <CardDescription>Meilleures performances ce mois-ci</CardDescription>
           </CardHeader>
           <CardContent>
-            {topPromos.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">Aucune donnée disponible</p>
+            {displayedPromos.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">{emptyText}</p>
             ) : (
               <div className="space-y-3">
-                {topPromos.map((promo, idx) => (
+                {displayedPromos.map((promo, idx) => (
                   <div key={idx} className="flex items-center justify-between p-4 border border-border/50 rounded-xl bg-card/50 hover:shadow-md hover:border-primary/20 transition-smooth">
                     <div className="flex-1">
                       <h4 className="font-semibold text-sm">{promo.title}</h4>
@@ -181,7 +194,7 @@ const Stats = () => {
           </CardHeader>
           <CardContent>
             {platformStats.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">Aucune donnée disponible</p>
+              <p className="text-center text-muted-foreground py-8">{emptyText}</p>
             ) : (
               <div className="space-y-6">
                 {platformStats.map((stat, idx) => (
