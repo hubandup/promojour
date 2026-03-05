@@ -39,9 +39,9 @@ export function AppSidebar() {
                    isStoreManager ? "/mon-magasin" : 
                    "/stores";
 
-  // Build menu items based on organization type and permissions
-  const menuItems = isStore ? [
-    { title: "Mon magasin", url: "/mon-magasin", icon: Store },
+  // Build menu items based on organization type
+  const menuItems = (isStore && !isSuperAdmin) ? [
+    { title: "Mon Magasin", url: "/my-store", icon: Store },
     { title: "Mes Promotions", url: "/promotions", icon: Tag },
     { title: "Mes Stats", url: "/stats", icon: BarChart3 },
   ] : [
@@ -57,7 +57,7 @@ export function AppSidebar() {
   ];
 
   // Settings items - for store type, show only Réglages; otherwise filter based on permissions
-  const filteredSettingsItems = isStore
+  const filteredSettingsItems = (isStore && !isSuperAdmin)
     ? [{ title: "Réglages", url: "/settings", icon: Settings }]
     : canEditOrgSettings 
       ? settingsItems 
@@ -130,7 +130,7 @@ export function AppSidebar() {
         </SidebarGroup>
       )}
 
-      {isSuperAdmin && !isStore && (
+      {isSuperAdmin && (
         <SidebarGroup>
           <SidebarGroupLabel>Super Admin</SidebarGroupLabel>
           <SidebarGroupContent>

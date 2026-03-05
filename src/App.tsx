@@ -28,6 +28,7 @@ import StoreFrontend from "./pages/StoreFrontend";
 import Settings from "./pages/Settings";
 import Account from "./pages/Account";
 import SuperAdmin from "./pages/SuperAdmin";
+import MyStoreHome from "./pages/MyStoreHome";
 import LegalNotice from "./pages/LegalNotice";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -169,6 +170,16 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <MyStoreFree />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-store"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <MyStoreHome />
                 </AppLayout>
               </ProtectedRoute>
             }

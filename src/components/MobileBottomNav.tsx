@@ -6,17 +6,18 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
 export function MobileBottomNav() {
-  const { isStoreManager, isFree, isStore } = useUserData();
+  const { isStoreManager, isFree, isStore, isSuperAdmin } = useUserData();
   const { stores } = useStores();
   const { toggleSidebar } = useSidebar();
 
+  const isStoreOrg = isStore && !isSuperAdmin;
   const showSingleStore = isStoreManager || (isFree && stores.length === 1);
   const storeUrl = isFree && stores.length === 1 ? "/mon-magasin-free" : 
                    isStoreManager ? "/mon-magasin" : 
                    "/stores";
 
-  const items = isStore ? [
-    { title: "Magasin", url: "/mon-magasin", icon: Store },
+  const items = isStoreOrg ? [
+    { title: "Magasin", url: "/my-store", icon: Store },
     { title: "Promos", url: "/promotions", icon: Tag },
     { title: "Stats", url: "/stats", icon: BarChart3 },
   ] : [
