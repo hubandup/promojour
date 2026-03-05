@@ -70,10 +70,12 @@ export const useSubscription = () => {
       });
     } catch (error) {
       console.error("Error checking subscription:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de vérifier votre abonnement",
-        variant: "destructive",
+      // Silently default to free tier instead of showing error toast
+      setSubscription({
+        subscribed: false,
+        product_id: null,
+        subscription_end: null,
+        tier: "free",
       });
     } finally {
       setLoading(false);
