@@ -39,6 +39,11 @@ const Settings = () => {
   const { stores } = useStores();
   const firstStoreId = stores && stores.length > 0 ? stores[0].id : null;
   const { isStore, profile } = useUserData();
+
+  // Store-specific state
+  const [storeName, setStoreName] = useState("");
+  const [storeDescription, setStoreDescription] = useState("");
+  const [storeRecord, setStoreRecord] = useState<any>(null);
   const { subscription } = useSubscription();
 
   // Store account tab state
@@ -59,6 +64,16 @@ const Settings = () => {
       fetchAccountData();
     }
   }, [isStore]);
+
+  // Load store record for store users
+  useEffect(() => {
+    if (isStore && stores && stores.length > 0) {
+      const s = stores[0];
+      setStoreRecord(s);
+      setStoreName(s.name || "");
+      setStoreDescription(s.description || "");
+    }
+  }, [isStore, stores]);
 
   useEffect(() => {
     if (profile) {
@@ -234,6 +249,39 @@ const Settings = () => {
     }
   };
 
+  const handleSaveStore = async () => {
+    if (!storeRecord) return;
+
+    try {
+      const { error } = await supabase
+        .from("stores")
+        .update({
+          name: storeName,
+          description: storeDescription,
+        })
+        .eq("id", storeRecord.id);
+
+      if (error) throw error;
+
+      // Also update org name to keep in sync
+      if (organization) {
+        await supabase
+          .from("organizations")
+          .update({ name: storeName, description: storeDescription })
+          .eq("id", organization.id);
+        setOrganization({ ...organization, name: storeName, description: storeDescription });
+        setOrgName(storeName);
+        setOrgDescription(storeDescription);
+      }
+
+      setStoreRecord({ ...storeRecord, name: storeName, description: storeDescription });
+      toast.success("Magasin mis à jour");
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast.error("Erreur lors de la sauvegarde");
+    }
+  };
+
   const handleSaveMechanic = (data: any) => {
     if (editingMechanic) {
       updateMechanic({ id: editingMechanic.id, ...data });
@@ -362,8 +410,8 @@ const Settings = () => {
                   <div className="space-y-2">
                     <Label>Nom du magasin</Label>
                     <Input
-                      value={orgName}
-                      onChange={(e) => setOrgName(e.target.value)}
+                      value={isStore ? storeName : orgName}
+                      onChange={(e) => isStore ? setStoreName(e.target.value) : setOrgName(e.target.value)}
                       className="rounded-xl"
                       placeholder="Ex: Ma Boutique"
                     />
@@ -371,8 +419,8 @@ const Settings = () => {
                   <div className="space-y-2">
                     <Label>Description</Label>
                     <Input
-                      value={orgDescription}
-                      onChange={(e) => setOrgDescription(e.target.value)}
+                      value={isStore ? storeDescription : orgDescription}
+                      onChange={(e) => isStore ? setStoreDescription(e.target.value) : setOrgDescription(e.target.value)}
                       className="rounded-xl"
                       placeholder="Description de votre magasin"
                     />
@@ -407,7 +455,7 @@ const Settings = () => {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button onClick={handleSaveOrganization} className="rounded-xl">
+                  <Button onClick={isStore ? handleSaveStore : handleSaveOrganization} className="rounded-xl">
                     Enregistrer
                   </Button>
                 </div>
