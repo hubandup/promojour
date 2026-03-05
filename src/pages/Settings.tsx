@@ -4,7 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Palette, Bell, Key, Building2, Settings2, Plus, Edit, Trash2 } from "lucide-react";
+import { Palette, Bell, Key, Building2, Settings2, Plus, Edit, Trash2, User, CreditCard, Shield, FileText, Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -13,6 +13,10 @@ import { PromotionalMechanicDialog } from "@/components/PromotionalMechanicDialo
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { GoogleMerchantSettings } from "@/components/GoogleMerchantSettings";
 import { useStores } from "@/hooks/use-stores";
+import { useUserData } from "@/hooks/use-user-data";
+import { SocialConnectionsManager } from "@/components/SocialConnectionsManager";
+import { useSubscription } from "@/hooks/use-subscription";
+import { Badge } from "@/components/ui/badge";
 
 const Settings = () => {
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -34,29 +38,93 @@ const Settings = () => {
   const { mechanics, createMechanic, updateMechanic, deleteMechanic } = usePromotionalMechanics();
   const { stores } = useStores();
   const firstStoreId = stores && stores.length > 0 ? stores[0].id : null;
+  const { isStore, profile } = useUserData();
+  const { subscription } = useSubscription();
+
+  // Store account tab state
+  const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [initialFirstName, setInitialFirstName] = useState("");
+  const [initialLastName, setInitialLastName] = useState("");
+  const [initialPhone, setInitialPhone] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     fetchOrganization();
     fetchUserPreferences();
-  }, []);
+    if (isStore) {
+      fetchAccountData();
+    }
+  }, [isStore]);
+
+  useEffect(() => {
+    if (profile) {
+      setFirstName(profile.first_name || "");
+      setLastName(profile.last_name || "");
+      setPhone(profile.phone || "");
+      setInitialFirstName(profile.first_name || "");
+      setInitialLastName(profile.last_name || "");
+      setInitialPhone(profile.phone || "");
+    }
+  }, [profile]);
+
+  const fetchAccountData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.email) setEmail(user.email);
+  };
+
+  const accountHasChanges = firstName !== initialFirstName || lastName !== initialLastName || phone !== initialPhone || newPassword.length > 0;
+
+  const handleSaveAccount = async () => {
+    setIsSavingProfile(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ first_name: firstName, last_name: lastName, phone })
+        .eq("id", user.id);
+      if (error) throw error;
+
+      if (newPassword.length > 0) {
+        const { error: pwError } = await supabase.auth.updateUser({ password: newPassword });
+        if (pwError) throw pwError;
+      }
+
+      setInitialFirstName(firstName);
+      setInitialLastName(lastName);
+      setInitialPhone(phone);
+      setNewPassword("");
+      toast.success("Informations mises à jour");
+    } catch (error) {
+      console.error("Error saving account:", error);
+      toast.error("Erreur lors de la sauvegarde");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   const fetchOrganization = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: profile } = await supabase
+      const { data: profileData } = await supabase
         .from("profiles")
         .select("organization_id")
         .eq("id", user.id)
         .single();
 
-      if (!profile?.organization_id) return;
+      if (!profileData?.organization_id) return;
 
       const { data: org } = await supabase
         .from("organizations")
         .select("*")
-        .eq("id", profile.organization_id)
+        .eq("id", profileData.organization_id)
         .single();
 
       if (org) {
@@ -251,6 +319,206 @@ const Settings = () => {
     }
   };
 
+  const getCurrentPlanName = () => {
+    switch (subscription.tier) {
+      case "magasin_pro": return "Magasin Pro";
+      case "centrale": return "Centrale";
+      default: return "Free";
+    }
+  };
+
+  // Store-specific settings view
+  if (isStore) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold">Réglages</h1>
+          <p className="text-muted-foreground">Configurez votre magasin</p>
+        </div>
+
+        <Tabs defaultValue="magasin" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
+            <TabsTrigger value="magasin">Mon Magasin</TabsTrigger>
+            <TabsTrigger value="connexions">Mes Connexions</TabsTrigger>
+            <TabsTrigger value="compte">Mon Compte</TabsTrigger>
+          </TabsList>
+
+          {/* Mon Magasin */}
+          <TabsContent value="magasin" className="space-y-6">
+            <Card className="glass-card border-border/50">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
+                    <Building2 className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle>Mon Magasin</CardTitle>
+                    <CardDescription>Informations et visuels de votre magasin</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Nom du magasin</Label>
+                    <Input
+                      value={orgName}
+                      onChange={(e) => setOrgName(e.target.value)}
+                      className="rounded-xl"
+                      placeholder="Ex: Ma Boutique"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <Input
+                      value={orgDescription}
+                      onChange={(e) => setOrgDescription(e.target.value)}
+                      className="rounded-xl"
+                      placeholder="Description de votre magasin"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Logo</Label>
+                    {organization?.logo_url && (
+                      <div className="w-32 h-32 rounded-xl overflow-hidden border border-border mb-2">
+                        <img src={organization.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                    <Button type="button" variant="outline" onClick={() => logoInputRef.current?.click()} disabled={uploading} className="rounded-xl">
+                      {uploading ? "Upload..." : organization?.logo_url ? "Changer le logo" : "Uploader le logo"}
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Image de couverture</Label>
+                    {organization?.cover_image_url && (
+                      <div className="w-full h-32 rounded-xl overflow-hidden border border-border mb-2">
+                        <img src={organization.cover_image_url} alt="Couverture" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <input ref={coverInputRef} type="file" accept="image/*" onChange={handleCoverUpload} className="hidden" />
+                    <Button type="button" variant="outline" onClick={() => coverInputRef.current?.click()} disabled={uploading} className="rounded-xl">
+                      {uploading ? "Upload..." : organization?.cover_image_url ? "Changer la couverture" : "Uploader la couverture"}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveOrganization} className="rounded-xl">
+                    Enregistrer
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Mes Connexions */}
+          <TabsContent value="connexions" className="space-y-6">
+            <Card className="glass-card border-border/50">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-md">
+                    <Key className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle>Mes Connexions</CardTitle>
+                    <CardDescription>Gérez vos connexions aux réseaux sociaux</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {firstStoreId ? (
+                  <SocialConnectionsManager storeId={firstStoreId} />
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">
+                    Aucun magasin trouvé pour gérer les connexions
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Mon Compte */}
+          <TabsContent value="compte" className="space-y-6">
+            <Card className="glass-card border-border/50">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
+                    <User className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle>Mon Compte</CardTitle>
+                    <CardDescription>Vos informations personnelles</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Prénom</Label>
+                    <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Jean" className="rounded-xl" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Nom</Label>
+                    <Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Dupont" className="rounded-xl" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input type="email" value={email} disabled className="rounded-xl opacity-60 cursor-not-allowed" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Téléphone</Label>
+                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+33 6 12 34 56 78" className="rounded-xl" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Nouveau mot de passe</Label>
+                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Laisser vide pour ne pas changer" className="rounded-xl" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Plan actuel */}
+            <Card className="glass-card border-border/50">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center shadow-md">
+                    <CreditCard className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle>Plan & Facturation</CardTitle>
+                    <CardDescription>Votre abonnement actuel</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground">Plan actuel :</span>
+                  <Badge variant="secondary" className="rounded-xl">{getCurrentPlanName()}</Badge>
+                </div>
+                {subscription.subscribed && subscription.subscription_end && (
+                  <p className="text-sm text-muted-foreground">
+                    Renouvellement le {new Date(subscription.subscription_end).toLocaleDateString("fr-FR")}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end">
+              <Button onClick={handleSaveAccount} disabled={!accountHasChanges || isSavingProfile} className="rounded-xl">
+                {isSavingProfile ? "Enregistrement..." : "Enregistrer"}
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
+
+  // Default (non-store) settings view
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -306,71 +574,33 @@ const Settings = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Logo */}
                 <div className="space-y-2">
                   <Label>Logo de l'enseigne</Label>
                   {organization?.logo_url && (
                     <div className="w-32 h-32 rounded-xl overflow-hidden border border-border mb-2">
-                      <img
-                        src={organization.logo_url}
-                        alt="Logo"
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={organization.logo_url} alt="Logo" className="w-full h-full object-cover" />
                     </div>
                   )}
-                  <input
-                    ref={logoInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleLogoUpload}
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => logoInputRef.current?.click()}
-                    disabled={uploading}
-                    className="rounded-xl"
-                  >
+                  <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                  <Button type="button" variant="outline" onClick={() => logoInputRef.current?.click()} disabled={uploading} className="rounded-xl">
                     {uploading ? "Upload..." : organization?.logo_url ? "Changer le logo" : "Uploader le logo"}
                   </Button>
                 </div>
-
-                {/* Cover */}
                 <div className="space-y-2">
                   <Label>Image de couverture</Label>
                   {organization?.cover_image_url && (
                     <div className="w-full h-32 rounded-xl overflow-hidden border border-border mb-2">
-                      <img
-                        src={organization.cover_image_url}
-                        alt="Couverture"
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={organization.cover_image_url} alt="Couverture" className="w-full h-full object-cover" />
                     </div>
                   )}
-                  <input
-                    ref={coverInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleCoverUpload}
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => coverInputRef.current?.click()}
-                    disabled={uploading}
-                    className="rounded-xl"
-                  >
+                  <input ref={coverInputRef} type="file" accept="image/*" onChange={handleCoverUpload} className="hidden" />
+                  <Button type="button" variant="outline" onClick={() => coverInputRef.current?.click()} disabled={uploading} className="rounded-xl">
                     {uploading ? "Upload..." : organization?.cover_image_url ? "Changer la couverture" : "Uploader la couverture"}
                   </Button>
                 </div>
               </div>
 
-              <Button
-                onClick={handleSaveOrganization}
-                className="rounded-xl"
-              >
+              <Button onClick={handleSaveOrganization} className="rounded-xl">
                 Enregistrer les modifications
               </Button>
             </CardContent>
@@ -395,15 +625,8 @@ const Settings = () => {
               <div className="space-y-2">
                 <Label>Couleur du bouton des promotions</Label>
                 <div className="flex items-center gap-4">
-                  <Input
-                    type="color"
-                    value={brandingColor}
-                    onChange={(e) => setBrandingColor(e.target.value)}
-                    className="w-20 h-12 rounded-xl cursor-pointer"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Sélectionnez la couleur qui sera appliquée aux boutons CTA de vos promotions
-                  </p>
+                  <Input type="color" value={brandingColor} onChange={(e) => setBrandingColor(e.target.value)} className="w-20 h-12 rounded-xl cursor-pointer" />
+                  <p className="text-sm text-muted-foreground">Sélectionnez la couleur qui sera appliquée aux boutons CTA de vos promotions</p>
                 </div>
               </div>
               <div className="flex items-center justify-between p-4 rounded-xl border border-border/50 bg-card/50 hover:shadow-md transition-smooth">
@@ -421,10 +644,7 @@ const Settings = () => {
                 <Button variant="outline" size="sm" className="rounded-xl">Configurer</Button>
               </div>
 
-              <Button
-                onClick={handleSaveBranding}
-                className="rounded-xl w-full"
-              >
+              <Button onClick={handleSaveBranding} className="rounded-xl w-full">
                 Enregistrer les modifications
               </Button>
             </CardContent>
@@ -468,10 +688,7 @@ const Settings = () => {
                 <Button variant="outline" size="sm" className="rounded-xl">Connecter</Button>
               </div>
 
-              <Button
-                onClick={handleSaveIntegrations}
-                className="rounded-xl w-full"
-              >
+              <Button onClick={handleSaveIntegrations} className="rounded-xl w-full">
                 Enregistrer les modifications
               </Button>
             </CardContent>
@@ -549,20 +766,10 @@ const Settings = () => {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditMechanic(mechanic)}
-                        className="rounded-lg"
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => handleEditMechanic(mechanic)} className="rounded-lg">
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteClick(mechanic.id)}
-                        className="rounded-lg text-destructive hover:text-destructive"
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(mechanic.id)} className="rounded-lg text-destructive hover:text-destructive">
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
@@ -615,10 +822,7 @@ const Settings = () => {
                 <Switch checked={tipsEnabled} onCheckedChange={setTipsEnabled} />
               </div>
 
-              <Button
-                onClick={handleSaveNotifications}
-                className="rounded-xl w-full"
-              >
+              <Button onClick={handleSaveNotifications} className="rounded-xl w-full">
                 Enregistrer les modifications
               </Button>
             </CardContent>
