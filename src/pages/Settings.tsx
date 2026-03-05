@@ -17,6 +17,7 @@ import { useUserData } from "@/hooks/use-user-data";
 import { SocialConnectionsManager } from "@/components/SocialConnectionsManager";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Settings = () => {
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -38,7 +39,7 @@ const Settings = () => {
   const { mechanics, createMechanic, updateMechanic, deleteMechanic } = usePromotionalMechanics();
   const { stores } = useStores();
   const firstStoreId = stores && stores.length > 0 ? stores[0].id : null;
-  const { isStore, profile } = useUserData();
+  const { isStore, profile, loading: userLoading } = useUserData();
 
   // Store-specific state
   const [storeName, setStoreName] = useState("");
@@ -374,6 +375,22 @@ const Settings = () => {
       default: return "Free";
     }
   };
+
+  // Loading guard
+  if (userLoading) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold">Réglages</h1>
+          <p className="text-muted-foreground">Chargement...</p>
+        </div>
+        <div className="space-y-4">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </div>
+    );
+  }
 
   // Store-specific settings view
   if (isStore) {
