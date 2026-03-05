@@ -29,6 +29,7 @@ import Settings from "./pages/Settings";
 import Account from "./pages/Account";
 import SuperAdmin from "./pages/SuperAdmin";
 import MyStoreHome from "./pages/MyStoreHome";
+import StoreOnboarding from "./pages/StoreOnboarding";
 import LegalNotice from "./pages/LegalNotice";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -53,6 +54,11 @@ const App = () => (
             <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/payment-canceled" element={<PaymentCanceled />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/store-onboarding" element={
+              <ProtectedRoute>
+                <StoreOnboarding />
+              </ProtectedRoute>
+            } />
             <Route path="/checkout" element={<Checkout />} />
             {/* Legal pages */}
             <Route path="/mentions-legales" element={<LegalNotice />} />

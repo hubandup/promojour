@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 
@@ -10,24 +10,64 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
-    // Check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    checkAuth();
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      setLoading(false);
+      if (session?.user) {
+        checkOnboarding(session.user.id);
+      } else {
+        setLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    setUser(session?.user ?? null);
+    if (session?.user) {
+      await checkOnboarding(session.user.id);
+    }
+    setLoading(false);
+  };
+
+  const checkOnboarding = async (userId: string) => {
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("organization_id")
+        .eq("id", userId)
+        .single();
+
+      if (!profile?.organization_id) {
+        setNeedsOnboarding(false);
+        return;
+      }
+
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("account_type, onboarding_completed")
+        .eq("id", profile.organization_id)
+        .single();
+
+      // Only store-type organizations need onboarding check
+      if (org?.account_type === "store" && !org?.onboarding_completed) {
+        setNeedsOnboarding(true);
+      } else {
+        setNeedsOnboarding(false);
+      }
+    } catch {
+      setNeedsOnboarding(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -39,6 +79,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Redirect store users who haven't completed onboarding
+  if (needsOnboarding && location.pathname !== "/store-onboarding") {
+    return <Navigate to="/store-onboarding" replace />;
   }
 
   return <>{children}</>;
