@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 const Dashboard = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const { organization, isCentral, loading: userLoading } = useUserData();
+  const { organization, isCentral, isStore, loading: userLoading } = useUserData();
   const { promotions, activePromotions, scheduledPromotions, topPromotions, loading: promosLoading } = usePromotions();
   const { stores, loading: storesLoading } = useStores();
   const { dailyViews, statusDistribution, loading: chartsLoading } = useDashboardCharts();
@@ -24,6 +25,11 @@ const Dashboard = () => {
   const { connections, connectedCount } = useSocialConnections(firstStore?.id);
 
   const loading = userLoading || promosLoading || storesLoading;
+
+  // Redirect store users to /my-store
+  if (!userLoading && isStore) {
+    return <Navigate to="/my-store" replace />;
+  }
 
   const MIN_ACTIVE_PROMOTIONS = 3;
   const MIN_UPCOMING_PROMOTIONS = 5;
