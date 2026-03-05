@@ -254,6 +254,8 @@ export type Database = {
           max_stores: number | null
           max_users: number | null
           name: string
+          onboarding_completed: boolean
+          onboarding_step: number
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           subscription_status: string | null
@@ -274,6 +276,8 @@ export type Database = {
           max_stores?: number | null
           max_users?: number | null
           name: string
+          onboarding_completed?: boolean
+          onboarding_step?: number
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_status?: string | null
@@ -294,6 +298,8 @@ export type Database = {
           max_stores?: number | null
           max_users?: number | null
           name?: string
+          onboarding_completed?: boolean
+          onboarding_step?: number
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_status?: string | null
