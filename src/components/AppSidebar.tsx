@@ -29,7 +29,7 @@ const superAdminItems = [
 
 export function AppSidebar() {
   const navigate = useNavigate();
-  const { isStoreManager, isFree, isSuperAdmin, loading: userLoading } = useUserData();
+  const { isStoreManager, isFree, isSuperAdmin, isStore, loading: userLoading } = useUserData();
   const { stores, loading: storesLoading } = useStores();
   const { canViewCampaigns, canEditOrgSettings } = usePermissions();
 
@@ -39,11 +39,14 @@ export function AppSidebar() {
                    isStoreManager ? "/mon-magasin" : 
                    "/stores";
 
-  // Build menu items based on permissions
-  const menuItems = [
+  // Build menu items based on organization type and permissions
+  const menuItems = isStore ? [
+    { title: "Mon magasin", url: "/mon-magasin", icon: Store },
+    { title: "Mes Promotions", url: "/promotions", icon: Tag },
+    { title: "Mes Stats", url: "/stats", icon: BarChart3 },
+  ] : [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Promotions", url: "/promotions", icon: Tag },
-    // Campagnes only visible for Pro and Centrale (not Free)
     ...(canViewCampaigns ? [{ title: "Campagnes", url: "/campaigns", icon: CalendarDays }] : []),
     { title: "Statistiques", url: "/stats", icon: BarChart3 },
     { 
@@ -53,10 +56,12 @@ export function AppSidebar() {
     },
   ];
 
-  // Settings items - filter based on permissions
-  const filteredSettingsItems = canEditOrgSettings 
-    ? settingsItems 
-    : settingsItems.filter(item => item.url !== "/settings");
+  // Settings items - for store type, show only Réglages; otherwise filter based on permissions
+  const filteredSettingsItems = isStore
+    ? [{ title: "Réglages", url: "/settings", icon: Settings }]
+    : canEditOrgSettings 
+      ? settingsItems 
+      : settingsItems.filter(item => item.url !== "/settings");
 
   const handleLogout = async () => {
     try {
@@ -125,7 +130,7 @@ export function AppSidebar() {
         </SidebarGroup>
       )}
 
-      {isSuperAdmin && (
+      {isSuperAdmin && !isStore && (
         <SidebarGroup>
           <SidebarGroupLabel>Super Admin</SidebarGroupLabel>
           <SidebarGroupContent>

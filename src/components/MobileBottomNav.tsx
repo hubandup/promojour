@@ -6,7 +6,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
 export function MobileBottomNav() {
-  const { isStoreManager, isFree } = useUserData();
+  const { isStoreManager, isFree, isStore } = useUserData();
   const { stores } = useStores();
   const { toggleSidebar } = useSidebar();
 
@@ -15,7 +15,11 @@ export function MobileBottomNav() {
                    isStoreManager ? "/mon-magasin" : 
                    "/stores";
 
-  const items = [
+  const items = isStore ? [
+    { title: "Magasin", url: "/mon-magasin", icon: Store },
+    { title: "Promos", url: "/promotions", icon: Tag },
+    { title: "Stats", url: "/stats", icon: BarChart3 },
+  ] : [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Promos", url: "/promotions", icon: Tag },
     { title: "Stats", url: "/stats", icon: BarChart3 },
