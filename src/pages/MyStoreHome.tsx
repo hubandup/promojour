@@ -128,9 +128,11 @@ const MyStoreHome = () => {
               <Badge variant="secondary">En pause</Badge>
             )}
           </div>
-          {store?.city && (
+          {store?.description ? (
+            <p className="text-muted-foreground text-sm mt-0.5">{store.description}</p>
+          ) : store?.city ? (
             <p className="text-muted-foreground text-sm mt-0.5">{store.city}</p>
-          )}
+          ) : null}
         </div>
       </div>
 
