@@ -63,7 +63,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         .single();
 
       const pendingAccountType = localStorage.getItem("pending_account_type") as "store" | "central" | null;
-      const effectiveAccountType = org?.account_type === "free" && pendingAccountType ? pendingAccountType : org?.account_type;
+      const effectiveAccountType: "free" | "store" | "central" | null =
+        org?.account_type === "free" && pendingAccountType ? pendingAccountType : org?.account_type ?? null;
 
       // If org type is still 'free', user needs to choose account type
       if (effectiveAccountType === "free") {
