@@ -68,12 +68,16 @@ export default function ChooseAccountType() {
         return;
       }
 
-      const { error } = await supabase
+      localStorage.setItem("pending_account_type", option.type);
+
+      const { data: updatedOrg, error } = await supabase
         .from("organizations")
         .update({ account_type: option.type } as any)
-        .eq("id", profile.organization_id);
+        .eq("id", profile.organization_id)
+        .select("id")
+        .single();
 
-      if (error) throw error;
+      if (error || !updatedOrg) throw error || new Error("Mise à jour impossible");
 
       // For central, mark onboarding as completed (no wizard needed)
       if (option.type === "central") {
@@ -85,6 +89,7 @@ export default function ChooseAccountType() {
 
       navigate(option.redirectTo, { replace: true });
     } catch (error: any) {
+      localStorage.removeItem("pending_account_type");
       toast.error(error.message || "Une erreur est survenue");
     } finally {
       setLoading(null);
