@@ -9,11 +9,12 @@ import { Upload, ArrowRight, Store } from "lucide-react";
 interface Props {
   organizationId: string;
   existingStoreId: string | null;
+  initialStoreName?: string;
   onComplete: (storeId: string) => void;
 }
 
-export function StoreOnboardingStep1({ organizationId, existingStoreId, onComplete }: Props) {
-  const [storeName, setStoreName] = useState("");
+export function StoreOnboardingStep1({ organizationId, existingStoreId, initialStoreName, onComplete }: Props) {
+  const [storeName, setStoreName] = useState(initialStoreName || "");
   const [addressLine1, setAddressLine1] = useState("");
   const [city, setCity] = useState("");
   const [postalCode, setPostalCode] = useState("");
