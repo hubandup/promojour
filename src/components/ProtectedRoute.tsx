@@ -11,6 +11,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [needsAccountTypeChoice, setNeedsAccountTypeChoice] = useState(false);
   const [isStore, setIsStore] = useState(false);
   const location = useLocation();
 
@@ -50,6 +51,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
       if (!profile?.organization_id) {
         setNeedsOnboarding(false);
+        setNeedsAccountTypeChoice(false);
         setIsStore(false);
         return;
       }
@@ -60,10 +62,18 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         .eq("id", profile.organization_id)
         .single();
 
+      // If org type is still 'free', user needs to choose account type
+      if (org?.account_type === "free") {
+        setNeedsAccountTypeChoice(true);
+        setNeedsOnboarding(false);
+        setIsStore(false);
+        return;
+      }
+
+      setNeedsAccountTypeChoice(false);
       const storeType = org?.account_type === "store";
       setIsStore(storeType);
 
-      // Only store-type organizations need onboarding check
       if (storeType && !org?.onboarding_completed) {
         setNeedsOnboarding(true);
       } else {
@@ -71,6 +81,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       }
     } catch {
       setNeedsOnboarding(false);
+      setNeedsAccountTypeChoice(false);
       setIsStore(false);
     }
   };
@@ -85,6 +96,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Redirect users who haven't chosen account type
+  if (needsAccountTypeChoice && location.pathname !== "/choose-account-type") {
+    return <Navigate to="/choose-account-type" replace />;
   }
 
   // Redirect store users who haven't completed onboarding
