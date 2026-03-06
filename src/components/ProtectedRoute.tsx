@@ -62,16 +62,24 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         .eq("id", profile.organization_id)
         .single();
 
+      const pendingAccountType = localStorage.getItem("pending_account_type") as "store" | "central" | null;
+      const effectiveAccountType: "free" | "store" | "central" | null =
+        org?.account_type === "free" && pendingAccountType ? pendingAccountType : org?.account_type ?? null;
+
       // If org type is still 'free', user needs to choose account type
-      if (org?.account_type === "free") {
+      if (effectiveAccountType === "free") {
         setNeedsAccountTypeChoice(true);
         setNeedsOnboarding(false);
         setIsStore(false);
         return;
       }
 
+      if (effectiveAccountType) {
+        localStorage.removeItem("pending_account_type");
+      }
+
       setNeedsAccountTypeChoice(false);
-      const storeType = org?.account_type === "store";
+      const storeType = effectiveAccountType === "store";
       setIsStore(storeType);
 
       if (storeType && !org?.onboarding_completed) {
