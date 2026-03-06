@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function OAuthCallback() {
   const [searchParams] = useSearchParams();
@@ -25,19 +26,48 @@ export default function OAuthCallback() {
         );
       }
       
-      // Fermer la popup après un court délai pour que l'utilisateur voie le message
       setTimeout(() => {
         window.close();
       }, 1500);
     } else {
-      // Si ce n'est pas une popup, rediriger vers la page du store
-      if (storeId) {
-        setTimeout(() => {
-          navigate(`/stores/${storeId}`);
-        }, 1500);
-      } else {
-        navigate("/stores");
-      }
+      // Check if user is in onboarding flow
+      const checkOnboardingAndRedirect = async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("organization_id")
+              .eq("id", user.id)
+              .single();
+
+            if (profile?.organization_id) {
+              const { data: org } = await supabase
+                .from("organizations")
+                .select("onboarding_completed")
+                .eq("id", profile.organization_id)
+                .single();
+
+              // If onboarding not completed, redirect back to wizard
+              if (org && !org.onboarding_completed) {
+                setTimeout(() => navigate("/store-onboarding", { replace: true }), 1500);
+                return;
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error checking onboarding status:", err);
+        }
+
+        // Default: redirect to store page
+        if (storeId) {
+          setTimeout(() => navigate(`/stores/${storeId}`, { replace: true }), 1500);
+        } else {
+          navigate("/stores", { replace: true });
+        }
+      };
+
+      checkOnboardingAndRedirect();
     }
   }, [searchParams, navigate]);
 
