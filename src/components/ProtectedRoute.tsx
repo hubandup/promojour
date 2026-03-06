@@ -74,7 +74,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         return;
       }
 
-      if (effectiveAccountType && effectiveAccountType !== "free") {
+      if (effectiveAccountType) {
         localStorage.removeItem("pending_account_type");
       }
 
