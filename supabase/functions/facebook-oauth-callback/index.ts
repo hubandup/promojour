@@ -67,8 +67,6 @@ async function fetchWithLogging(url: string, options?: RequestInit): Promise<{ r
   log('DEBUG', 'HTTP response received', {
     status: response.status,
     statusText: response.statusText,
-    headers: Object.fromEntries(response.headers.entries()),
-    body: data,
   });
   
   return { response, data };
