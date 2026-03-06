@@ -83,7 +83,28 @@ const Auth = () => {
           console.log("[AUTH] Welcome email sent to:", email);
         } catch (emailError) {
           console.error("[AUTH] Failed to send welcome email:", emailError);
-          // Don't block the signup flow if email fails
+        }
+
+        // Set organization account_type to 'store' for free plan signups
+        // (the trigger creates it as 'free' by default)
+        if (plan === "free" || !plan) {
+          try {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("organization_id")
+              .eq("id", data.user.id)
+              .single();
+            
+            if (profile?.organization_id) {
+              await supabase
+                .from("organizations")
+                .update({ account_type: "store" as any })
+                .eq("id", profile.organization_id);
+              console.log("[AUTH] Organization type set to 'store'");
+            }
+          } catch (orgError) {
+            console.error("[AUTH] Failed to update org type:", orgError);
+          }
         }
         
         // Navigate based on plan
