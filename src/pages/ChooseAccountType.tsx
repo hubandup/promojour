@@ -45,6 +45,7 @@ const options: AccountOption[] = [
 export default function ChooseAccountType() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState<string | null>(null);
+  const [transitioning, setTransitioning] = useState(false);
 
   const handleChoice = async (option: AccountOption) => {
     setLoading(option.title);
@@ -79,7 +80,6 @@ export default function ChooseAccountType() {
 
       if (error || !updatedOrg) throw error || new Error("Mise à jour impossible");
 
-      // For central, mark onboarding as completed (no wizard needed)
       if (option.type === "central") {
         await supabase
           .from("organizations")
@@ -87,15 +87,30 @@ export default function ChooseAccountType() {
           .eq("id", profile.organization_id);
       }
 
-      navigate(option.redirectTo, { replace: true });
+      // Show transitioning screen before navigating
+      setTransitioning(true);
+      setTimeout(() => {
+        navigate(option.redirectTo, { replace: true });
+      }, 1500);
     } catch (error: any) {
       localStorage.removeItem("pending_account_type");
       toast.error(error.message || "Une erreur est survenue");
-    } finally {
       setLoading(null);
     }
   };
 
+  if (transitioning) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-6">
+        <img src={logoPromojour} alt="PromoJour" className="h-10 animate-pulse" />
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+          <p className="text-lg font-medium text-foreground">Configuration de votre compte...</p>
+          <p className="text-sm text-muted-foreground">Nous préparons votre espace</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
