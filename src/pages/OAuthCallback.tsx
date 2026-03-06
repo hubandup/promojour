@@ -11,6 +11,7 @@ export default function OAuthCallback() {
     const success = searchParams.get("success");
     const error = searchParams.get("error");
     const storeId = searchParams.get("storeId");
+    const onboardingInProgress = localStorage.getItem("onboarding_in_progress") === "true";
 
     // Si c'est une popup, envoyer le message au parent et fermer
     if (window.opener) {
@@ -25,13 +26,17 @@ export default function OAuthCallback() {
           window.location.origin
         );
       }
-      
+      localStorage.removeItem("onboarding_in_progress");
       setTimeout(() => {
         window.close();
       }, 1500);
+    } else if (onboardingInProgress) {
+      // Coming back from OAuth during onboarding wizard — go back to wizard
+      localStorage.removeItem("onboarding_in_progress");
+      setTimeout(() => navigate("/store-onboarding", { replace: true }), 1500);
     } else {
-      // Check if user is in onboarding flow
-      const checkOnboardingAndRedirect = async () => {
+      // Default: check onboarding status then redirect
+      const checkAndRedirect = async () => {
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
@@ -48,7 +53,6 @@ export default function OAuthCallback() {
                 .eq("id", profile.organization_id)
                 .single();
 
-              // If onboarding not completed, redirect back to wizard
               if (org && !org.onboarding_completed) {
                 setTimeout(() => navigate("/store-onboarding", { replace: true }), 1500);
                 return;
@@ -59,7 +63,6 @@ export default function OAuthCallback() {
           console.error("Error checking onboarding status:", err);
         }
 
-        // Default: redirect to store page
         if (storeId) {
           setTimeout(() => navigate(`/stores/${storeId}`, { replace: true }), 1500);
         } else {
@@ -67,7 +70,7 @@ export default function OAuthCallback() {
         }
       };
 
-      checkOnboardingAndRedirect();
+      checkAndRedirect();
     }
   }, [searchParams, navigate]);
 

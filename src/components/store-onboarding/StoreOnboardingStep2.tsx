@@ -43,6 +43,9 @@ export function StoreOnboardingStep2({ storeId, onComplete }: Props) {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const authUrl = `${supabaseUrl}/functions/v1/facebook-oauth-init?store_id=${encodeURIComponent(storeId)}&platform=facebook`;
 
+      // Set flag so OAuth callback knows to return to wizard
+      localStorage.setItem("onboarding_in_progress", "true");
+
       // Open in new tab and poll for connection
       window.open(authUrl, "_blank");
       toast.info("Connectez-vous à Facebook dans le nouvel onglet");
