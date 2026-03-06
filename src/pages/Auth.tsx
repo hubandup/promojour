@@ -17,7 +17,8 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [forgotPassword, setForgotPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("signin");
   const { sendWelcomeEmail } = useSendEmail();
