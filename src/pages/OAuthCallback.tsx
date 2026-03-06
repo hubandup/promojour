@@ -13,7 +13,33 @@ export default function OAuthCallback() {
     const storeId = searchParams.get("storeId");
     const onboardingInProgress = localStorage.getItem("onboarding_in_progress") === "true";
 
-    // Si c'est une popup, envoyer le message au parent et fermer
+    // PRIORITY: If onboarding is in progress, always go back to wizard
+    if (onboardingInProgress) {
+      localStorage.removeItem("onboarding_in_progress");
+
+      // If opened as popup/tab, notify parent and close
+      if (window.opener) {
+        try {
+          window.opener.postMessage(
+            {
+              type: success === "social_connected" ? "oauth_success" : "oauth_error",
+              platform: "facebook",
+              error: error || undefined,
+            },
+            window.location.origin
+          );
+        } catch (e) {
+          // opener may be cross-origin, ignore
+        }
+        setTimeout(() => window.close(), 1500);
+      } else {
+        // Full-page redirect: go back to wizard
+        setTimeout(() => navigate("/store-onboarding", { replace: true }), 1500);
+      }
+      return;
+    }
+
+    // Non-onboarding popup flow
     if (window.opener) {
       if (success === "social_connected") {
         window.opener.postMessage(
@@ -26,52 +52,46 @@ export default function OAuthCallback() {
           window.location.origin
         );
       }
-      localStorage.removeItem("onboarding_in_progress");
-      setTimeout(() => {
-        window.close();
-      }, 1500);
-    } else if (onboardingInProgress) {
-      // Coming back from OAuth during onboarding wizard — go back to wizard
-      localStorage.removeItem("onboarding_in_progress");
-      setTimeout(() => navigate("/store-onboarding", { replace: true }), 1500);
-    } else {
-      // Default: check onboarding status then redirect
-      const checkAndRedirect = async () => {
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("organization_id")
-              .eq("id", user.id)
+      setTimeout(() => window.close(), 1500);
+      return;
+    }
+
+    // Default: check onboarding status then redirect
+    const checkAndRedirect = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("organization_id")
+            .eq("id", user.id)
+            .single();
+
+          if (profile?.organization_id) {
+            const { data: org } = await supabase
+              .from("organizations")
+              .select("onboarding_completed")
+              .eq("id", profile.organization_id)
               .single();
 
-            if (profile?.organization_id) {
-              const { data: org } = await supabase
-                .from("organizations")
-                .select("onboarding_completed")
-                .eq("id", profile.organization_id)
-                .single();
-
-              if (org && !org.onboarding_completed) {
-                setTimeout(() => navigate("/store-onboarding", { replace: true }), 1500);
-                return;
-              }
+            if (org && !org.onboarding_completed) {
+              setTimeout(() => navigate("/store-onboarding", { replace: true }), 1500);
+              return;
             }
           }
-        } catch (err) {
-          console.error("Error checking onboarding status:", err);
         }
+      } catch (err) {
+        console.error("Error checking onboarding status:", err);
+      }
 
-        if (storeId) {
-          setTimeout(() => navigate(`/stores/${storeId}`, { replace: true }), 1500);
-        } else {
-          navigate("/stores", { replace: true });
-        }
-      };
+      if (storeId) {
+        setTimeout(() => navigate(`/stores/${storeId}`, { replace: true }), 1500);
+      } else {
+        navigate("/stores", { replace: true });
+      }
+    };
 
-      checkAndRedirect();
-    }
+    checkAndRedirect();
   }, [searchParams, navigate]);
 
   const success = searchParams.get("success") === "social_connected";
