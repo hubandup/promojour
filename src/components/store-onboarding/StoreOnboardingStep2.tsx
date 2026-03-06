@@ -16,6 +16,17 @@ export function StoreOnboardingStep2({ storeId, onComplete }: Props) {
 
   useEffect(() => {
     checkFacebookConnection();
+
+    // Listen for postMessage from OAuth popup/tab
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === "oauth_success" && event.data?.platform === "facebook") {
+        // Re-check connection from DB
+        checkFacebookConnection();
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, [storeId]);
 
   const checkFacebookConnection = async () => {
@@ -30,6 +41,7 @@ export function StoreOnboardingStep2({ storeId, onComplete }: Props) {
     if (data) {
       setFacebookConnected(true);
       setFacebookPageName(data.account_name);
+      setConnecting(false);
     }
   };
 
