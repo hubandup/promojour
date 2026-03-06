@@ -141,6 +141,7 @@ const StoreOnboarding = () => {
             <StoreOnboardingStep1
               organizationId={organizationId!}
               existingStoreId={storeId}
+              initialStoreName={searchParams.get("storeName") || undefined}
               onComplete={(newStoreId) => {
                 setStoreId(newStoreId);
                 goToStep(2);
