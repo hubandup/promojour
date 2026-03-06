@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoPromojour from "@/assets/logo-promojour.svg";
@@ -11,6 +11,7 @@ const stepLabels = ["Mon Magasin", "Mes Réseaux", "Ma première promo"];
 
 const StoreOnboarding = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
@@ -140,6 +141,7 @@ const StoreOnboarding = () => {
             <StoreOnboardingStep1
               organizationId={organizationId!}
               existingStoreId={storeId}
+              initialStoreName={searchParams.get("storeName") || undefined}
               onComplete={(newStoreId) => {
                 setStoreId(newStoreId);
                 goToStep(2);
