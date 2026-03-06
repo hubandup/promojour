@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Store, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { useSendEmail } from "@/hooks/use-send-email";
 
 const Auth = () => {
@@ -18,13 +18,9 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [storeName, setStoreName] = useState("");
   const [forgotPassword, setForgotPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("signin");
   const { sendWelcomeEmail } = useSendEmail();
-  
-  // Plan from URL params
-  const plan = searchParams.get("plan") || "free";
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -38,28 +34,19 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      // Determine redirect based on plan
-      let redirectPath = "/store-onboarding";
-      if (plan === "pro" || plan === "centrale") {
-        redirectPath = `/checkout?plan=${plan}&storeName=${encodeURIComponent(storeName)}`;
-      } else if (storeName) {
-        redirectPath = `/store-onboarding?storeName=${encodeURIComponent(storeName)}`;
-      }
-
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}${redirectPath}`,
+          emailRedirectTo: `${window.location.origin}/choose-account-type`,
           data: {
             name: name,
-            company_name: storeName || "Mon Organisation",
+            company_name: "Mon Organisation",
           }
         }
       });
 
       if (error) {
-        // Handle specific error for existing user
         if (error.message.includes("already registered") || error.message.includes("User already registered")) {
           toast.error("Cet email est déjà utilisé. Veuillez vous connecter.", {
             action: {
@@ -72,47 +59,17 @@ const Auth = () => {
         throw error;
       }
 
-      // Check if user was actually created (not just a fake signup for existing user)
       if (data.user && data.session) {
         toast.success("Compte créé avec succès !");
         
-        // Send welcome email
         const firstName = name.split(' ')[0] || name;
         try {
           await sendWelcomeEmail(email, firstName);
-          console.log("[AUTH] Welcome email sent to:", email);
         } catch (emailError) {
           console.error("[AUTH] Failed to send welcome email:", emailError);
         }
-
-        // Set organization account_type to 'store' for free plan signups
-        // (the trigger creates it as 'free' by default)
-        if (plan === "free" || !plan) {
-          try {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("organization_id")
-              .eq("id", data.user.id)
-              .single();
-            
-            if (profile?.organization_id) {
-              await supabase
-                .from("organizations")
-                .update({ account_type: "store" as any })
-                .eq("id", profile.organization_id);
-              console.log("[AUTH] Organization type set to 'store'");
-            }
-          } catch (orgError) {
-            console.error("[AUTH] Failed to update org type:", orgError);
-          }
-        }
         
-        // Navigate based on plan
-        if (plan === "pro" || plan === "centrale") {
-          navigate(`/checkout?plan=${plan}&storeName=${encodeURIComponent(storeName)}`);
-        } else {
-          navigate(`/store-onboarding${storeName ? `?storeName=${encodeURIComponent(storeName)}` : ""}`);
-        }
+        navigate("/choose-account-type");
       } else if (data.user && !data.session) {
         // User created but needs email confirmation
         // Send welcome email anyway
@@ -283,24 +240,6 @@ const Auth = () => {
 
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
-                {/* Plan badge */}
-                {plan !== "free" && (
-                  <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Store className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">
-                        Plan {plan === "pro" ? "Magasin Pro" : "Centrale"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {plan === "pro" ? "39€/mois" : "180€/mois + 19€/magasin"}
-                      </p>
-                    </div>
-                    <Check className="ml-auto h-5 w-5 text-primary" />
-                  </div>
-                )}
-
                 <div className="space-y-2">
                   <Label htmlFor="name">Nom complet</Label>
                   <Input
@@ -313,13 +252,14 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="storeName">Nom du magasin</Label>
+                  <Label htmlFor="signup-email">Email</Label>
                   <Input
-                    id="storeName"
-                    type="text"
-                    placeholder="Ma Boulangerie"
-                    value={storeName}
-                    onChange={(e) => setStoreName(e.target.value)}
+                    id="signup-email"
+                    type="email"
+                    placeholder="votre@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
                   />
                 </div>
                 <div className="space-y-2">
