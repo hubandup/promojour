@@ -10,7 +10,7 @@ import OAuthCallback from "./pages/OAuthCallback";
 import Pricing from "./pages/Pricing";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCanceled from "./pages/PaymentCanceled";
-import Onboarding from "./pages/Onboarding";
+import { Navigate } from "react-router-dom";
 import Checkout from "./pages/Checkout";
 import Dashboard from "./pages/Dashboard";
 import Promotions from "./pages/Promotions";
@@ -53,7 +53,7 @@ const App = () => (
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/payment-canceled" element={<PaymentCanceled />} />
-            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/onboarding" element={<Navigate to="/store-onboarding" replace />} />
             <Route path="/store-onboarding" element={
               <ProtectedRoute>
                 <StoreOnboarding />
