@@ -39,11 +39,11 @@ const Auth = () => {
 
     try {
       // Determine redirect based on plan
-      let redirectPath = "/onboarding";
+      let redirectPath = "/store-onboarding";
       if (plan === "pro" || plan === "centrale") {
         redirectPath = `/checkout?plan=${plan}&storeName=${encodeURIComponent(storeName)}`;
       } else if (storeName) {
-        redirectPath = `/onboarding?storeName=${encodeURIComponent(storeName)}`;
+        redirectPath = `/store-onboarding?storeName=${encodeURIComponent(storeName)}`;
       }
 
       const { data, error } = await supabase.auth.signUp({
@@ -90,7 +90,7 @@ const Auth = () => {
         if (plan === "pro" || plan === "centrale") {
           navigate(`/checkout?plan=${plan}&storeName=${encodeURIComponent(storeName)}`);
         } else {
-          navigate(`/onboarding${storeName ? `?storeName=${encodeURIComponent(storeName)}` : ""}`);
+          navigate(`/store-onboarding${storeName ? `?storeName=${encodeURIComponent(storeName)}` : ""}`);
         }
       } else if (data.user && !data.session) {
         // User created but needs email confirmation
