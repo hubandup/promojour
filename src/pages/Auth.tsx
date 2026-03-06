@@ -41,7 +41,9 @@ const Auth = () => {
         options: {
           emailRedirectTo: `${window.location.origin}/choose-account-type`,
           data: {
-            name: name,
+            name: `${firstName} ${lastName}`.trim(),
+            first_name: firstName,
+            last_name: lastName,
             company_name: "Mon Organisation",
           }
         }
@@ -63,9 +65,9 @@ const Auth = () => {
       if (data.user && data.session) {
         toast.success("Compte créé avec succès !");
         
-        const firstName = name.split(' ')[0] || name;
+        const fn = firstName || `${firstName} ${lastName}`.trim();
         try {
-          await sendWelcomeEmail(email, firstName);
+          await sendWelcomeEmail(email, fn);
         } catch (emailError) {
           console.error("[AUTH] Failed to send welcome email:", emailError);
         }
@@ -74,9 +76,9 @@ const Auth = () => {
       } else if (data.user && !data.session) {
         // User created but needs email confirmation
         // Send welcome email anyway
-        const firstName = name.split(' ')[0] || name;
+        const fn2 = firstName || `${firstName} ${lastName}`.trim();
         try {
-          await sendWelcomeEmail(email, firstName);
+          await sendWelcomeEmail(email, fn2);
           console.log("[AUTH] Welcome email sent to:", email);
         } catch (emailError) {
           console.error("[AUTH] Failed to send welcome email:", emailError);
@@ -242,24 +244,24 @@ const Auth = () => {
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nom complet</Label>
+                  <Label htmlFor="firstName">Prénom</Label>
                   <Input
-                    id="name"
+                    id="firstName"
                     type="text"
-                    placeholder="Votre nom"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Votre prénom"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="lastName">Nom</Label>
                   <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="votre@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="lastName"
+                    type="text"
+                    placeholder="Votre nom"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                     required
                   />
                 </div>
