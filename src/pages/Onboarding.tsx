@@ -154,31 +154,19 @@ const Onboarding = () => {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('facebook-oauth-init', {
-        body: { storeId: createdStoreId, platform: 'facebook' }
-      });
+      // Use direct GET URL to avoid CORS issues with functions.invoke
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const authUrl = `${supabaseUrl}/functions/v1/facebook-oauth-init?store_id=${encodeURIComponent(createdStoreId)}&platform=facebook`;
 
-      if (error) throw error;
+      // Open in new tab (works in iframe and standalone)
+      window.open(authUrl, '_blank');
+      toast.info("Connectez-vous à Facebook dans le nouvel onglet");
 
-      const authUrl = data?.authUrl;
-      if (!authUrl) throw new Error("URL d'authentification non reçue");
-
-      // Open in popup or new tab
-      const isInIframe = window.self !== window.top;
-      if (isInIframe) {
-        window.open(authUrl, '_blank');
-        toast.info("Connectez-vous à Facebook dans le nouvel onglet");
-      } else {
-        const popup = window.open(authUrl, 'facebook-oauth', 'width=600,height=700');
-        
-        // Listen for popup close
-        const checkClosed = setInterval(() => {
-          if (popup?.closed) {
-            clearInterval(checkClosed);
-            checkFacebookConnection();
-          }
-        }, 1000);
-      }
+      // Poll for connection
+      const interval = setInterval(async () => {
+        await checkFacebookConnection();
+      }, 3000);
+      setTimeout(() => clearInterval(interval), 120000);
     } catch (error: any) {
       console.error('Facebook OAuth error:', error);
       toast.error(error.message || "Erreur lors de la connexion Facebook");
