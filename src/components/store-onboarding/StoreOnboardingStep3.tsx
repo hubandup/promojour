@@ -206,10 +206,14 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
         </div>
         <div className="space-y-2">
           <h2 className="text-2xl font-bold text-foreground">
-            Votre promotion est en ligne !
+            {savedAsDraft
+              ? "Votre promotion a été enregistrée"
+              : "Votre promotion est en ligne !"}
           </h2>
           <p className="text-muted-foreground">
-            Félicitations, votre première promotion a été publiée avec succès.
+            {savedAsDraft
+              ? "Vous pourrez la publier depuis Mes Promotions quand vous le souhaitez."
+              : "Félicitations, votre première promotion a été publiée avec succès."}
           </p>
         </div>
         <Button onClick={onComplete} size="lg" className="h-12 px-8">
