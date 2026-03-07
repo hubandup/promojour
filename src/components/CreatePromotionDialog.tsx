@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Upload, X } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { CalendarIcon, Upload, X, Settings } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -20,17 +21,19 @@ import { usePromotionalMechanics } from "@/hooks/use-promotional-mechanics";
 import { usePromotionLimits } from "@/hooks/use-promotion-limits";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useUserData } from "@/hooks/use-user-data";
+import { StoreMechanicSelector } from "@/components/promotion-form/StoreMechanicSelector";
 
 const promotionSchema = z.object({
   title: z.string().min(3, "Le titre doit contenir au moins 3 caractères").max(100),
-  description: z.string().min(10, "La description doit contenir au moins 10 caractères").max(500),
-  category: z.string().min(1, "Veuillez sélectionner une catégorie"),
+  description: z.string().max(500).optional().or(z.literal("")),
+  category: z.string().optional().or(z.literal("")),
   mechanicType: z.string().min(1, "Veuillez sélectionner une mécanique promotionnelle"),
-  productName: z.string().min(1, "Le nom du produit est requis"),
+  productName: z.string().optional().or(z.literal("")),
   ean: z.string().optional(),
   originalPrice: z.string().optional(),
   discountedPrice: z.string().optional(),
   discountPercentage: z.string().optional(),
+  bundleDescription: z.string().optional(),
   startDate: z.date({ required_error: "La date de début est requise" }),
   endDate: z.date({ required_error: "La date de fin est requise" }),
   status: z.enum(["draft", "scheduled", "active", "archived"]),
@@ -54,10 +57,11 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   
   const { mechanics } = usePromotionalMechanics();
   const { limits, validatePromotionDates, checkLimits } = usePromotionLimits();
-  const { isSuperAdmin } = useUserData();
+  const { isSuperAdmin, isStore } = useUserData();
 
   const {
     register,
@@ -88,6 +92,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
   const discountedPrice = watch("discountedPrice");
   const discountPercentage = watch("discountPercentage");
   const ctaActionType = watch("ctaActionType");
+  const ean = watch("ean");
 
   // Auto-calculate discount percentage when prices change
   useEffect(() => {
@@ -112,6 +117,14 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
       }
     }
   }, [originalPrice, discountPercentage, mechanicType, setValue]);
+
+  // Auto-select CTA action type based on EAN for store users
+  useEffect(() => {
+    if (isStore && ean && ean.trim()) {
+      setValue("ctaActionType", "ean");
+      setValue("eanCode", ean);
+    }
+  }, [ean, isStore, setValue]);
 
   const processFiles = (files: File[]) => {
     if (files.length + images.length > 5) {
@@ -224,13 +237,17 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
       // Create promotion with attributes
       const attributes: any = {
         mechanicType: data.mechanicType,
-        productName: data.productName,
+        productName: data.productName || "",
         ean: data.ean,
         ctaText: data.ctaText || "J'en Profite",
         ctaActionType: data.ctaActionType || "url",
         ctaUrl: data.ctaUrl || "",
         eanCode: data.eanCode || "",
       };
+
+      if (data.mechanicType === "bundle") {
+        attributes.bundleDescription = data.bundleDescription || "";
+      }
 
       if (data.mechanicType === 'price_discount' && data.originalPrice && data.discountedPrice) {
         attributes.originalPrice = data.originalPrice;
@@ -246,15 +263,21 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
         }
       }
 
+      // For store users, determine status from button action
+      let finalStatus = data.status;
+      if (isStore && finalStatus === "active" && data.startDate > new Date()) {
+        finalStatus = "scheduled";
+      }
+
       const { error } = await supabase
         .from('promotions')
         .insert({
           organization_id: profile.organization_id,
           store_id: defaultStoreId || null,
           title: data.title,
-          description: data.description,
-          category: data.category,
-          status: data.status,
+          description: data.description || null,
+          category: data.category || null,
+          status: finalStatus,
           start_date: data.startDate.toISOString(),
           end_date: data.endDate.toISOString(),
           image_url: imageUrl,
@@ -267,11 +290,15 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
         throw error;
       }
       
-      toast.success("Promotion créée avec succès !");
+      toast.success(
+        isStore && finalStatus === "draft" 
+          ? "Promotion enregistrée en brouillon" 
+          : "Promotion créée avec succès !"
+      );
       reset();
       setImages([]);
       setImagePreviews([]);
-      await checkLimits(); // Rafraîchir les limites
+      await checkLimits();
       onOpenChange(false);
       onSuccess?.();
     } catch (error: any) {
@@ -282,17 +309,642 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
     }
   };
 
+  const handleStorePublish = () => {
+    setValue("status", "active");
+    handleSubmit(onSubmit)();
+  };
+
+  const handleStoreDraft = () => {
+    setValue("status", "draft");
+    handleSubmit(onSubmit)();
+  };
+
+  // Shared media upload section
+  const renderMediaUpload = () => (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold">Image ou vidéo</h3>
+      <div className="space-y-4">
+        <div 
+          className={cn(
+            "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+            isDragging ? "border-primary bg-primary/5" : "border-border"
+          )}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <input
+            type="file"
+            id="images"
+            accept="image/*,video/*"
+            multiple
+            className="hidden"
+            onChange={handleImageUpload}
+          />
+          <label htmlFor="images" className="cursor-pointer">
+            <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-sm font-medium mb-1">
+              Cliquez ou glissez-déposez vos images ou vidéos
+            </p>
+            <p className="text-xs text-muted-foreground">
+              PNG, JPG, MP4 jusqu'à 10MB (max 5 fichiers)
+            </p>
+          </label>
+        </div>
+
+        {imagePreviews.length > 0 && (
+          <div className="grid grid-cols-5 gap-4">
+            {imagePreviews.map((preview, index) => {
+              const isVideo = images[index]?.type.startsWith('video/');
+              return (
+                <div key={index} className="relative aspect-square rounded-lg overflow-hidden border bg-muted">
+                  {isVideo ? (
+                    <video src={preview} className="w-full h-full object-cover" controls playsInline />
+                  ) : (
+                    <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // Shared date pickers
+  const renderDatePickers = () => (
+    <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <Label>Date de début *</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start text-left font-normal",
+                !startDate && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {startDate ? format(startDate, "PPP", { locale: fr }) : "Sélectionner"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={startDate}
+              onSelect={(date) => date && setValue("startDate", date)}
+              locale={fr}
+              initialFocus
+              className="pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+        {errors.startDate && (
+          <p className="text-sm text-destructive">{errors.startDate.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label>Date de fin *</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start text-left font-normal",
+                !endDate && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {endDate ? format(endDate, "PPP", { locale: fr }) : "Sélectionner"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={endDate}
+              onSelect={(date) => date && setValue("endDate", date)}
+              locale={fr}
+              disabled={(date) => startDate ? date < startDate : false}
+              initialFocus
+              className="pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+        {errors.endDate && (
+          <p className="text-sm text-destructive">{errors.endDate.message}</p>
+        )}
+      </div>
+    </div>
+  );
+
+  // Store-specific form layout
+  const renderStoreForm = () => (
+    <div className="space-y-5">
+      {/* Level 1 - Essential fields */}
+      {renderMediaUpload()}
+
+      <div className="space-y-2">
+        <Label htmlFor="title">Titre de la promotion *</Label>
+        <Input
+          id="title"
+          placeholder="Ex: -30% sur les croissants"
+          {...register("title")}
+        />
+        {errors.title && (
+          <p className="text-sm text-destructive">{errors.title.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          placeholder="Décrivez brièvement votre promotion..."
+          rows={2}
+          {...register("description")}
+        />
+      </div>
+
+      {/* Mechanic type - visual buttons */}
+      <div className="space-y-2">
+        <Label>Type de promotion</Label>
+        <StoreMechanicSelector
+          value={mechanicType}
+          onChange={(value) => setValue("mechanicType", value)}
+        />
+      </div>
+
+      {/* Dynamic price fields based on mechanic */}
+      {mechanicType === "price_discount" && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="originalPrice">Prix original (€)</Label>
+            <Input
+              id="originalPrice"
+              type="number"
+              step="0.01"
+              placeholder="99.99"
+              {...register("originalPrice")}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="discountedPrice">Prix remisé (€)</Label>
+            <Input
+              id="discountedPrice"
+              type="number"
+              step="0.01"
+              placeholder="69.99"
+              {...register("discountedPrice")}
+            />
+          </div>
+        </div>
+      )}
+
+      {mechanicType === "percentage_discount" && (
+        <>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="originalPrice">Prix original (€)</Label>
+              <Input
+                id="originalPrice"
+                type="number"
+                step="0.01"
+                placeholder="99.99"
+                {...register("originalPrice")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="discountPercentage">Réduction (%)</Label>
+              <Input
+                id="discountPercentage"
+                type="number"
+                placeholder="30"
+                {...register("discountPercentage")}
+              />
+            </div>
+          </div>
+          {originalPrice && discountPercentage && discountedPrice && (
+            <p className="text-sm text-muted-foreground">
+              Prix remisé calculé : <strong>{discountedPrice} €</strong>
+            </p>
+          )}
+        </>
+      )}
+
+      {mechanicType === "bundle" && (
+        <div className="space-y-2">
+          <Label htmlFor="bundleDescription">Description de l'offre</Label>
+          <Input
+            id="bundleDescription"
+            placeholder="Ex: 2 achetés = 1 offert"
+            {...register("bundleDescription")}
+          />
+        </div>
+      )}
+
+      {/* Dates */}
+      <div className="space-y-2">
+        <Label>Dates de validité</Label>
+        {renderDatePickers()}
+      </div>
+
+      {/* EAN */}
+      <div className="space-y-2">
+        <Label htmlFor="ean">Code EAN (optionnel)</Label>
+        <Input
+          id="ean"
+          placeholder="Ex: 1234567890123"
+          {...register("ean")}
+        />
+        <p className="text-xs text-muted-foreground">
+          Ce code-barre sera scannable en caisse pour valider la promotion
+        </p>
+      </div>
+
+      {/* Level 2 - Advanced options accordion */}
+      <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+        <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
+          <Settings className="w-4 h-4" />
+          <span>Options avancées</span>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4 pt-3 border-t mt-2">
+          <div className="space-y-2">
+            <Label htmlFor="productName">Nom du produit</Label>
+            <Input
+              id="productName"
+              placeholder="Ex: Chaussures Nike Air Max"
+              {...register("productName")}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="ctaText">Intitulé du bouton</Label>
+            <Input
+              id="ctaText"
+              placeholder="J'en Profite"
+              {...register("ctaText")}
+            />
+            <p className="text-xs text-muted-foreground">Texte affiché sur le bouton d'action de votre promotion</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="ctaActionType">Type d'action</Label>
+            <Select 
+              value={ctaActionType} 
+              onValueChange={(value: "url" | "ean") => setValue("ctaActionType", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner le type d'action" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ean">Code EAN (code-barre)</SelectItem>
+                <SelectItem value="url">Lien URL</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {ctaActionType === "url" && (
+            <div className="space-y-2">
+              <Label htmlFor="ctaUrl">URL de destination</Label>
+              <Input
+                id="ctaUrl"
+                type="url"
+                placeholder="https://example.com"
+                {...register("ctaUrl")}
+              />
+              {errors.ctaUrl && (
+                <p className="text-sm text-destructive">{errors.ctaUrl.message}</p>
+              )}
+            </div>
+          )}
+
+          {ctaActionType === "ean" && (
+            <div className="space-y-2">
+              <Label htmlFor="eanCode">Code EAN du bon de réduction</Label>
+              <Input
+                id="eanCode"
+                placeholder="1234567890123"
+                maxLength={13}
+                {...register("eanCode")}
+              />
+              <p className="text-xs text-muted-foreground">Code EAN à 13 chiffres pour générer le code-barre</p>
+            </div>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Store action buttons */}
+      <div className="space-y-3 pt-4 border-t">
+        <Button
+          type="button"
+          onClick={handleStorePublish}
+          className="w-full gradient-primary text-white shadow-glow"
+          disabled={uploading || !limits.canCreatePromotion}
+        >
+          {uploading ? "Publication en cours..." : "Publier la promotion"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleStoreDraft}
+          className="w-full"
+          disabled={uploading}
+        >
+          Enregistrer en brouillon
+        </Button>
+      </div>
+    </div>
+  );
+
+  // Full form for central/super_admin
+  const renderFullForm = () => (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {renderMediaUpload()}
+
+      {/* Informations générales */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Informations générales</h3>
+        
+        <div className="space-y-2">
+          <Label htmlFor="title">Titre de la promotion *</Label>
+          <Input
+            id="title"
+            placeholder="Ex: Réduction 30% sur les chaussures"
+            {...register("title")}
+          />
+          {errors.title && (
+            <p className="text-sm text-destructive">{errors.title.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Description *</Label>
+          <Textarea
+            id="description"
+            placeholder="Décrivez votre promotion..."
+            rows={3}
+            {...register("description")}
+          />
+          {errors.description && (
+            <p className="text-sm text-destructive">{errors.description.message}</p>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="category">Catégorie *</Label>
+            <Select value={category} onValueChange={(value) => setValue("category", value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner une catégorie" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="mode">Mode</SelectItem>
+                <SelectItem value="alimentation">Alimentation</SelectItem>
+                <SelectItem value="electronique">Électronique</SelectItem>
+                <SelectItem value="maison">Maison & Décoration</SelectItem>
+                <SelectItem value="beaute">Beauté & Santé</SelectItem>
+                <SelectItem value="sport">Sport & Loisirs</SelectItem>
+                <SelectItem value="generale">Générale</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.category && (
+              <p className="text-sm text-destructive">{errors.category.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="status">Statut *</Label>
+            <Select value={status} onValueChange={(value: any) => setValue("status", value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="draft">Brouillon</SelectItem>
+                <SelectItem value="scheduled">Programmé</SelectItem>
+                <SelectItem value="active">Actif</SelectItem>
+                <SelectItem value="archived">Archivé</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* Informations produit */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Informations produit</h3>
+        
+        <div className="space-y-2">
+          <Label htmlFor="productName">Nom du produit *</Label>
+          <Input
+            id="productName"
+            placeholder="Ex: Chaussures Nike Air Max"
+            {...register("productName")}
+          />
+          {errors.productName && (
+            <p className="text-sm text-destructive">{errors.productName.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="ean">Code EAN (optionnel)</Label>
+          <Input
+            id="ean"
+            placeholder="Ex: 1234567890123"
+            {...register("ean")}
+          />
+        </div>
+      </div>
+
+      {/* Mécanique promotionnelle */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Mécanique promotionnelle</h3>
+        
+        <div className="space-y-2">
+          <Label htmlFor="mechanicType">Type de mécanique *</Label>
+          <Select value={mechanicType} onValueChange={(value) => setValue("mechanicType", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionner une mécanique" />
+            </SelectTrigger>
+            <SelectContent>
+              {mechanics.map((mechanic) => (
+                <SelectItem key={mechanic.id} value={mechanic.code}>
+                  {mechanic.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.mechanicType && (
+            <p className="text-sm text-destructive">{errors.mechanicType.message}</p>
+          )}
+        </div>
+
+        {mechanicType === "price_discount" && (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="originalPrice">Prix original (€) *</Label>
+              <Input
+                id="originalPrice"
+                type="number"
+                step="0.01"
+                placeholder="99.99"
+                {...register("originalPrice")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="discountedPrice">Prix remisé (€) *</Label>
+              <Input
+                id="discountedPrice"
+                type="number"
+                step="0.01"
+                placeholder="69.99"
+                {...register("discountedPrice")}
+              />
+            </div>
+          </div>
+        )}
+
+        {mechanicType === "percentage_discount" && (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="originalPrice">Prix original (€) *</Label>
+              <Input
+                id="originalPrice"
+                type="number"
+                step="0.01"
+                placeholder="99.99"
+                {...register("originalPrice")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="discountPercentage">Pourcentage de réduction (%) *</Label>
+              <Input
+                id="discountPercentage"
+                type="number"
+                placeholder="30"
+                {...register("discountPercentage")}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Période de validité */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Période de validité</h3>
+        {renderDatePickers()}
+      </div>
+
+      {/* Bouton */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Bouton</h3>
+        
+        <div className="space-y-2">
+          <Label htmlFor="ctaText">Intitulé du bouton</Label>
+          <Input
+            id="ctaText"
+            placeholder="J'en Profite"
+            defaultValue="J'en Profite"
+            {...register("ctaText")}
+          />
+          <p className="text-xs text-muted-foreground">Texte affiché sur le bouton d'action en frontend</p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="ctaActionType">Type d'action</Label>
+          <Select 
+            value={ctaActionType} 
+            onValueChange={(value: "url" | "ean") => setValue("ctaActionType", value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionner le type d'action" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="url">Lien URL</SelectItem>
+              <SelectItem value="ean">Code EAN (code-barre)</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">Action déclenchée lors du clic sur le bouton</p>
+        </div>
+
+        {ctaActionType === "url" && (
+          <div className="space-y-2">
+            <Label htmlFor="ctaUrl">URL de destination</Label>
+            <Input
+              id="ctaUrl"
+              type="url"
+              placeholder="https://example.com"
+              {...register("ctaUrl")}
+            />
+            {errors.ctaUrl && (
+              <p className="text-sm text-destructive">{errors.ctaUrl.message}</p>
+            )}
+          </div>
+        )}
+
+        {ctaActionType === "ean" && (
+          <div className="space-y-2">
+            <Label htmlFor="eanCode">Code EAN du bon de réduction</Label>
+            <Input
+              id="eanCode"
+              placeholder="1234567890123"
+              maxLength={13}
+              {...register("eanCode")}
+            />
+            <p className="text-xs text-muted-foreground">Code EAN à 13 chiffres pour générer le code-barre</p>
+          </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-end gap-3 pt-4 border-t">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            reset();
+            setImages([]);
+            setImagePreviews([]);
+            onOpenChange(false);
+          }}
+          disabled={uploading}
+        >
+          Annuler
+        </Button>
+        <Button 
+          type="submit" 
+          className="gradient-primary text-white shadow-glow" 
+          disabled={uploading || !limits.canCreatePromotion}
+        >
+          {uploading ? "Création en cours..." : "Créer la promotion"}
+        </Button>
+      </div>
+    </form>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Nouvelle promotion</DialogTitle>
           <DialogDescription>
-            Créez une nouvelle promotion pour votre magasin
+            {isStore 
+              ? "Créez et publiez une promotion pour votre magasin"
+              : "Créez une nouvelle promotion pour votre magasin"
+            }
           </DialogDescription>
         </DialogHeader>
 
-        {/* Afficher les limites pour le profil Free */}
+        {/* Limites Free */}
         {limits.remainingPromotions !== null && (
           <Alert className={limits.canCreatePromotion ? "border-primary/30 bg-primary/5" : "border-destructive/30 bg-destructive/5"}>
             <AlertDescription>
@@ -310,409 +962,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
           </Alert>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Image ou vidéo - TOP */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Image ou vidéo</h3>
-            
-            <div className="space-y-4">
-              <div 
-                className={cn(
-                  "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
-                  isDragging ? "border-primary bg-primary/5" : "border-border"
-                )}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <input
-                  type="file"
-                  id="images"
-                  accept="image/*,video/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleImageUpload}
-                />
-                <label htmlFor="images" className="cursor-pointer">
-                  <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-sm font-medium mb-1">
-                    Cliquez ou glissez-déposez vos images ou vidéos
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    PNG, JPG, MP4 jusqu'à 10MB (max 5 fichiers)
-                  </p>
-                </label>
-              </div>
-
-              {imagePreviews.length > 0 && (
-                <div className="grid grid-cols-5 gap-4">
-                  {imagePreviews.map((preview, index) => {
-                    const isVideo = images[index]?.type.startsWith('video/');
-                    return (
-                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden border bg-muted">
-                        {isVideo ? (
-                          <video
-                            src={preview}
-                            className="w-full h-full object-cover"
-                            controls
-                            playsInline
-                          />
-                        ) : (
-                          <img
-                            src={preview}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Informations générales */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Informations générales</h3>
-            
-            <div className="space-y-2">
-              <Label htmlFor="title">Titre de la promotion *</Label>
-              <Input
-                id="title"
-                placeholder="Ex: Réduction 30% sur les chaussures"
-                {...register("title")}
-              />
-              {errors.title && (
-                <p className="text-sm text-destructive">{errors.title.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
-              <Textarea
-                id="description"
-                placeholder="Décrivez votre promotion..."
-                rows={3}
-                {...register("description")}
-              />
-              {errors.description && (
-                <p className="text-sm text-destructive">{errors.description.message}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="category">Catégorie *</Label>
-                <Select value={category} onValueChange={(value) => setValue("category", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une catégorie" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mode">Mode</SelectItem>
-                    <SelectItem value="alimentation">Alimentation</SelectItem>
-                    <SelectItem value="electronique">Électronique</SelectItem>
-                    <SelectItem value="maison">Maison & Décoration</SelectItem>
-                    <SelectItem value="beaute">Beauté & Santé</SelectItem>
-                    <SelectItem value="sport">Sport & Loisirs</SelectItem>
-                    <SelectItem value="generale">Générale</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.category && (
-                  <p className="text-sm text-destructive">{errors.category.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="status">Statut *</Label>
-                <Select value={status} onValueChange={(value: any) => setValue("status", value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Brouillon</SelectItem>
-                    <SelectItem value="scheduled">Programmé</SelectItem>
-                    <SelectItem value="active">Actif</SelectItem>
-                    <SelectItem value="archived">Archivé</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          {/* Informations produit */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Informations produit</h3>
-            
-            <div className="space-y-2">
-              <Label htmlFor="productName">Nom du produit *</Label>
-              <Input
-                id="productName"
-                placeholder="Ex: Chaussures Nike Air Max"
-                {...register("productName")}
-              />
-              {errors.productName && (
-                <p className="text-sm text-destructive">{errors.productName.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="ean">Code EAN (optionnel)</Label>
-              <Input
-                id="ean"
-                placeholder="Ex: 1234567890123"
-                {...register("ean")}
-              />
-            </div>
-          </div>
-
-          {/* Mécanique promotionnelle */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Mécanique promotionnelle</h3>
-            
-            <div className="space-y-2">
-              <Label htmlFor="mechanicType">Type de mécanique *</Label>
-              <Select value={mechanicType} onValueChange={(value) => setValue("mechanicType", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une mécanique" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mechanics.map((mechanic) => (
-                    <SelectItem key={mechanic.id} value={mechanic.code}>
-                      {mechanic.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.mechanicType && (
-                <p className="text-sm text-destructive">{errors.mechanicType.message}</p>
-              )}
-            </div>
-
-            {mechanicType === "price_discount" && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="originalPrice">Prix original (€) *</Label>
-                  <Input
-                    id="originalPrice"
-                    type="number"
-                    step="0.01"
-                    placeholder="99.99"
-                    {...register("originalPrice")}
-                  />
-                  {errors.originalPrice && (
-                    <p className="text-sm text-destructive">{errors.originalPrice.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="discountedPrice">Prix remisé (€) *</Label>
-                  <Input
-                    id="discountedPrice"
-                    type="number"
-                    step="0.01"
-                    placeholder="69.99"
-                    {...register("discountedPrice")}
-                  />
-                  {errors.discountedPrice && (
-                    <p className="text-sm text-destructive">{errors.discountedPrice.message}</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {mechanicType === "percentage_discount" && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="originalPrice">Prix original (€) *</Label>
-                  <Input
-                    id="originalPrice"
-                    type="number"
-                    step="0.01"
-                    placeholder="99.99"
-                    {...register("originalPrice")}
-                  />
-                  {errors.originalPrice && (
-                    <p className="text-sm text-destructive">{errors.originalPrice.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="discountPercentage">Pourcentage de réduction (%) *</Label>
-                  <Input
-                    id="discountPercentage"
-                    type="number"
-                    placeholder="30"
-                    {...register("discountPercentage")}
-                  />
-                  {errors.discountPercentage && (
-                    <p className="text-sm text-destructive">{errors.discountPercentage.message}</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Période de validité */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Période de validité</h3>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Date de début *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !startDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {startDate ? format(startDate, "PPP", { locale: fr }) : "Sélectionner"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={startDate}
-                      onSelect={(date) => date && setValue("startDate", date)}
-                      locale={fr}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                {errors.startDate && (
-                  <p className="text-sm text-destructive">{errors.startDate.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label>Date de fin *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !endDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {endDate ? format(endDate, "PPP", { locale: fr }) : "Sélectionner"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={endDate}
-                      onSelect={(date) => date && setValue("endDate", date)}
-                      locale={fr}
-                      disabled={(date) => startDate ? date < startDate : false}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                {errors.endDate && (
-                  <p className="text-sm text-destructive">{errors.endDate.message}</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Bouton */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Bouton</h3>
-            
-            <div className="space-y-2">
-              <Label htmlFor="ctaText">Intitulé du bouton</Label>
-              <Input
-                id="ctaText"
-                placeholder="J'en Profite"
-                defaultValue="J'en Profite"
-                {...register("ctaText")}
-              />
-              <p className="text-xs text-muted-foreground">Texte affiché sur le bouton d'action en frontend</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="ctaActionType">Type d'action</Label>
-              <Select 
-                value={ctaActionType} 
-                onValueChange={(value: "url" | "ean") => setValue("ctaActionType", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner le type d'action" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="url">Lien URL</SelectItem>
-                  <SelectItem value="ean">Code EAN (code-barre)</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">Action déclenchée lors du clic sur le bouton</p>
-            </div>
-
-            {ctaActionType === "url" && (
-              <div className="space-y-2">
-                <Label htmlFor="ctaUrl">URL de destination</Label>
-                <Input
-                  id="ctaUrl"
-                  type="url"
-                  placeholder="https://example.com"
-                  {...register("ctaUrl")}
-                />
-                {errors.ctaUrl && (
-                  <p className="text-sm text-destructive">{errors.ctaUrl.message}</p>
-                )}
-              </div>
-            )}
-
-            {ctaActionType === "ean" && (
-              <div className="space-y-2">
-                <Label htmlFor="eanCode">Code EAN du bon de réduction</Label>
-                <Input
-                  id="eanCode"
-                  placeholder="1234567890123"
-                  maxLength={13}
-                  {...register("eanCode")}
-                />
-                <p className="text-xs text-muted-foreground">Code EAN à 13 chiffres pour générer le code-barre</p>
-              </div>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                reset();
-                setImages([]);
-                setImagePreviews([]);
-                onOpenChange(false);
-              }}
-              disabled={uploading}
-            >
-              Annuler
-            </Button>
-            <Button 
-              type="submit" 
-              className="gradient-primary text-white shadow-glow" 
-              disabled={uploading || !limits.canCreatePromotion}
-            >
-              {uploading ? "Création en cours..." : "Créer la promotion"}
-            </Button>
-          </div>
-        </form>
+        {isStore ? renderStoreForm() : renderFullForm()}
       </DialogContent>
     </Dialog>
   );
