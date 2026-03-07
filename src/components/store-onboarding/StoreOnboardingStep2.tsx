@@ -153,6 +153,15 @@ export function StoreOnboardingStep2({ storeId, onComplete }: Props) {
         Continuer
         <ArrowRight className="ml-2 h-4 w-4" />
       </Button>
+
+      {!facebookConnected && (
+        <button
+          onClick={onComplete}
+          className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
+        >
+          Passer cette étape
+        </button>
+      )}
     </div>
   );
 }
