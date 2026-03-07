@@ -53,7 +53,7 @@ export async function verifyOAuthState(
   const valid = await crypto.subtle.verify(
     'HMAC',
     key,
-    hexToBuffer(parsed.sig),
+    hexToBuffer(parsed.sig) as ArrayBuffer,
     encoder.encode(parsed.data),
   );
   if (!valid) throw new Error('Invalid OAuth state signature');
