@@ -42,7 +42,7 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
   );
   const [promoImage, setPromoImage] = useState<File | null>(null);
   const [promoImagePreview, setPromoImagePreview] = useState<string | null>(null);
-
+  const [savedAsDraft, setSavedAsDraft] = useState(false);
   useEffect(() => {
     loadCentralPromos();
   }, []);
@@ -115,7 +115,7 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
     }
   };
 
-  const handleCreatePromo = async () => {
+  const handleCreatePromo = async (publishNow: boolean) => {
     if (!title.trim()) {
       toast.error("Le titre de la promotion est requis");
       return;
@@ -140,7 +140,7 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
         }
       }
 
-      const { error } = await supabase.from("promotions").insert({
+      const { data: newPromo, error } = await supabase.from("promotions").insert({
         title: title.trim(),
         description: description.trim() || null,
         image_url: imageUrl,
@@ -148,14 +148,39 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
         store_id: storeId,
         start_date: new Date(startDate).toISOString(),
         end_date: new Date(endDate).toISOString(),
-        status: "active",
+        status: publishNow ? "active" : "draft",
         attributes: {
           price_before: priceBefore || null,
           price_after: priceAfter || null,
         },
-      });
+      }).select("id").single();
 
       if (error) throw error;
+
+      if (publishNow && newPromo) {
+        // Trigger auto-publish to Facebook
+        try {
+          const { data: connections } = await supabase
+            .from("social_connections")
+            .select("platform, is_connected")
+            .eq("store_id", storeId)
+            .eq("is_connected", true)
+            .eq("platform", "facebook");
+
+          if (connections && connections.length > 0) {
+            await supabase.functions.invoke("publish-social-reel", {
+              body: { promotionId: newPromo.id, storeId, platforms: ["facebook"] },
+            });
+          }
+        } catch (pubError) {
+          console.error("Auto-publish error during onboarding:", pubError);
+          // Don't block onboarding if publish fails
+        }
+      }
+
+      if (!publishNow) {
+        setSavedAsDraft(true);
+      }
       setSuccess(true);
     } catch (error: any) {
       toast.error(error.message || "Erreur lors de la création");
@@ -181,10 +206,14 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
         </div>
         <div className="space-y-2">
           <h2 className="text-2xl font-bold text-foreground">
-            Votre promotion est en ligne !
+            {savedAsDraft
+              ? "Votre promotion a été enregistrée"
+              : "Votre promotion est en ligne !"}
           </h2>
           <p className="text-muted-foreground">
-            Félicitations, votre première promotion a été publiée avec succès.
+            {savedAsDraft
+              ? "Vous pourrez la publier depuis Mes Promotions quand vous le souhaitez."
+              : "Félicitations, votre première promotion a été publiée avec succès."}
           </p>
         </div>
         <Button onClick={onComplete} size="lg" className="h-12 px-8">
@@ -343,13 +372,27 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
             />
           </div>
 
+          <p className="text-xs text-muted-foreground text-center leading-relaxed">
+            La publication enverra automatiquement votre promotion sur votre page Facebook. Vous pourrez modifier ou supprimer la publication à tout moment.
+          </p>
+
           <Button
-            onClick={handleCreatePromo}
+            onClick={() => handleCreatePromo(true)}
             disabled={submitting}
             className="w-full h-12"
             size="lg"
           >
-            {submitting ? "Publication..." : "Publier ma première promo"}
+            {submitting ? "Publication..." : "Publier maintenant sur Facebook"}
+          </Button>
+
+          <Button
+            onClick={() => handleCreatePromo(false)}
+            disabled={submitting}
+            variant="outline"
+            className="w-full h-12"
+            size="lg"
+          >
+            Enregistrer et publier plus tard
           </Button>
         </div>
       )}
