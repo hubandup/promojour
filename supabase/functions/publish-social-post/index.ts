@@ -90,8 +90,8 @@ serve(async (req) => {
     }
 
     // Build PromoJour link
-    const baseUrl = Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovableproject.com') || '';
-    const promoUrl = `${baseUrl}/magasin/${storeId}/${promotionId}`;
+    const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://www.promojour.fr';
+    const promoUrl = `${frontendUrl}/magasin/${storeId}/${promotionId}`;
 
     // Build caption/message
     const message = `${promotion.title}\n\n${promotion.description || ''}\n\n🔗 Découvrez cette offre : ${promoUrl}`;
