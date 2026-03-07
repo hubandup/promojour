@@ -75,15 +75,7 @@ const Auth = () => {
         navigate("/choose-account-type");
       } else if (data.user && !data.session) {
         // User created but needs email confirmation
-        // Send welcome email anyway
-        const fn2 = firstName || `${firstName} ${lastName}`.trim();
-        try {
-          await sendWelcomeEmail(email, fn2);
-          console.log("[AUTH] Welcome email sent to:", email);
-        } catch (emailError) {
-          console.error("[AUTH] Failed to send welcome email:", emailError);
-        }
-        
+        // Welcome email will be sent after email confirmation when user has a session
         toast.success("Compte créé ! Vérifiez votre email pour confirmer.", {
           duration: 5000
         });
