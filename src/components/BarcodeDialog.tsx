@@ -15,9 +15,12 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
   const barcodeRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (open && barcodeRef.current && eanCode) {
+    if (!open || !eanCode) return;
+
+    // Wait for canvas to be mounted in the DOM
+    const timer = requestAnimationFrame(() => {
+      if (!barcodeRef.current) return;
       try {
-        // Format to 12 digits for EAN13
         let formattedCode = eanCode.replace(/\D/g, '');
         
         if (formattedCode.length < 12) {
@@ -26,7 +29,6 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
           formattedCode = formattedCode.substring(0, 12);
         }
 
-        // Use bwip-js for better mobile compatibility
         bwipjs.toCanvas(barcodeRef.current, {
           bcid: 'ean13',
           text: formattedCode,
@@ -37,11 +39,13 @@ export function BarcodeDialog({ open, onOpenChange, eanCode, promotionTitle }: B
           backgroundcolor: 'ffffff',
         });
         
-        console.log("Code-barre généré avec succès");
+        console.log("Code-barre généré avec succès pour:", formattedCode);
       } catch (error) {
         console.error("Erreur lors de la génération du code-barre:", error);
       }
-    }
+    });
+
+    return () => cancelAnimationFrame(timer);
   }, [open, eanCode]);
 
   return (
