@@ -25,8 +25,9 @@ No test suite is configured. There is no `test` script.
 
 For Supabase Edge Functions, deploy via the Supabase CLI:
 ```bash
-supabase functions deploy <function-name>
-supabase db push   # apply pending migrations
+npx supabase login
+npx supabase functions deploy <function-name> --project-ref rrcrfwhblesarezabsfo
+npx supabase db push --project-ref rrcrfwhblesarezabsfo
 ```
 
 ## Architecture Overview
@@ -56,13 +57,24 @@ All authenticated app routes are wrapped in `<ProtectedRoute>` (checks Supabase 
 - `get_user_organization(auth.uid())` — returns the org ID for the current user
 - `has_role(auth.uid(), 'admin'::app_role)` — checks user role
 
-**Edge Functions** (`supabase/functions/`): 21 Deno functions. All use a shared CORS helper:
+**Edge Functions** (`supabase/functions/`): 21 Deno functions. Shared helpers in `_shared/`:
+- `_shared/cors.ts` — `getCorsHeaders(req)` restricts `Access-Control-Allow-Origin` to the whitelist; always call inside `serve()`, never at module level
+- `_shared/hmac.ts` — `signOAuthState` / `verifyOAuthState` for CSRF-safe OAuth state parameters (requires `OAUTH_STATE_SECRET` env var)
+
 ```typescript
 import { getCorsHeaders } from '../_shared/cors.ts';
-// Inside serve():
-const corsHeaders = getCorsHeaders(req);
+serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);  // must be first, inside serve()
+  ...
+});
 ```
+
 Functions with `verify_jwt = false` in `supabase/config.toml`: OAuth init/callback functions, `stripe-webhook`, `distribute-campaign-promotions`, `check-promotion-alerts`. All others require a valid Supabase JWT.
+
+**Cron-only functions** (`distribute-campaign-promotions`, `check-promotion-alerts`) authenticate via `CRON_SECRET` env var — callers must send `Authorization: Bearer <CRON_SECRET>`. Never use `SUPABASE_SERVICE_ROLE_KEY` as a bearer token.
+
+**Required env vars** (set in Supabase dashboard → Settings → Edge Functions → Secrets):
+`CRON_SECRET`, `OAUTH_STATE_SECRET`, `STRIPE_SECRET_KEY`, `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `BREVO_API_KEY`
 
 **Migrations**: `supabase/migrations/` — 41+ files. Always create new migration files; never edit existing ones.
 
@@ -98,5 +110,8 @@ Routes `/magasin/:storeId` and `/enseigne/magasin/:storeId` render `StoreReels` 
 - **Supabase imports**: always `import { supabase } from "@/integrations/supabase/client"`
 - **Toast notifications**: use `sonner` (`import { toast } from "sonner"`) for new code; legacy code uses the shadcn `useToast` hook
 - **Permissions check order**: check `permissions.loading` before rendering gated UI to avoid flicker
-- **New Edge Functions**: must add an entry to `supabase/config.toml` with `verify_jwt`; import CORS from `../_shared/cors.ts`
+- **New Edge Functions**: must add an entry to `supabase/config.toml` with `verify_jwt`; import CORS from `../_shared/cors.ts`; define `const corsHeaders = getCorsHeaders(req)` **inside** `serve()`, not at module level
 - **New migrations**: filename format `YYYYMMDDHHMMSS_<slug>.sql`; never modify existing migration files
+- **OAuth flows**: always sign state with `signOAuthState` from `_shared/hmac.ts`; never use plain `btoa()`
+- **Redirect URLs**: never trust `req.headers.get("origin")` directly — validate against the `ALLOWED_ORIGINS` whitelist before use
+- **Brevo templates**: allowed template IDs are `52` (welcome) and `53` (alert); update `ALLOWED_TEMPLATE_IDS` in `send-email` when adding new ones

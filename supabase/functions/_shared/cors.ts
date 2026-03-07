@@ -1,5 +1,7 @@
 const ALLOWED_ORIGINS = [
   'https://promojour.lovable.app',
+  'https://www.promojour.fr',
+  'https://promojour.fr',
   'http://localhost:5173',
   'http://localhost:3000',
 ];
