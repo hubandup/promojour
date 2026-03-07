@@ -62,23 +62,9 @@ const Auth = () => {
         throw error;
       }
 
-      if (data.user && data.session) {
-        toast.success("Compte créé avec succès !");
-        
-        const fn = firstName || `${firstName} ${lastName}`.trim();
-        try {
-          await sendWelcomeEmail(email, fn);
-        } catch (emailError) {
-          console.error("[AUTH] Failed to send welcome email:", emailError);
-        }
-        
-        navigate("/choose-account-type");
-      } else if (data.user && !data.session) {
-        // User created but needs email confirmation
-        // Welcome email will be sent after email confirmation when user has a session
-        toast.success("Compte créé ! Vérifiez votre email pour confirmer.", {
-          duration: 5000
-        });
+      if (data.user) {
+        // Email confirmation required - redirect to verification screen
+        navigate(`/verify-email?email=${encodeURIComponent(email)}`);
       } else {
         // User already exists (Supabase returns empty user/session for security)
         toast.error("Cet email est déjà utilisé. Veuillez vous connecter.", {
@@ -108,7 +94,13 @@ const Auth = () => {
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes("Email not confirmed")) {
+          navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+          return;
+        }
+        throw error;
+      }
 
       toast.success("Connexion réussie !");
       navigate("/dashboard");
