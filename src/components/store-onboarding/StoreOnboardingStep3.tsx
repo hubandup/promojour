@@ -372,16 +372,27 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
             />
           </div>
 
+          <p className="text-xs text-muted-foreground text-center leading-relaxed">
+            La publication enverra automatiquement votre promotion sur votre page Facebook. Vous pourrez modifier ou supprimer la publication à tout moment.
+          </p>
+
           <Button
-            onClick={handleCreatePromo}
+            onClick={() => handleCreatePromo(true)}
             disabled={submitting}
             className="w-full h-12"
             size="lg"
           >
-            {submitting ? "Publication..." : "Publier ma première promo"}
+            {submitting ? "Publication..." : "Publier maintenant sur Facebook"}
           </Button>
-        </div>
-      )}
-    </div>
+
+          <Button
+            onClick={() => handleCreatePromo(false)}
+            disabled={submitting}
+            variant="outline"
+            className="w-full h-12"
+            size="lg"
+          >
+            Enregistrer et publier plus tard
+          </Button>
   );
 }
