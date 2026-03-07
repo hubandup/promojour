@@ -61,14 +61,18 @@ const PromotionDetail = () => {
   });
 
   const handlePublishReel = async (storeId: string, storeName: string) => {
-    if (!promotion?.video_url) {
-      toast.error("Cette promotion n'a pas de vidéo pour un Reel");
+    if (!promotion?.video_url && !promotion?.image_url) {
+      toast.error("Cette promotion n'a pas de média à publier");
       return;
     }
     
     setPublishing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('publish-social-reel', {
+      // Choose edge function based on media type
+      const hasVideo = !!promotion?.video_url;
+      const edgeFunction = hasVideo ? 'publish-social-reel' : 'publish-social-post';
+      
+      const { data, error } = await supabase.functions.invoke(edgeFunction, {
         body: {
           promotionId: id,
           storeId: storeId,
@@ -81,7 +85,7 @@ const PromotionDetail = () => {
       if (data?.success) {
         const fbResult = data.results?.find((r: any) => r.platform === 'facebook');
         if (fbResult?.success) {
-          toast.success(`Reel publié sur Facebook via ${storeName}`);
+          toast.success(`${hasVideo ? 'Reel' : 'Post'} publié sur Facebook via ${storeName}`);
         } else {
           toast.error(fbResult?.error || "Échec de la publication");
         }
