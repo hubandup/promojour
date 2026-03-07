@@ -42,7 +42,7 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
   );
   const [promoImage, setPromoImage] = useState<File | null>(null);
   const [promoImagePreview, setPromoImagePreview] = useState<string | null>(null);
-
+  const [savedAsDraft, setSavedAsDraft] = useState(false);
   useEffect(() => {
     loadCentralPromos();
   }, []);
