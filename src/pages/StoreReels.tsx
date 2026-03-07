@@ -66,7 +66,7 @@ export default function StoreReels() {
     };
 
     fetchData();
-  }, [storeId]);
+  }, [storeId, promotionId]);
 
   if (loading) {
     return (
