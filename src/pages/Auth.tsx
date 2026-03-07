@@ -94,7 +94,13 @@ const Auth = () => {
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes("Email not confirmed")) {
+          navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+          return;
+        }
+        throw error;
+      }
 
       toast.success("Connexion réussie !");
       navigate("/dashboard");
