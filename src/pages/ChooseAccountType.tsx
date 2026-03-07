@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logoPromojour from "@/assets/logo-promojour.svg";
@@ -115,7 +115,7 @@ export default function ChooseAccountType() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <div className="px-6 pt-6 pb-2">
-        <img src={logoPromojour} alt="PromoJour" className="h-9" />
+        <Link to="/"><img src={logoPromojour} alt="PromoJour" className="h-9" /></Link>
       </div>
 
       {/* Content */}
