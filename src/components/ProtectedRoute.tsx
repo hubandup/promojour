@@ -32,6 +32,13 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Re-check onboarding state when route changes (e.g. after account type selection or onboarding completion)
+  useEffect(() => {
+    if (user) {
+      checkOnboarding(user.id);
+    }
+  }, [location.pathname]);
+
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     setUser(session?.user ?? null);
