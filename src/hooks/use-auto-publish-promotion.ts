@@ -18,15 +18,14 @@ export function useAutoPublishPromotion() {
         return;
       }
 
-      // Si aucune publication automatique n'est activée, on arrête
       if (!settings?.auto_publish_facebook && !settings?.auto_publish_instagram) {
         return;
       }
 
-      // Récupérer la promotion pour vérifier qu'elle a une vidéo
+      // Récupérer la promotion pour vérifier le type de média
       const { data: promotion, error: promoError } = await supabase
         .from('promotions')
-        .select('video_url')
+        .select('video_url, image_url')
         .eq('id', promotionId)
         .single();
 
@@ -35,9 +34,13 @@ export function useAutoPublishPromotion() {
         return;
       }
 
-      // Si pas de vidéo, on ne peut pas publier
-      if (!promotion?.video_url) {
-        console.log('Promotion has no video, skipping auto-publish');
+      // Déterminer quelle Edge Function appeler selon le type de média
+      const hasVideo = !!promotion?.video_url;
+      const hasImage = !!promotion?.image_url;
+
+      // Si ni vidéo ni image, on ne peut pas publier
+      if (!hasVideo && !hasImage) {
+        console.log('Promotion has no media, skipping auto-publish');
         return;
       }
 
@@ -53,7 +56,6 @@ export function useAutoPublishPromotion() {
         return;
       }
 
-      // Construire la liste des plateformes à publier
       const platforms = [];
       const hasActiveFacebook = connections?.some(c => c.platform === 'facebook');
       const hasActiveInstagram = connections?.some(c => c.platform === 'instagram');
@@ -65,16 +67,16 @@ export function useAutoPublishPromotion() {
         platforms.push('instagram');
       }
 
-      // Si aucune plateforme disponible, on arrête
       if (platforms.length === 0) {
         console.log('No active social connections for auto-publish');
         return;
       }
 
-      // Appeler la fonction de publication
-      console.log(`Auto-publishing to: ${platforms.join(', ')}`);
+      // Appeler la bonne Edge Function selon le type de média
+      const edgeFunction = hasVideo ? 'publish-social-reel' : 'publish-social-post';
+      console.log(`Auto-publishing via ${edgeFunction} to: ${platforms.join(', ')}`);
       
-      const { data, error } = await supabase.functions.invoke('publish-social-reel', {
+      const { data, error } = await supabase.functions.invoke(edgeFunction, {
         body: { 
           promotionId, 
           storeId,
@@ -92,7 +94,6 @@ export function useAutoPublishPromotion() {
         return;
       }
 
-      // Afficher un toast de succès avec les résultats
       const successPlatforms = data?.results
         ?.filter((r: any) => r.success)
         .map((r: any) => r.platform) || [];
@@ -106,7 +107,6 @@ export function useAutoPublishPromotion() {
 
     } catch (error) {
       console.error('Error in auto-publish:', error);
-      // On ne bloque pas l'activation de la promotion si la publication échoue
     }
   };
 
