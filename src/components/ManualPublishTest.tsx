@@ -68,10 +68,10 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
     const selectedPromo = promotions?.find(p => p.id === selectedPromoId);
     console.log('[ManualPublishTest] selectedPromo:', selectedPromo);
     
-    if (!selectedPromo?.video_url) {
+    if (!selectedPromo?.video_url && !selectedPromo?.image_url) {
       toast({
-        title: "Vidéo requise",
-        description: "Seules les promotions avec vidéo peuvent être publiées en Reel sur Facebook",
+        title: "Média requis",
+        description: "La promotion doit contenir une image ou une vidéo pour être publiée",
         variant: "destructive",
       });
       return;
@@ -80,8 +80,11 @@ export function ManualPublishTest({ storeId }: ManualPublishTestProps) {
     setPublishing(true);
 
     try {
-      console.log('[ManualPublishTest] Calling publish-social-reel...');
-      const { data, error } = await supabase.functions.invoke('publish-social-reel', {
+      // Choose edge function based on media type
+      const hasVideo = !!selectedPromo?.video_url;
+      const edgeFunction = hasVideo ? 'publish-social-reel' : 'publish-social-post';
+      console.log(`[ManualPublishTest] Calling ${edgeFunction}...`);
+      const { data, error } = await supabase.functions.invoke(edgeFunction, {
         body: {
           promotionId: selectedPromoId,
           storeId: storeId,
