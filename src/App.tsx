@@ -76,6 +76,7 @@ const App = () => (
             <Route path="/store/:storeId/reels" element={<StoreReels />} />
             <Route path="/enseigne/magasin/:storeId" element={<StoreReels />} />
             <Route path="/magasin/:storeId" element={<StoreReels />} />
+            <Route path="/magasin/:storeId/:promotionId" element={<StoreReels />} />
             <Route path="/enseigne/magasin/:storeId/magasin" element={<StoreFrontend />} />
             <Route path="/magasin/:storeId/magasin" element={<StoreFrontend />} />
             <Route
