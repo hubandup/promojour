@@ -168,7 +168,10 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
             .eq("platform", "facebook");
 
           if (connections && connections.length > 0) {
-            await supabase.functions.invoke("publish-social-reel", {
+            // Choose edge function based on media type: video → reel, image → post
+            const hasVideo = promoImage && promoImage.type.startsWith("video/");
+            const edgeFunction = hasVideo ? "publish-social-reel" : "publish-social-post";
+            await supabase.functions.invoke(edgeFunction, {
               body: { promotionId: newPromo.id, storeId, platforms: ["facebook"] },
             });
           }
