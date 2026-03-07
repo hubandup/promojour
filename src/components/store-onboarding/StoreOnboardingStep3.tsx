@@ -394,5 +394,8 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
           >
             Enregistrer et publier plus tard
           </Button>
+        </div>
+      )}
+    </div>
   );
 }
