@@ -8,7 +8,7 @@ import { Promotion } from "@/hooks/use-promotions";
 import { Helmet } from "react-helmet";
 
 export default function StoreReels() {
-  const { storeId } = useParams<{ storeId: string }>();
+  const { storeId, promotionId } = useParams<{ storeId: string; promotionId?: string }>();
   const [store, setStore] = useState<Store | null>(null);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,17 @@ export default function StoreReels() {
         console.log('Promotions query result:', { promoData, promoError, count: promoData?.length });
 
         if (promoError) throw promoError;
-        setPromotions(promoData || []);
+        
+        // If a specific promotionId is provided, reorder to show it first
+        let orderedPromos = promoData || [];
+        if (promotionId && orderedPromos.length > 0) {
+          const targetIndex = orderedPromos.findIndex(p => p.id === promotionId);
+          if (targetIndex > 0) {
+            const [target] = orderedPromos.splice(targetIndex, 1);
+            orderedPromos = [target, ...orderedPromos];
+          }
+        }
+        setPromotions(orderedPromos);
       } catch (error) {
         console.error("Error fetching store reels data:", error);
       } finally {
