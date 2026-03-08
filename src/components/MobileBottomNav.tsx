@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 export function MobileBottomNav() {
   const { isStoreManager, isFree, isStore, isSuperAdmin } = useUserData();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { stores } = useStores();
   const { toggleSidebar } = useSidebar();
 

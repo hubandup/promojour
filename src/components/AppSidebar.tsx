@@ -33,17 +33,19 @@ export function AppSidebar() {
   const { stores, loading: storesLoading } = useStores();
   const { canViewCampaigns, canEditOrgSettings } = usePermissions();
 
+  // Store and Free users get simplified view (free treated as store for Meta review)
+  const isSimplifiedView = (isStore || isFree) && !isSuperAdmin;
+
   // Déterminer si on affiche "Mon magasin" ou "Mes Magasins"
   const showSingleStore = isStoreManager || (isFree && stores.length === 1);
-  const storeUrl = isFree && stores.length === 1 ? "/mon-magasin-free" : 
-                   isStoreManager ? "/mon-magasin" : 
-                   "/stores";
+  const storeUrl = isStoreManager ? "/mon-magasin" : "/stores";
 
   // Build menu items based on organization type
-  const menuItems = (isStore && !isSuperAdmin) ? [
+  const menuItems = isSimplifiedView ? [
     { title: "Mon Magasin", url: "/my-store", icon: Store },
     { title: "Mes Promotions", url: "/promotions", icon: Tag },
     { title: "Mes Stats", url: "/stats", icon: BarChart3 },
+    { title: "Réglages", url: "/settings", icon: Settings },
   ] : [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Promotions", url: "/promotions", icon: Tag },
@@ -56,9 +58,9 @@ export function AppSidebar() {
     },
   ];
 
-  // Settings items - for store type, show only Réglages; otherwise filter based on permissions
-  const filteredSettingsItems = (isStore && !isSuperAdmin)
-    ? [{ title: "Réglages", url: "/settings", icon: Settings }]
+  // Settings items - for simplified view, already included in main menu; otherwise filter based on permissions
+  const filteredSettingsItems = isSimplifiedView
+    ? []
     : canEditOrgSettings 
       ? settingsItems 
       : settingsItems.filter(item => item.url !== "/settings");
