@@ -62,10 +62,10 @@ const Settings = () => {
   useEffect(() => {
     fetchOrganization();
     fetchUserPreferences();
-    if (isStore) {
+    if (isSimplifiedView) {
       fetchAccountData();
     }
-  }, [isStore]);
+  }, [isSimplifiedView]);
 
   // Load store record for store users
   useEffect(() => {
