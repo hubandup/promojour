@@ -23,10 +23,23 @@ const Auth = () => {
   const [activeTab, setActiveTab] = useState("signin");
   const { sendWelcomeEmail } = useSendEmail();
 
+  const [emailVerified, setEmailVerified] = useState(false);
+
   useEffect(() => {
     const tab = searchParams.get("tab");
     if (tab === "signup") {
       setActiveTab("signup");
+    }
+
+    // Detect email verification return (Supabase redirects with hash containing type=signup)
+    const hash = window.location.hash;
+    if (hash.includes("type=signup") || hash.includes("type=email_change")) {
+      setEmailVerified(true);
+      setActiveTab("signin");
+      // Try to extract email from hash params
+      const hashParams = new URLSearchParams(hash.replace("#", ""));
+      // Supabase may not include email in hash, but try access_token decode
+      // Fallback: leave email as-is if already filled
     }
   }, [searchParams]);
 

@@ -45,20 +45,31 @@ export function StoreOnboardingStep2({ storeId, onComplete }: Props) {
     }
   };
 
+  const [redirecting, setRedirecting] = useState(false);
+
+  const isMobile = () => window.innerWidth < 768;
+
   const handleFacebookConnect = async () => {
     setConnecting(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { toast.error("Vous devez être connecté"); return; }
 
-      // Use the GET endpoint directly to avoid CORS/iframe issues with functions.invoke
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const authUrl = `${supabaseUrl}/functions/v1/facebook-oauth-init?store_id=${encodeURIComponent(storeId)}&platform=facebook`;
 
-      // Set flag so OAuth callback knows to return to wizard
+      // Set flags so OAuth callback knows to return to wizard
       localStorage.setItem("onboarding_in_progress", "true");
+      localStorage.setItem("onboarding_step", "2");
 
-      // Open in new tab and poll for connection
+      if (isMobile()) {
+        // Mobile: full-page redirect (popups are blocked on most mobile browsers)
+        setRedirecting(true);
+        window.location.href = authUrl;
+        return; // page will unload
+      }
+
+      // Desktop: open in new tab and poll for connection
       window.open(authUrl, "_blank");
       toast.info("Connectez-vous à Facebook dans le nouvel onglet");
       
@@ -74,13 +85,13 @@ export function StoreOnboardingStep2({ storeId, onComplete }: Props) {
           clearInterval(interval);
           setFacebookConnected(true);
           setFacebookPageName(conn.account_name);
+          setConnecting(false);
           toast.success("Facebook connecté avec succès !");
         }
       }, 3000);
       setTimeout(() => clearInterval(interval), 120000);
     } catch (error: any) {
       toast.error(error.message || "Erreur lors de la connexion Facebook");
-    } finally {
       setConnecting(false);
     }
   };

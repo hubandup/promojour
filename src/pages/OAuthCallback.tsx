@@ -16,6 +16,7 @@ export default function OAuthCallback() {
     // PRIORITY: If onboarding is in progress, always go back to wizard
     if (onboardingInProgress) {
       localStorage.removeItem("onboarding_in_progress");
+      localStorage.removeItem("onboarding_step");
 
       // If opened as popup/tab, notify parent and close
       if (window.opener) {
