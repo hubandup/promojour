@@ -427,9 +427,9 @@ const Settings = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Nom du magasin</Label>
-                    <Input
-                      value={isStore ? storeName : orgName}
-                      onChange={(e) => isStore ? setStoreName(e.target.value) : setOrgName(e.target.value)}
+                     <Input
+                       value={isSimplifiedView ? storeName : orgName}
+                       onChange={(e) => isSimplifiedView ? setStoreName(e.target.value) : setOrgName(e.target.value)}
                       className="rounded-xl"
                       placeholder="Ex: Ma Boutique"
                     />
