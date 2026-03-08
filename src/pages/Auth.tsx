@@ -248,8 +248,9 @@ const Auth = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
         <Card className="w-full max-w-md shadow-xl">
-          <CardContent className="py-10 text-center text-muted-foreground">
-            Finalisation de la vérification en cours...
+          <CardContent className="py-10 text-center space-y-3">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+            <p className="text-muted-foreground">Finalisation de la vérification en cours...</p>
           </CardContent>
         </Card>
       </div>
