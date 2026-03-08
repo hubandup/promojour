@@ -20,29 +20,38 @@ export default function StoreReels() {
       try {
         console.log('Fetching store with ID:', storeId);
         
-        // Fetch store info
-        const { data: storeData, error: storeError } = await supabase
-          .from("stores_public")
-          .select("*")
-          .eq("id", storeId)
-          .single();
+        // Use SECURITY DEFINER function to bypass RLS for anonymous users
+        const { data: storeRows, error: storeError } = await supabase
+          .rpc("get_public_store_data", { store_id: storeId });
 
-        console.log('Store query result:', { storeData, storeError });
+        console.log('Store query result:', { storeRows, storeError });
 
         if (storeError) throw storeError;
-        // stores_public view doesn't include phone/email for privacy
-        setStore({ ...storeData, phone: null, email: null });
+        if (!storeRows || storeRows.length === 0) throw new Error('Store not found');
+        
+        const storeData = storeRows[0];
+        setStore({ ...storeData, phone: null, email: null, organization_id: storeData.id } as any);
 
-        // Fetch active promotions for this store
-        // Include ALL active promotions from the organization
-        console.log('Fetching promotions for organization:', storeData.organization_id);
+        // We need the organization_id - fetch it via a separate approach
+        // Since get_public_store_data doesn't return org_id, query stores_public as fallback
+        // But first let's get promotions using the store's org
+        const { data: storePublicData } = await supabase
+          .from("stores_public")
+          .select("organization_id")
+          .eq("id", storeId)
+          .single();
+        
+        const orgId = storePublicData?.organization_id;
+        if (!orgId) throw new Error('Organization not found');
+
+        // Update store with correct org_id
+        setStore({ ...storeData, phone: null, email: null, organization_id: orgId } as any);
+
+        // Use SECURITY DEFINER function to fetch active promotions
+        console.log('Fetching promotions for organization:', orgId);
         
         const { data: promoData, error: promoError } = await supabase
-          .from("promotions")
-          .select("*")
-          .eq("status", "active")
-          .eq("organization_id", storeData.organization_id)
-          .order("created_at", { ascending: false });
+          .rpc("get_public_promotions_by_org", { org_id: orgId });
 
         console.log('Promotions query result:', { promoData, promoError, count: promoData?.length });
 
