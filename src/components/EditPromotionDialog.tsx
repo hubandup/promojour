@@ -724,19 +724,11 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
         <h3 className="text-lg font-semibold">Mécanique promotionnelle</h3>
         
         <div className="space-y-2">
-          <Label htmlFor="mechanicType">Type de mécanique *</Label>
-          <Select value={mechanicType} onValueChange={(value) => setValue("mechanicType", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionner une mécanique" />
-            </SelectTrigger>
-            <SelectContent>
-              {mechanics.map((mechanic) => (
-                <SelectItem key={mechanic.id} value={mechanic.code}>
-                  {mechanic.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label>Type de mécanique *</Label>
+          <StoreMechanicSelector
+            value={mechanicType}
+            onChange={(value) => setValue("mechanicType", value)}
+          />
           {errors.mechanicType && <p className="text-sm text-destructive">{errors.mechanicType.message}</p>}
         </div>
 
@@ -754,15 +746,29 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
         )}
 
         {mechanicType === "percentage_discount" && (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="originalPrice">Prix original (€) *</Label>
-              <Input id="originalPrice" type="number" step="0.01" placeholder="99.99" {...register("originalPrice")} />
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="originalPrice">Prix original (€) *</Label>
+                <Input id="originalPrice" type="number" step="0.01" placeholder="99.99" {...register("originalPrice")} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="discountPercentage">Pourcentage de réduction (%) *</Label>
+                <Input id="discountPercentage" type="number" placeholder="30" {...register("discountPercentage")} />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="discountPercentage">Pourcentage de réduction (%) *</Label>
-              <Input id="discountPercentage" type="number" placeholder="30" {...register("discountPercentage")} />
-            </div>
+            {originalPrice && discountPercentage && discountedPrice && (
+              <p className="text-sm text-muted-foreground">
+                Prix remisé calculé : <strong>{discountedPrice} €</strong>
+              </p>
+            )}
+          </>
+        )}
+
+        {mechanicType === "bundle_offer" && (
+          <div className="space-y-2">
+            <Label htmlFor="bundleDescription">Description de l'offre</Label>
+            <Input id="bundleDescription" placeholder="Ex: 2 achetés = 1 offert" {...register("bundleDescription")} />
           </div>
         )}
       </div>
