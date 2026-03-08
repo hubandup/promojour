@@ -212,6 +212,38 @@ const Promotions = () => {
     }
   };
 
+  const handlePublishPromotion = async (promo: any) => {
+    const storeId = promo.store_id || defaultStoreId;
+    if (!storeId) {
+      toast({
+        title: "Erreur",
+        description: "Aucun magasin associé à cette promotion",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if store has Facebook connected
+    const { data: connections } = await supabase
+      .from('social_connections')
+      .select('platform, is_connected')
+      .eq('store_id', storeId)
+      .eq('is_connected', true)
+      .eq('platform', 'facebook');
+
+    if (!connections || connections.length === 0) {
+      toast({
+        title: "Facebook non connecté",
+        description: "Connectez votre page Facebook depuis les paramètres de votre magasin pour publier.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    await publishPromotion(promo.id, storeId, ['facebook']);
+    await refetch();
+  };
+
   // Filtrer les promotions
   const filteredPromotions = promotions.filter((promo) => {
     const matchesSearch = promo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
