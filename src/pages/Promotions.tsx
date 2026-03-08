@@ -75,6 +75,10 @@ const Promotions = () => {
   const { stores, loading: storesLoading } = useStores();
   const { campaigns, loading: campaignsLoading } = useCampaigns();
   const { mechanics, isLoading: mechanicsLoading } = usePromotionalMechanics();
+  const { publishPromotion, publishing } = usePublishPromotion();
+
+  // For store/free users, get the first store's ID for publishing
+  const defaultStoreId = isSimplifiedView && stores.length > 0 ? stores[0].id : null;
 
   // Précharger uniquement les 5 premiers codes-barres visibles
   const eanCodes = promotions
