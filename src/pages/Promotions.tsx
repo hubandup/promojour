@@ -248,7 +248,7 @@ const Promotions = () => {
               {selectedIds.size > 0 && ` · ${selectedIds.size} sélectionnée(s)`}
             </p>
           </div>
-          {!isStore && <ProfileBadge variant="compact" />}
+          {!isSimplifiedView && <ProfileBadge variant="compact" />}
         </div>
         <div className="flex flex-wrap gap-2">
           {!isStore && (
