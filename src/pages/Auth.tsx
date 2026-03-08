@@ -15,6 +15,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const [processingVerificationReturn, setProcessingVerificationReturn] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -25,22 +26,108 @@ const Auth = () => {
 
   const [emailVerified, setEmailVerified] = useState(false);
 
-  useEffect(() => {
-    const tab = searchParams.get("tab");
-    if (tab === "signup") {
-      setActiveTab("signup");
+  const decodeEmailFromToken = (token: string | null) => {
+    if (!token) return null;
+    try {
+      const payload = token.split(".")[1];
+      if (!payload) return null;
+      const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+      const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+      const json = JSON.parse(atob(padded));
+      return typeof json?.email === "string" ? json.email : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const redirectAfterLogin = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      navigate("/auth", { replace: true });
+      return;
     }
 
-    // Detect email verification return (Supabase redirects with hash containing type=signup)
-    const hash = window.location.hash;
-    if (hash.includes("type=signup") || hash.includes("type=email_change")) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("organization_id")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.organization_id) {
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("account_type, onboarding_completed")
+      .eq("id", profile.organization_id)
+      .single();
+
+    // TEMP: disabled for Meta — force onboarding flow for store/free orgs not completed
+    if ((org?.account_type === "store" || org?.account_type === "free") && !org?.onboarding_completed) {
+      navigate("/store-onboarding", { replace: true });
+      return;
+    }
+
+    navigate("/dashboard", { replace: true });
+  };
+
+  useEffect(() => {
+    const handleVerificationReturn = async () => {
+      const tab = searchParams.get("tab");
+      if (tab === "signup") setActiveTab("signup");
+
+      const rawHash = window.location.hash.replace(/^#/, "");
+      const hashParams = new URLSearchParams(rawHash);
+      const queryAccessToken = searchParams.get("access_token");
+      const queryRefreshToken = searchParams.get("refresh_token");
+      const hashAccessToken = hashParams.get("access_token");
+      const hashRefreshToken = hashParams.get("refresh_token");
+      const typeParam = hashParams.get("type") ?? searchParams.get("type");
+
+      const hasVerificationContext =
+        typeParam === "signup" ||
+        typeParam === "email_change" ||
+        Boolean(queryAccessToken || hashAccessToken || rawHash.includes("type=signup"));
+
+      const resolvedEmail =
+        searchParams.get("email") ||
+        hashParams.get("email") ||
+        decodeEmailFromToken(queryAccessToken || hashAccessToken);
+
+      if (resolvedEmail) setEmail(resolvedEmail);
+
+      if (!hasVerificationContext) {
+        setProcessingVerificationReturn(false);
+        return;
+      }
+
       setEmailVerified(true);
       setActiveTab("signin");
-      // Try to extract email from hash params
-      const hashParams = new URLSearchParams(hash.replace("#", ""));
-      // Supabase may not include email in hash, but try access_token decode
-      // Fallback: leave email as-is if already filled
-    }
+
+      const access_token = queryAccessToken || hashAccessToken;
+      const refresh_token = queryRefreshToken || hashRefreshToken;
+
+      if (access_token && refresh_token) {
+        // TEMP: disabled for Meta — prioritize silent auto-login after email verification
+        const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+        if (!error) {
+          await redirectAfterLogin();
+          return;
+        }
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await redirectAfterLogin();
+        return;
+      }
+
+      setProcessingVerificationReturn(false);
+    };
+
+    handleVerificationReturn();
   }, [searchParams]);
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -117,7 +204,7 @@ const Auth = () => {
       }
 
       toast.success("Connexion réussie !");
-      navigate("/dashboard");
+      await redirectAfterLogin();
     } catch (error: any) {
       toast.error(error.message || "Erreur lors de la connexion");
     } finally {
@@ -145,6 +232,18 @@ const Auth = () => {
     }
   };
 
+  if (processingVerificationReturn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
+        <Card className="w-full max-w-md shadow-xl">
+          <CardContent className="py-10 text-center text-muted-foreground">
+            Finalisation de la vérification en cours...
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
       <Card className="w-full max-w-md shadow-xl">
@@ -169,8 +268,7 @@ const Auth = () => {
                 <div className="mb-4 p-4 rounded-lg border border-green-500/30 bg-green-500/5 flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
                   <div>
-                    <p className="font-medium text-foreground">Votre email a été vérifié avec succès !</p>
-                    <p className="text-sm text-muted-foreground">Connectez-vous pour continuer la configuration de votre magasin.</p>
+                    <p className="font-medium text-foreground">✅ Votre adresse email a été vérifiée avec succès ! Connectez-vous pour continuer la configuration de votre magasin.</p>
                   </div>
                 </div>
               )}

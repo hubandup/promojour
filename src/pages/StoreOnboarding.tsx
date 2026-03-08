@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { Check } from "lucide-react";
 import logoPromojour from "@/assets/logo-promojour.svg";
 import { StoreOnboardingStep1 } from "@/components/store-onboarding/StoreOnboardingStep1";
 import { StoreOnboardingStep2 } from "@/components/store-onboarding/StoreOnboardingStep2";
@@ -113,13 +113,24 @@ const StoreOnboarding = () => {
             const isActive = stepNum === step;
             const isDone = stepNum < step;
             return (
-              <div key={label} className="flex-1 flex flex-col items-center gap-1.5">
+              <div key={label} className="flex-1 flex flex-col items-center gap-2">
                 <div className="w-full flex items-center">
                   <div
                     className={`h-1.5 w-full rounded-full transition-colors ${
                       isDone || isActive ? "bg-primary" : "bg-muted"
                     }`}
                   />
+                </div>
+                <div
+                  className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-semibold ${
+                    isDone
+                      ? "bg-green-600 border-green-600 text-white"
+                      : isActive
+                      ? "border-primary text-primary"
+                      : "border-muted-foreground/40 text-muted-foreground"
+                  }`}
+                >
+                  {isDone ? <Check className="w-3.5 h-3.5" /> : stepNum}
                 </div>
                 <span
                   className={`text-xs font-medium transition-colors ${
