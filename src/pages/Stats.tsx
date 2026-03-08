@@ -74,7 +74,7 @@ const Stats = () => {
         )}
       </div>
 
-      {!isStore && (
+       {!isSimplifiedView && (
         <InfoCard
           icon={BarChart3}
           title="Analysez vos performances"
