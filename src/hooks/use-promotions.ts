@@ -34,13 +34,33 @@ export function usePromotions() {
 
   const fetchPromotions = async () => {
     try {
+      // Get user's organization to filter promotions
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setPromotions([]);
+        setLoading(false);
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.organization_id) {
+        setPromotions([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('promotions')
         .select('*')
+        .eq('organization_id', profile.organization_id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      console.log('Promotions fetched:', data); // Debug: vérifier les données
       setPromotions(data || []);
     } catch (error) {
       console.error('Error fetching promotions:', error);
