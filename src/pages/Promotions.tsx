@@ -83,7 +83,7 @@ const Promotions = () => {
   const loading = promotionsLoading || userLoading || storesLoading || campaignsLoading || mechanicsLoading;
 
   // Force list view for store type
-  const effectiveViewMode = isStore ? "list" : viewMode;
+  const effectiveViewMode = isSimplifiedView ? "list" : viewMode;
 
   const getMechanicName = (mechanicCode: string) => {
     const mechanic = mechanics.find(m => m.code === mechanicCode);
