@@ -130,7 +130,7 @@ const Stats = () => {
           </CardContent>
         </Card>
 
-        {!isStore && (
+        {!isSimplifiedView && (
           <Card className="glass-card border-border/50 hover:shadow-glass transition-smooth">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Portée totale</CardTitle>
