@@ -7,16 +7,15 @@ import { cn } from "@/lib/utils";
 
 export function MobileBottomNav() {
   const { isStoreManager, isFree, isStore, isSuperAdmin } = useUserData();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { stores } = useStores();
   const { toggleSidebar } = useSidebar();
 
-  const isStoreOrg = isStore && !isSuperAdmin;
+  const isSimplifiedView = (isStore || isFree) && !isSuperAdmin;
   const showSingleStore = isStoreManager || (isFree && stores.length === 1);
-  const storeUrl = isFree && stores.length === 1 ? "/mon-magasin-free" : 
-                   isStoreManager ? "/mon-magasin" : 
-                   "/stores";
+  const storeUrl = isStoreManager ? "/mon-magasin" : "/stores";
 
-  const items = isStoreOrg ? [
+  const items = isSimplifiedView ? [
     { title: "Magasin", url: "/my-store", icon: Store },
     { title: "Promos", url: "/promotions", icon: Tag },
     { title: "Stats", url: "/stats", icon: BarChart3 },

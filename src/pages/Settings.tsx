@@ -39,7 +39,8 @@ const Settings = () => {
   const { mechanics, createMechanic, updateMechanic, deleteMechanic } = usePromotionalMechanics();
   const { stores } = useStores();
   const firstStoreId = stores && stores.length > 0 ? stores[0].id : null;
-  const { isStore, profile, loading: userLoading } = useUserData();
+  const { isStore, isFree, profile, loading: userLoading } = useUserData();
+  const isSimplifiedView = isStore || isFree;
 
   // Store-specific state
   const [storeName, setStoreName] = useState("");
@@ -61,20 +62,20 @@ const Settings = () => {
   useEffect(() => {
     fetchOrganization();
     fetchUserPreferences();
-    if (isStore) {
+    if (isSimplifiedView) {
       fetchAccountData();
     }
-  }, [isStore]);
+  }, [isSimplifiedView]);
 
   // Load store record for store users
   useEffect(() => {
-    if (isStore && stores && stores.length > 0) {
+    if (isSimplifiedView && stores && stores.length > 0) {
       const s = stores[0];
       setStoreRecord(s);
       setStoreName(s.name || "");
       setStoreDescription(s.description || "");
     }
-  }, [isStore, stores]);
+  }, [isSimplifiedView, stores]);
 
   useEffect(() => {
     if (profile) {
@@ -393,7 +394,7 @@ const Settings = () => {
   }
 
   // Store-specific settings view
-  if (isStore) {
+  if (isSimplifiedView) {
     return (
       <div className="space-y-8">
         <div>
@@ -426,18 +427,18 @@ const Settings = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Nom du magasin</Label>
-                    <Input
-                      value={isStore ? storeName : orgName}
-                      onChange={(e) => isStore ? setStoreName(e.target.value) : setOrgName(e.target.value)}
+                     <Input
+                       value={isSimplifiedView ? storeName : orgName}
+                       onChange={(e) => isSimplifiedView ? setStoreName(e.target.value) : setOrgName(e.target.value)}
                       className="rounded-xl"
                       placeholder="Ex: Ma Boutique"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Description</Label>
-                    <Input
-                      value={isStore ? storeDescription : orgDescription}
-                      onChange={(e) => isStore ? setStoreDescription(e.target.value) : setOrgDescription(e.target.value)}
+                     <Input
+                       value={isSimplifiedView ? storeDescription : orgDescription}
+                       onChange={(e) => isSimplifiedView ? setStoreDescription(e.target.value) : setOrgDescription(e.target.value)}
                       className="rounded-xl"
                       placeholder="Description de votre magasin"
                     />
@@ -472,7 +473,7 @@ const Settings = () => {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button onClick={isStore ? handleSaveStore : handleSaveOrganization} className="rounded-xl">
+                  <Button onClick={isSimplifiedView ? handleSaveStore : handleSaveOrganization} className="rounded-xl">
                     Enregistrer
                   </Button>
                 </div>

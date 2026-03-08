@@ -9,7 +9,8 @@ import { useUserData } from "@/hooks/use-user-data";
 
 const Stats = () => {
   const { overview, topPromos, platformStats, loading } = useStats();
-  const { isStore } = useUserData();
+  const { isStore, isFree } = useUserData();
+  const isSimplifiedView = isStore || isFree;
 
   if (loading) {
     return (
@@ -20,9 +21,9 @@ const Stats = () => {
   }
 
   const maxReach = Math.max(...platformStats.map(s => s.reach), 1);
-  const displayedPromos = isStore ? topPromos.slice(0, 3) : topPromos;
+  const displayedPromos = isSimplifiedView ? topPromos.slice(0, 3) : topPromos;
   const hasNoData = overview.totalViews === 0 && overview.totalClicks === 0;
-  const emptyText = isStore
+  const emptyText = isSimplifiedView
     ? "Publiez votre première promotion pour voir vos statistiques ici"
     : "Aucune donnée disponible";
 
@@ -30,10 +31,10 @@ const Stats = () => {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">{isStore ? "Mes Stats" : "Statistiques"}</h1>
+          <h1 className="text-3xl font-bold">{isSimplifiedView ? "Mes Stats" : "Statistiques"}</h1>
           <p className="text-muted-foreground">Suivez les performances de vos promotions</p>
         </div>
-        {!isStore && (
+         {!isSimplifiedView && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" disabled={topPromos.length === 0 && platformStats.length === 0}>
@@ -73,7 +74,7 @@ const Stats = () => {
         )}
       </div>
 
-      {!isStore && (
+       {!isSimplifiedView && (
         <InfoCard
           icon={BarChart3}
           title="Analysez vos performances"
@@ -83,7 +84,7 @@ const Stats = () => {
       )}
 
       {/* Overview Stats */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 ${isStore ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-6`}>
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${isSimplifiedView ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-6`}>
         <Card className="glass-card border-border/50 hover:shadow-glass transition-smooth">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Impressions totales</CardTitle>
@@ -129,7 +130,7 @@ const Stats = () => {
           </CardContent>
         </Card>
 
-        {!isStore && (
+        {!isSimplifiedView && (
           <Card className="glass-card border-border/50 hover:shadow-glass transition-smooth">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Portée totale</CardTitle>
@@ -152,7 +153,7 @@ const Stats = () => {
         {/* Top Promotions */}
         <Card className="glass-card border-border/50">
           <CardHeader>
-            <CardTitle>{isStore ? "Top 3 Promotions" : "Top 5 Promotions"}</CardTitle>
+            <CardTitle>{isSimplifiedView ? "Top 3 Promotions" : "Top 5 Promotions"}</CardTitle>
             <CardDescription>Meilleures performances ce mois-ci</CardDescription>
           </CardHeader>
           <CardContent>

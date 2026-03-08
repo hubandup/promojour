@@ -17,10 +17,64 @@ export interface PromotionalMechanic {
   updated_at: string;
 }
 
+// Default mechanics available for all accounts
+const DEFAULT_MECHANICS: PromotionalMechanic[] = [
+  {
+    id: "default-price-discount",
+    organization_id: "",
+    name: "Remise de prix",
+    code: "price_discount",
+    fields: [
+      { name: "original_price", label: "Prix original (€)", type: "number" },
+      { name: "discounted_price", label: "Prix remisé (€)", type: "number" },
+    ],
+    is_active: true,
+    created_at: "",
+    updated_at: "",
+  },
+  {
+    id: "default-percentage-discount",
+    organization_id: "",
+    name: "Pourcentage",
+    code: "percentage_discount",
+    fields: [
+      { name: "original_price", label: "Prix original (€)", type: "number" },
+      { name: "percentage", label: "% de réduction", type: "number" },
+    ],
+    is_active: true,
+    created_at: "",
+    updated_at: "",
+  },
+  {
+    id: "default-bundle-offer",
+    organization_id: "",
+    name: "Offre groupée",
+    code: "bundle_offer",
+    fields: [
+      { name: "bundle_description", label: "Description de l'offre", type: "text" },
+    ],
+    is_active: true,
+    created_at: "",
+    updated_at: "",
+  },
+  {
+    id: "default-free-offer",
+    organization_id: "",
+    name: "Gratuit",
+    code: "free_offer",
+    fields: [
+      { name: "free_description", label: "Description", type: "text" },
+    ],
+    is_active: true,
+    created_at: "",
+    updated_at: "",
+  },
+];
+
 export const usePromotionalMechanics = () => {
   const queryClient = useQueryClient();
 
-  const { data: mechanics = [], isLoading } = useQuery({
+  const { data: dbMechanics = [], isLoading } = useQuery({
     queryKey: ["promotional-mechanics"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -44,6 +98,9 @@ export const usePromotionalMechanics = () => {
       return data as PromotionalMechanic[];
     },
   });
+
+  // Use DB mechanics if available, otherwise fall back to defaults
+  const mechanics = dbMechanics.length > 0 ? dbMechanics : DEFAULT_MECHANICS;
 
   const createMechanic = useMutation({
     mutationFn: async (mechanic: Omit<PromotionalMechanic, "id" | "organization_id" | "created_at" | "updated_at">) => {

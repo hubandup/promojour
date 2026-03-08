@@ -22,7 +22,7 @@ import Store from "./pages/Store";
 import Stores from "./pages/Stores";
 import StoreDetail from "./pages/StoreDetail";
 import MyStore from "./pages/MyStore";
-import MyStoreFree from "./pages/MyStoreFree";
+// MyStoreFree removed - redirects to /my-store
 import StoreReels from "./pages/StoreReels";
 import StoreFrontend from "./pages/StoreFrontend";
 import Settings from "./pages/Settings";
@@ -180,13 +180,12 @@ const App = () => (
               </ProtectedRoute>
             }
           />
+          {/* /mon-magasin-free redirects to /my-store */}
           <Route
             path="/mon-magasin-free"
             element={
               <ProtectedRoute>
-                <AppLayout>
-                  <MyStoreFree />
-                </AppLayout>
+                <Navigate to="/my-store" replace />
               </ProtectedRoute>
             }
           />

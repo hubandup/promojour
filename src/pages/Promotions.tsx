@@ -69,6 +69,7 @@ const Promotions = () => {
 
   const { promotions, loading: promotionsLoading, refetch, deletePromotion } = usePromotions();
   const { organization, isFree, isStore, loading: userLoading } = useUserData();
+  const isSimplifiedView = isStore || isFree;
   const { stores, loading: storesLoading } = useStores();
   const { campaigns, loading: campaignsLoading } = useCampaigns();
   const { mechanics, isLoading: mechanicsLoading } = usePromotionalMechanics();
@@ -82,7 +83,7 @@ const Promotions = () => {
   const loading = promotionsLoading || userLoading || storesLoading || campaignsLoading || mechanicsLoading;
 
   // Force list view for store type
-  const effectiveViewMode = isStore ? "list" : viewMode;
+  const effectiveViewMode = isSimplifiedView ? "list" : viewMode;
 
   const getMechanicName = (mechanicCode: string) => {
     const mechanic = mechanics.find(m => m.code === mechanicCode);
@@ -241,16 +242,16 @@ const Promotions = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">{isStore ? "Mes Promotions" : "Promotions"}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">{isSimplifiedView ? "Mes Promotions" : "Promotions"}</h1>
             <p className="text-muted-foreground text-sm">
               {loading ? "Chargement..." : `${filteredPromotions.length} promotion${filteredPromotions.length > 1 ? 's' : ''}`}
               {selectedIds.size > 0 && ` · ${selectedIds.size} sélectionnée(s)`}
             </p>
           </div>
-          {!isStore && <ProfileBadge variant="compact" />}
+          {!isSimplifiedView && <ProfileBadge variant="compact" />}
         </div>
         <div className="flex flex-wrap gap-2">
-          {!isStore && (
+           {!isSimplifiedView && (
             <div className="flex gap-1 bg-muted/50 p-1 rounded-xl">
               <Button
                 variant={viewMode === "grid" ? "secondary" : "ghost"}
@@ -281,7 +282,7 @@ const Promotions = () => {
               </Button>
             </div>
           )}
-          {!isStore && (
+          {!isSimplifiedView && (
             <>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

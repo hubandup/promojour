@@ -124,9 +124,14 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/store-onboarding" replace />;
   }
 
-  // Redirect store users from /dashboard to /my-store
+  // Redirect store/free users from /dashboard to /my-store
   if (isStore && location.pathname === "/dashboard") {
     return <Navigate to="/my-store" replace />;
+  }
+
+  // Redirect store/free users from /account to /settings
+  if (isStore && location.pathname === "/account") {
+    return <Navigate to="/settings" replace />;
   }
 
   return <>{children}</>;
