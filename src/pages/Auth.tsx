@@ -52,7 +52,8 @@ const Auth = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/choose-account-type`,
+          // TEMP: disabled for Meta — redirect to auth page after email verification instead of choose-account-type
+          emailRedirectTo: `${window.location.origin}/auth`,
           data: {
             name: `${firstName} ${lastName}`.trim(),
             first_name: firstName,
