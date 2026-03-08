@@ -222,12 +222,9 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
         if (data.discountedPrice) attributes.discountedPrice = data.discountedPrice;
       }
 
-      let finalStatus: string;
-      if (asDraft) {
-        finalStatus = "draft";
-      } else {
-        finalStatus = data.startDate > new Date() ? "scheduled" : "active";
-      }
+      const finalStatus = asDraft
+        ? "draft" as const
+        : (data.startDate > new Date() ? "scheduled" as const : "active" as const);
 
       const { error } = await supabase
         .from('promotions')
