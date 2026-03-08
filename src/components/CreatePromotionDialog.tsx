@@ -62,6 +62,8 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
   const { mechanics } = usePromotionalMechanics();
   const { limits, validatePromotionDates, checkLimits } = usePromotionLimits();
   const { isSuperAdmin, isStore, isFree, isCentral } = useUserData();
+  const { stores } = useStores();
+  const { publishPromotion, publishing: publishingInProgress } = usePublishPromotion();
   const isSimplifiedForm = isStore || isFree;
 
   const {
