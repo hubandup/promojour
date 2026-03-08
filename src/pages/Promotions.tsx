@@ -69,6 +69,7 @@ const Promotions = () => {
 
   const { promotions, loading: promotionsLoading, refetch, deletePromotion } = usePromotions();
   const { organization, isFree, isStore, loading: userLoading } = useUserData();
+  const isSimplifiedView = isStore || isFree;
   const { stores, loading: storesLoading } = useStores();
   const { campaigns, loading: campaignsLoading } = useCampaigns();
   const { mechanics, isLoading: mechanicsLoading } = usePromotionalMechanics();
