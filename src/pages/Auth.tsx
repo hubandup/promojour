@@ -232,6 +232,18 @@ const Auth = () => {
     }
   };
 
+  if (processingVerificationReturn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
+        <Card className="w-full max-w-md shadow-xl">
+          <CardContent className="py-10 text-center text-muted-foreground">
+            Finalisation de la vérification en cours...
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
       <Card className="w-full max-w-md shadow-xl">
@@ -256,8 +268,7 @@ const Auth = () => {
                 <div className="mb-4 p-4 rounded-lg border border-green-500/30 bg-green-500/5 flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
                   <div>
-                    <p className="font-medium text-foreground">Votre email a été vérifié avec succès !</p>
-                    <p className="text-sm text-muted-foreground">Connectez-vous pour continuer la configuration de votre magasin.</p>
+                    <p className="font-medium text-foreground">✅ Votre adresse email a été vérifiée avec succès ! Connectez-vous pour continuer la configuration de votre magasin.</p>
                   </div>
                 </div>
               )}
