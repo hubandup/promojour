@@ -9,7 +9,8 @@ import { useUserData } from "@/hooks/use-user-data";
 
 const Stats = () => {
   const { overview, topPromos, platformStats, loading } = useStats();
-  const { isStore } = useUserData();
+  const { isStore, isFree } = useUserData();
+  const isSimplifiedView = isStore || isFree;
 
   if (loading) {
     return (
