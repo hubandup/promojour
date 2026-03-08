@@ -84,7 +84,7 @@ const Stats = () => {
       )}
 
       {/* Overview Stats */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 ${isStore ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-6`}>
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${isSimplifiedView ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-6`}>
         <Card className="glass-card border-border/50 hover:shadow-glass transition-smooth">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Impressions totales</CardTitle>
