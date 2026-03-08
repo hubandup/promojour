@@ -21,9 +21,9 @@ const Stats = () => {
   }
 
   const maxReach = Math.max(...platformStats.map(s => s.reach), 1);
-  const displayedPromos = isStore ? topPromos.slice(0, 3) : topPromos;
+  const displayedPromos = isSimplifiedView ? topPromos.slice(0, 3) : topPromos;
   const hasNoData = overview.totalViews === 0 && overview.totalClicks === 0;
-  const emptyText = isStore
+  const emptyText = isSimplifiedView
     ? "Publiez votre première promotion pour voir vos statistiques ici"
     : "Aucune donnée disponible";
 
