@@ -1017,6 +1017,7 @@ const Promotions = () => {
         open={createDialogOpen} 
         onOpenChange={setCreateDialogOpen}
         onSuccess={refetch}
+        defaultStoreId={defaultStoreId || undefined}
       />
       
       {selectedPromotionId && (
