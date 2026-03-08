@@ -54,6 +54,7 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [savedAsDraft, setSavedAsDraft] = useState(false);
+  const [publishFailed, setPublishFailed] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
   // Form state
