@@ -89,10 +89,14 @@ const EmailVerification = () => {
           <Button
             variant="link"
             onClick={handleResend}
-            disabled={resending}
+            disabled={resending || cooldown > 0}
             className="text-primary font-medium"
           >
-            {resending ? "Envoi en cours..." : "Renvoyer l'email de vérification"}
+            {resending
+              ? "Envoi en cours..."
+              : cooldown > 0
+              ? `Renvoyer dans ${cooldown}s`
+              : "Renvoyer l'email de vérification"}
           </Button>
         </div>
 
