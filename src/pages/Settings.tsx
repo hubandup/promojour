@@ -473,7 +473,7 @@ const Settings = () => {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button onClick={isStore ? handleSaveStore : handleSaveOrganization} className="rounded-xl">
+                  <Button onClick={isSimplifiedView ? handleSaveStore : handleSaveOrganization} className="rounded-xl">
                     Enregistrer
                   </Button>
                 </div>

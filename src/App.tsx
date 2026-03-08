@@ -180,13 +180,12 @@ const App = () => (
               </ProtectedRoute>
             }
           />
+          {/* /mon-magasin-free redirects to /my-store */}
           <Route
             path="/mon-magasin-free"
             element={
               <ProtectedRoute>
-                <AppLayout>
-                  <MyStoreFree />
-                </AppLayout>
+                <Navigate to="/my-store" replace />
               </ProtectedRoute>
             }
           />
