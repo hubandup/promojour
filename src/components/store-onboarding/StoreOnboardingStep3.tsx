@@ -311,17 +311,25 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
   if (success) {
     return (
       <div className="text-center space-y-6 py-8">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/10 mx-auto">
-          <PartyPopper className="w-10 h-10 text-green-500" />
+        <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mx-auto ${
+          publishFailed ? "bg-amber-500/10" : "bg-green-500/10"
+        }`}>
+          <PartyPopper className={`w-10 h-10 ${publishFailed ? "text-amber-500" : "text-green-500"}`} />
         </div>
         <div className="space-y-2">
           <h2 className="text-2xl font-bold text-foreground">
-            {savedAsDraft ? "Votre promotion a été enregistrée" : "Votre promotion est en ligne !"}
+            {publishFailed
+              ? "Votre promotion a été créée"
+              : savedAsDraft
+                ? "Votre promotion a été enregistrée"
+                : "Votre promotion est en ligne sur Facebook !"}
           </h2>
           <p className="text-muted-foreground">
-            {savedAsDraft
-              ? "Vous pourrez la publier depuis Mes Promotions quand vous le souhaitez."
-              : "Félicitations, votre première promotion a été publiée avec succès."}
+            {publishFailed
+              ? "La promotion a été créée mais la publication Facebook a échoué. Vous pourrez la publier depuis Mes Promotions."
+              : savedAsDraft
+                ? "Vous pourrez la publier depuis Mes Promotions quand vous le souhaitez."
+                : "Félicitations, votre première promotion a été publiée avec succès."}
           </p>
         </div>
         <Button onClick={onComplete} size="lg" className="h-12 px-8">
