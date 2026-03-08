@@ -394,7 +394,7 @@ const Settings = () => {
   }
 
   // Store-specific settings view
-  if (isStore) {
+  if (isSimplifiedView) {
     return (
       <div className="space-y-8">
         <div>
