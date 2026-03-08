@@ -1190,6 +1190,7 @@ export type Database = {
           logo_url: string
           name: string
           opening_hours: Json
+          organization_id: string
           postal_code: string
           website_url: string
         }[]
