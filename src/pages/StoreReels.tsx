@@ -58,7 +58,7 @@ export default function StoreReels() {
         if (promoError) throw promoError;
         
         // If a specific promotionId is provided, reorder to show it first
-        let orderedPromos = promoData || [];
+        let orderedPromos = (promoData || []) as unknown as Promotion[];
         if (promotionId && orderedPromos.length > 0) {
           const targetIndex = orderedPromos.findIndex(p => p.id === promotionId);
           if (targetIndex > 0) {
