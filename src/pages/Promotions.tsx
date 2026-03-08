@@ -704,6 +704,16 @@ const Promotions = () => {
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8 text-primary"
+                        onClick={() => handlePublishPromotion(promo)}
+                        disabled={publishing || (!promo.image_url && !promo.video_url)}
+                        title="Publier sur Facebook"
+                      >
+                        {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="h-8 w-8"
                         onClick={() => {
                           setPreviewPromotion(promo);
