@@ -57,9 +57,10 @@ const App = () => (
             <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/payment-canceled" element={<PaymentCanceled />} />
             <Route path="/onboarding" element={<Navigate to="/store-onboarding" replace />} />
+            {/* TEMP: disabled for Meta — redirect to onboarding instead of showing account type choice */}
             <Route path="/choose-account-type" element={
               <ProtectedRoute>
-                <ChooseAccountType />
+                <Navigate to="/store-onboarding" replace />
               </ProtectedRoute>
             } />
             <Route path="/store-onboarding" element={
