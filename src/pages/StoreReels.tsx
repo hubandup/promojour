@@ -30,22 +30,9 @@ export default function StoreReels() {
         if (!storeRows || storeRows.length === 0) throw new Error('Store not found');
         
         const storeData = storeRows[0];
-        setStore({ ...storeData, phone: null, email: null, organization_id: storeData.id } as any);
-
-        // We need the organization_id - fetch it via a separate approach
-        // Since get_public_store_data doesn't return org_id, query stores_public as fallback
-        // But first let's get promotions using the store's org
-        const { data: storePublicData } = await supabase
-          .from("stores_public")
-          .select("organization_id")
-          .eq("id", storeId)
-          .single();
+        const orgId = storeData.organization_id;
         
-        const orgId = storePublicData?.organization_id;
-        if (!orgId) throw new Error('Organization not found');
-
-        // Update store with correct org_id
-        setStore({ ...storeData, phone: null, email: null, organization_id: orgId } as any);
+        setStore({ ...storeData, phone: null, email: null, qr_code_url: null, created_at: '' } as Store);
 
         // Use SECURITY DEFINER function to fetch active promotions
         console.log('Fetching promotions for organization:', orgId);
