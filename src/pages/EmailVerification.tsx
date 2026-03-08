@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Mail, ArrowLeft } from "lucide-react";
@@ -6,34 +6,54 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logoPromojour from "@/assets/logo-promojour.svg";
 
+const COOLDOWN_SECONDS = 60;
+
 const EmailVerification = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const email = searchParams.get("email") || "";
   const [resending, setResending] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
 
-  const handleResend = async () => {
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  const handleResend = useCallback(async () => {
     if (!email) {
       toast.error("Adresse email manquante.");
       return;
     }
+    if (cooldown > 0) return;
+
     setResending(true);
     try {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/choose-account-type`,
+          // TEMP: disabled for Meta — redirect to /auth instead of /choose-account-type
+          emailRedirectTo: `${window.location.origin}/auth`,
         },
       });
       if (error) throw error;
       toast.success("Email de vérification renvoyé !");
+      setCooldown(COOLDOWN_SECONDS);
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors du renvoi de l'email");
+      if (error.message?.includes("rate limit")) {
+        toast.error("Trop de tentatives. Veuillez patienter quelques minutes.");
+        setCooldown(COOLDOWN_SECONDS);
+      } else {
+        toast.error(error.message || "Erreur lors du renvoi de l'email");
+      }
     } finally {
       setResending(false);
     }
-  };
+  }, [email, cooldown]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
