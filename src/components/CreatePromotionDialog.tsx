@@ -19,6 +19,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePromotionalMechanics } from "@/hooks/use-promotional-mechanics";
 import { usePromotionLimits } from "@/hooks/use-promotion-limits";
 import { useUserData } from "@/hooks/use-user-data";
+import { useStores } from "@/hooks/use-stores";
+import { usePublishPromotion } from "@/hooks/use-publish-promotion";
 import { StoreMechanicSelector } from "@/components/promotion-form/StoreMechanicSelector";
 import { StorePromotionFormFields } from "@/components/promotion-form/StorePromotionFormFields";
 
