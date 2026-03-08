@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Check } from "lucide-react";
+import { Check, CheckCircle } from "lucide-react";
 import { useSendEmail } from "@/hooks/use-send-email";
 
 const Auth = () => {
@@ -23,10 +23,23 @@ const Auth = () => {
   const [activeTab, setActiveTab] = useState("signin");
   const { sendWelcomeEmail } = useSendEmail();
 
+  const [emailVerified, setEmailVerified] = useState(false);
+
   useEffect(() => {
     const tab = searchParams.get("tab");
     if (tab === "signup") {
       setActiveTab("signup");
+    }
+
+    // Detect email verification return (Supabase redirects with hash containing type=signup)
+    const hash = window.location.hash;
+    if (hash.includes("type=signup") || hash.includes("type=email_change")) {
+      setEmailVerified(true);
+      setActiveTab("signin");
+      // Try to extract email from hash params
+      const hashParams = new URLSearchParams(hash.replace("#", ""));
+      // Supabase may not include email in hash, but try access_token decode
+      // Fallback: leave email as-is if already filled
     }
   }, [searchParams]);
 
@@ -39,7 +52,8 @@ const Auth = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/choose-account-type`,
+          // TEMP: disabled for Meta — redirect to auth page after email verification instead of choose-account-type
+          emailRedirectTo: `${window.location.origin}/auth`,
           data: {
             name: `${firstName} ${lastName}`.trim(),
             first_name: firstName,
@@ -151,6 +165,15 @@ const Auth = () => {
             </TabsList>
 
             <TabsContent value="signin">
+              {emailVerified && (
+                <div className="mb-4 p-4 rounded-lg border border-green-500/30 bg-green-500/5 flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium text-foreground">Votre email a été vérifié avec succès !</p>
+                    <p className="text-sm text-muted-foreground">Connectez-vous pour continuer la configuration de votre magasin.</p>
+                  </div>
+                </div>
+              )}
               {forgotPassword ? (
                 <form onSubmit={handleResetPassword} className="space-y-4">
                   <div className="space-y-2">
