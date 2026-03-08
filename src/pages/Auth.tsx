@@ -74,80 +74,72 @@ const Auth = () => {
   };
 
   useEffect(() => {
-    // Listen for auth state changes — handles PKCE code exchange and token detection automatically
+    // Detect if URL contains verification/auth context (hash fragment or query params)
+    const rawHash = window.location.hash.replace(/^#/, "");
+    const hashParams = new URLSearchParams(rawHash);
+    const typeParam = hashParams.get("type") ?? searchParams.get("type");
+    const tab = searchParams.get("tab");
+    if (tab === "signup") setActiveTab("signup");
+
+    const hasVerificationContext =
+      typeParam === "signup" ||
+      typeParam === "email_change" ||
+      typeParam === "recovery" ||
+      rawHash.includes("access_token") ||
+      searchParams.has("access_token") ||
+      rawHash.includes("code=");
+
+    // Try to extract email for pre-fill
+    const resolvedEmail =
+      searchParams.get("email") ||
+      hashParams.get("email") ||
+      decodeEmailFromToken(hashParams.get("access_token") || searchParams.get("access_token"));
+    if (resolvedEmail) setEmail(resolvedEmail);
+
+    if (hasVerificationContext) {
+      setEmailVerified(true);
+      setActiveTab("signin");
+    }
+
+    // Let Supabase handle token exchange automatically via onAuthStateChange
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
+        // Clean up URL hash/params
+        window.history.replaceState(null, "", window.location.pathname);
         await redirectAfterLogin();
       }
     });
 
-    const handleVerificationReturn = async () => {
-      const tab = searchParams.get("tab");
-      if (tab === "signup") setActiveTab("signup");
-
-      const rawHash = window.location.hash.replace(/^#/, "");
-      const hashParams = new URLSearchParams(rawHash);
-      const queryAccessToken = searchParams.get("access_token");
-      const queryRefreshToken = searchParams.get("refresh_token");
-      const hashAccessToken = hashParams.get("access_token");
-      const hashRefreshToken = hashParams.get("refresh_token");
-      const typeParam = hashParams.get("type") ?? searchParams.get("type");
-
-      const hasVerificationContext =
-        typeParam === "signup" ||
-        typeParam === "email_change" ||
-        typeParam === "recovery" ||
-        Boolean(queryAccessToken || hashAccessToken || rawHash.includes("type=signup"));
-
-      const resolvedEmail =
-        searchParams.get("email") ||
-        hashParams.get("email") ||
-        decodeEmailFromToken(queryAccessToken || hashAccessToken);
-
-      if (resolvedEmail) setEmail(resolvedEmail);
-
-      if (!hasVerificationContext) {
-        // No verification context — check if already logged in
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          await redirectAfterLogin();
-          return;
-        }
-        setProcessingVerificationReturn(false);
-        return;
-      }
-
-      setEmailVerified(true);
-      setActiveTab("signin");
-
-      const access_token = queryAccessToken || hashAccessToken;
-      const refresh_token = queryRefreshToken || hashRefreshToken;
-
-      if (access_token && refresh_token) {
-        const { error } = await supabase.auth.setSession({ access_token, refresh_token });
-        if (!error) {
-          // Clean up URL hash
-          window.history.replaceState(null, "", window.location.pathname);
-          await redirectAfterLogin();
-          return;
-        }
-      }
-
-      // Fallback: check if Supabase client already picked up the session (PKCE flow)
+    // Check if already logged in (no verification context)
+    const checkExistingSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        window.history.replaceState(null, "", window.location.pathname);
         await redirectAfterLogin();
         return;
       }
-
-      // Auto-login failed — show login form with verification success banner
-      setProcessingVerificationReturn(false);
+      // No session yet — if verification context, wait for onAuthStateChange with timeout
+      if (!hasVerificationContext) {
+        setProcessingVerificationReturn(false);
+      }
     };
 
-    handleVerificationReturn();
+    checkExistingSession();
 
-    return () => subscription.unsubscribe();
+    // Timeout: if still processing after 10 seconds, show login form with message
+    const timeout = setTimeout(() => {
+      setProcessingVerificationReturn((prev) => {
+        if (prev) {
+          setEmailVerified(true);
+          setActiveTab("signin");
+        }
+        return false;
+      });
+    }, 10000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [searchParams]);
 
   const handleSignUp = async (e: React.FormEvent) => {
