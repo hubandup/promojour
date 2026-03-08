@@ -251,7 +251,7 @@ const Promotions = () => {
           {!isSimplifiedView && <ProfileBadge variant="compact" />}
         </div>
         <div className="flex flex-wrap gap-2">
-          {!isStore && (
+           {!isSimplifiedView && (
             <div className="flex gap-1 bg-muted/50 p-1 rounded-xl">
               <Button
                 variant={viewMode === "grid" ? "secondary" : "ghost"}
