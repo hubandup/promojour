@@ -184,13 +184,16 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
 
   const submitPromotion = async (data: PromotionFormData, asDraft: boolean) => {
     setSubmitting(true);
+    setPublishFailed(false);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
 
       let imageUrl: string | null = null;
+      let isVideo = false;
       if (images.length > 0) {
         const file = images[0];
+        isVideo = file.type.startsWith('video/');
         const fileExt = file.name.split('.').pop();
         const fileName = `promotion-${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage
@@ -227,7 +230,7 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
         ? "draft" as const
         : (data.startDate > new Date() ? "scheduled" as const : "active" as const);
 
-      const { error } = await supabase
+      const { data: insertedRows, error } = await supabase
         .from('promotions')
         .insert({
           organization_id: organizationId,
@@ -241,9 +244,48 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
           image_url: imageUrl,
           attributes,
           created_by: user.id,
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
+
+      // If publishing now, call the edge function
+      if (!asDraft && insertedRows?.id) {
+        try {
+          const edgeFunction = isVideo ? 'publish-social-reel' : 'publish-social-post';
+          const { data: publishData, error: publishError } = await supabase.functions.invoke(edgeFunction, {
+            body: {
+              promotionId: insertedRows.id,
+              storeId: storeId,
+              platforms: ['facebook'],
+            },
+          });
+
+          if (publishError) throw publishError;
+
+          if (publishData?.success) {
+            const fbResult = publishData.results?.find((r: any) => r.platform === 'facebook');
+            if (fbResult?.success) {
+              // Publication succeeded
+              setSavedAsDraft(false);
+              setSuccess(true);
+              return;
+            } else {
+              throw new Error(fbResult?.error || "Échec de la publication Facebook");
+            }
+          } else {
+            throw new Error(publishData?.message || "Échec de la publication Facebook");
+          }
+        } catch (publishErr: any) {
+          console.error('Facebook publish failed:', publishErr);
+          setPublishFailed(true);
+          setSavedAsDraft(false);
+          setSuccess(true);
+          toast.error("La promotion a été créée mais la publication Facebook a échoué.");
+          return;
+        }
+      }
 
       setSavedAsDraft(asDraft);
       setSuccess(true);
