@@ -300,7 +300,7 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
         eanCode: data.eanCode || "",
       };
 
-      if (data.mechanicType === "bundle") {
+      if (data.mechanicType === "bundle_offer") {
         attributes.bundleDescription = data.bundleDescription || "";
       }
 

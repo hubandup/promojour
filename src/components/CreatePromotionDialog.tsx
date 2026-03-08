@@ -245,7 +245,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
         eanCode: data.eanCode || "",
       };
 
-      if (data.mechanicType === "bundle") {
+      if (data.mechanicType === "bundle_offer") {
         attributes.bundleDescription = data.bundleDescription || "";
       }
 

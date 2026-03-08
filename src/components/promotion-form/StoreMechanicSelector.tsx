@@ -10,8 +10,8 @@ interface MechanicOption {
 const STORE_MECHANICS: MechanicOption[] = [
   { value: "price_discount", label: "Remise de prix", icon: <Tag className="w-5 h-5" /> },
   { value: "percentage_discount", label: "Pourcentage", icon: <Percent className="w-5 h-5" /> },
-  { value: "bundle", label: "Offre groupée", icon: <Package className="w-5 h-5" /> },
-  { value: "free", label: "Gratuit", icon: <Gift className="w-5 h-5" /> },
+  { value: "bundle_offer", label: "Offre groupée", icon: <Package className="w-5 h-5" /> },
+  { value: "free_offer", label: "Gratuit", icon: <Gift className="w-5 h-5" /> },
 ];
 
 interface StoreMechanicSelectorProps {
