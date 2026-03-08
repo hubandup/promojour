@@ -10,8 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { CalendarIcon, Upload, X, Settings } from "lucide-react";
+import { CalendarIcon, Upload, X } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -19,9 +18,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { usePromotionalMechanics } from "@/hooks/use-promotional-mechanics";
 import { usePromotionLimits } from "@/hooks/use-promotion-limits";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useUserData } from "@/hooks/use-user-data";
 import { StoreMechanicSelector } from "@/components/promotion-form/StoreMechanicSelector";
+import { StorePromotionFormFields } from "@/components/promotion-form/StorePromotionFormFields";
 
 const promotionSchema = z.object({
   title: z.string().min(3, "Le titre doit contenir au moins 3 caractères").max(100),
@@ -57,11 +56,11 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [advancedOpen, setAdvancedOpen] = useState(false);
   
   const { mechanics } = usePromotionalMechanics();
   const { limits, validatePromotionDates, checkLimits } = usePromotionLimits();
-  const { isSuperAdmin, isStore } = useUserData();
+  const { isSuperAdmin, isStore, isFree, isCentral } = useUserData();
+  const isSimplifiedForm = isStore || isFree;
 
   const {
     register,
@@ -120,20 +119,18 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
 
   // Auto-select CTA action type based on EAN for store users
   useEffect(() => {
-    if (isStore && ean && ean.trim()) {
+    if (isSimplifiedForm && ean && ean.trim()) {
       setValue("ctaActionType", "ean");
       setValue("eanCode", ean);
     }
-  }, [ean, isStore, setValue]);
+  }, [ean, isSimplifiedForm, setValue]);
 
   const processFiles = (files: File[]) => {
     if (files.length + images.length > 5) {
       toast.error("Vous ne pouvez pas ajouter plus de 5 images");
       return;
     }
-
     setImages((prev) => [...prev, ...files]);
-    
     files.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -148,29 +145,15 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
     processFiles(files);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); };
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
     const files = Array.from(e.dataTransfer.files).filter(
       file => file.type.startsWith('image/') || file.type.startsWith('video/')
     );
-    
-    if (files.length === 0) {
-      toast.error("Veuillez déposer des fichiers image ou vidéo");
-      return;
-    }
-    
+    if (files.length === 0) { toast.error("Veuillez déposer des fichiers image ou vidéo"); return; }
     processFiles(files);
   };
 
@@ -183,14 +166,12 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
     try {
       setUploading(true);
       
-      // Vérifier les limites avant de créer la promotion
       if (!limits.canCreatePromotion) {
         toast.error(limits.reason || "Vous avez atteint la limite de promotions");
         setUploading(false);
         return;
       }
 
-      // Valider les dates pour le profil Free
       const dateValidation = validatePromotionDates(data.startDate, data.endDate);
       if (!dateValidation.valid) {
         toast.error(dateValidation.error || "Dates invalides");
@@ -198,7 +179,6 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
         return;
       }
       
-      // Get user organization
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
 
@@ -212,7 +192,6 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
 
       let imageUrl: string | null = null;
 
-      // Upload image if provided
       if (images.length > 0) {
         const file = images[0];
         const fileExt = file.name.split('.').pop();
@@ -222,10 +201,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
           .from('promotion-images')
           .upload(fileName, file, { upsert: true });
 
-        if (uploadError) {
-          console.error('Upload error:', uploadError);
-          throw uploadError;
-        }
+        if (uploadError) throw uploadError;
 
         const { data: { publicUrl } } = supabase.storage
           .from('promotion-images')
@@ -234,7 +210,6 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
         imageUrl = publicUrl;
       }
 
-      // Create promotion with attributes
       const attributes: any = {
         mechanicType: data.mechanicType,
         productName: data.productName || "",
@@ -252,21 +227,19 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
       if (data.mechanicType === 'price_discount' && data.originalPrice && data.discountedPrice) {
         attributes.originalPrice = data.originalPrice;
         attributes.discountedPrice = data.discountedPrice;
-        if (data.discountPercentage) {
-          attributes.discountPercentage = data.discountPercentage;
-        }
+        if (data.discountPercentage) attributes.discountPercentage = data.discountPercentage;
       } else if (data.mechanicType === 'percentage_discount' && data.originalPrice && data.discountPercentage) {
         attributes.originalPrice = data.originalPrice;
         attributes.discountPercentage = data.discountPercentage;
-        if (data.discountedPrice) {
-          attributes.discountedPrice = data.discountedPrice;
-        }
+        if (data.discountedPrice) attributes.discountedPrice = data.discountedPrice;
       }
 
-      // For store users, determine status from button action
+      // For simplified form users, auto-determine status
       let finalStatus = data.status;
-      if (isStore && finalStatus === "active" && data.startDate > new Date()) {
-        finalStatus = "scheduled";
+      if (isSimplifiedForm) {
+        if (finalStatus === "active" && data.startDate > new Date()) {
+          finalStatus = "scheduled";
+        }
       }
 
       const { error } = await supabase
@@ -285,16 +258,9 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
           created_by: user.id,
         });
 
-      if (error) {
-        console.error('Database error:', error);
-        throw error;
-      }
+      if (error) throw error;
       
-      toast.success(
-        isStore && finalStatus === "draft" 
-          ? "Promotion enregistrée en brouillon" 
-          : "Promotion créée avec succès !"
-      );
+      toast.success("Promotion créée avec succès !");
       reset();
       setImages([]);
       setImagePreviews([]);
@@ -309,17 +275,25 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
     }
   };
 
-  const handleStorePublish = () => {
-    setValue("status", "active");
+  const handleStoreCreate = () => {
+    // Auto-determine status: future dates → scheduled, else active
+    const currentStartDate = watch("startDate");
+    if (currentStartDate && currentStartDate > new Date()) {
+      setValue("status", "scheduled");
+    } else {
+      setValue("status", "active");
+    }
     handleSubmit(onSubmit)();
   };
 
-  const handleStoreDraft = () => {
-    setValue("status", "draft");
-    handleSubmit(onSubmit)();
+  const handleCancel = () => {
+    reset();
+    setImages([]);
+    setImagePreviews([]);
+    onOpenChange(false);
   };
 
-  // Shared media upload section
+  // Shared media upload section for full form
   const renderMediaUpload = () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">Image ou vidéo</h3>
@@ -333,25 +307,13 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          <input
-            type="file"
-            id="images"
-            accept="image/*,video/*"
-            multiple
-            className="hidden"
-            onChange={handleImageUpload}
-          />
+          <input type="file" id="images" accept="image/*,video/*" multiple className="hidden" onChange={handleImageUpload} />
           <label htmlFor="images" className="cursor-pointer">
             <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-sm font-medium mb-1">
-              Cliquez ou glissez-déposez vos images ou vidéos
-            </p>
-            <p className="text-xs text-muted-foreground">
-              PNG, JPG, MP4 jusqu'à 10MB (max 5 fichiers)
-            </p>
+            <p className="text-sm font-medium mb-1">Cliquez ou glissez-déposez vos images ou vidéos</p>
+            <p className="text-xs text-muted-foreground">PNG, JPG, MP4 jusqu'à 10MB (max 5 fichiers)</p>
           </label>
         </div>
-
         {imagePreviews.length > 0 && (
           <div className="grid grid-cols-5 gap-4">
             {imagePreviews.map((preview, index) => {
@@ -363,11 +325,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
                   ) : (
                     <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
                   )}
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90"
-                  >
+                  <button type="button" onClick={() => removeImage(index)} className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90">
                     <X className="w-3 h-3" />
                   </button>
                 </div>
@@ -379,291 +337,85 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
     </div>
   );
 
-  // Shared date pickers
+  // Shared date pickers for full form
   const renderDatePickers = () => (
     <div className="grid grid-cols-2 gap-4">
       <div className="space-y-2">
         <Label>Date de début *</Label>
         <Popover>
           <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "w-full justify-start text-left font-normal",
-                !startDate && "text-muted-foreground"
-              )}
-            >
+            <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
               <CalendarIcon className="mr-2 h-4 w-4" />
               {startDate ? format(startDate, "PPP", { locale: fr }) : "Sélectionner"}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={startDate}
-              onSelect={(date) => date && setValue("startDate", date)}
-              locale={fr}
-              initialFocus
-              className="pointer-events-auto"
-            />
+            <Calendar mode="single" selected={startDate} onSelect={(date) => date && setValue("startDate", date)} locale={fr} initialFocus className="pointer-events-auto" />
           </PopoverContent>
         </Popover>
-        {errors.startDate && (
-          <p className="text-sm text-destructive">{errors.startDate.message}</p>
-        )}
+        {errors.startDate && <p className="text-sm text-destructive">{errors.startDate.message}</p>}
       </div>
-
       <div className="space-y-2">
         <Label>Date de fin *</Label>
         <Popover>
           <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "w-full justify-start text-left font-normal",
-                !endDate && "text-muted-foreground"
-              )}
-            >
+            <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
               <CalendarIcon className="mr-2 h-4 w-4" />
               {endDate ? format(endDate, "PPP", { locale: fr }) : "Sélectionner"}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={endDate}
-              onSelect={(date) => date && setValue("endDate", date)}
-              locale={fr}
-              disabled={(date) => startDate ? date < startDate : false}
-              initialFocus
-              className="pointer-events-auto"
-            />
+            <Calendar mode="single" selected={endDate} onSelect={(date) => date && setValue("endDate", date)} locale={fr} disabled={(date) => startDate ? date < startDate : false} initialFocus className="pointer-events-auto" />
           </PopoverContent>
         </Popover>
-        {errors.endDate && (
-          <p className="text-sm text-destructive">{errors.endDate.message}</p>
-        )}
+        {errors.endDate && <p className="text-sm text-destructive">{errors.endDate.message}</p>}
       </div>
     </div>
   );
 
-  // Store-specific form layout
+  // Store/Free simplified form using shared component
   const renderStoreForm = () => (
-    <div className="space-y-5">
-      {/* Level 1 - Essential fields */}
-      {renderMediaUpload()}
-
-      <div className="space-y-2">
-        <Label htmlFor="title">Titre de la promotion *</Label>
-        <Input
-          id="title"
-          placeholder="Ex: -30% sur les croissants"
-          {...register("title")}
-        />
-        {errors.title && (
-          <p className="text-sm text-destructive">{errors.title.message}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          placeholder="Décrivez brièvement votre promotion..."
-          rows={2}
-          {...register("description")}
-        />
-      </div>
-
-      {/* Mechanic type - visual buttons */}
-      <div className="space-y-2">
-        <Label>Type de promotion</Label>
-        <StoreMechanicSelector
-          value={mechanicType}
-          onChange={(value) => setValue("mechanicType", value)}
-        />
-      </div>
-
-      {/* Dynamic price fields based on mechanic */}
-      {mechanicType === "price_discount" && (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="originalPrice">Prix original (€)</Label>
-            <Input
-              id="originalPrice"
-              type="number"
-              step="0.01"
-              placeholder="99.99"
-              {...register("originalPrice")}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="discountedPrice">Prix remisé (€)</Label>
-            <Input
-              id="discountedPrice"
-              type="number"
-              step="0.01"
-              placeholder="69.99"
-              {...register("discountedPrice")}
-            />
-          </div>
-        </div>
-      )}
-
-      {mechanicType === "percentage_discount" && (
-        <>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="originalPrice">Prix original (€)</Label>
-              <Input
-                id="originalPrice"
-                type="number"
-                step="0.01"
-                placeholder="99.99"
-                {...register("originalPrice")}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="discountPercentage">Réduction (%)</Label>
-              <Input
-                id="discountPercentage"
-                type="number"
-                placeholder="30"
-                {...register("discountPercentage")}
-              />
-            </div>
-          </div>
-          {originalPrice && discountPercentage && discountedPrice && (
-            <p className="text-sm text-muted-foreground">
-              Prix remisé calculé : <strong>{discountedPrice} €</strong>
-            </p>
-          )}
-        </>
-      )}
-
-      {mechanicType === "bundle_offer" && (
-        <div className="space-y-2">
-          <Label htmlFor="bundleDescription">Description de l'offre</Label>
-          <Input
-            id="bundleDescription"
-            placeholder="Ex: 2 achetés = 1 offert"
-            {...register("bundleDescription")}
-          />
-        </div>
-      )}
-
-      {/* Dates */}
-      <div className="space-y-2">
-        <Label>Dates de validité</Label>
-        {renderDatePickers()}
-      </div>
-
-      {/* EAN */}
-      <div className="space-y-2">
-        <Label htmlFor="ean">Code EAN (optionnel)</Label>
-        <Input
-          id="ean"
-          placeholder="Ex: 1234567890123"
-          {...register("ean")}
-        />
-        <p className="text-xs text-muted-foreground">
-          Ce code-barre sera scannable en caisse pour valider la promotion
-        </p>
-      </div>
-
-      {/* Level 2 - Advanced options accordion */}
-      <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-        <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
-          <Settings className="w-4 h-4" />
-          <span>Options avancées</span>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-4 pt-3 border-t mt-2">
-          <div className="space-y-2">
-            <Label htmlFor="productName">Nom du produit</Label>
-            <Input
-              id="productName"
-              placeholder="Ex: Chaussures Nike Air Max"
-              {...register("productName")}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="ctaText">Intitulé du bouton</Label>
-            <Input
-              id="ctaText"
-              placeholder="J'en Profite"
-              {...register("ctaText")}
-            />
-            <p className="text-xs text-muted-foreground">Texte affiché sur le bouton d'action de votre promotion</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="ctaActionType">Type d'action</Label>
-            <Select 
-              value={ctaActionType} 
-              onValueChange={(value: "url" | "ean") => setValue("ctaActionType", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner le type d'action" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ean">Code EAN (code-barre)</SelectItem>
-                <SelectItem value="url">Lien URL</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {ctaActionType === "url" && (
-            <div className="space-y-2">
-              <Label htmlFor="ctaUrl">URL de destination</Label>
-              <Input
-                id="ctaUrl"
-                type="url"
-                placeholder="https://example.com"
-                {...register("ctaUrl")}
-              />
-              {errors.ctaUrl && (
-                <p className="text-sm text-destructive">{errors.ctaUrl.message}</p>
-              )}
-            </div>
-          )}
-
-          {ctaActionType === "ean" && (
-            <div className="space-y-2">
-              <Label htmlFor="eanCode">Code EAN du bon de réduction</Label>
-              <Input
-                id="eanCode"
-                placeholder="1234567890123"
-                maxLength={13}
-                {...register("eanCode")}
-              />
-              <p className="text-xs text-muted-foreground">Code EAN à 13 chiffres pour générer le code-barre</p>
-            </div>
-          )}
-        </CollapsibleContent>
-      </Collapsible>
-
-      {/* Store action buttons */}
-      <div className="space-y-3 pt-4 border-t">
+    <StorePromotionFormFields
+      register={register}
+      errors={errors}
+      setValue={setValue}
+      watchValues={{
+        mechanicType,
+        originalPrice,
+        discountedPrice,
+        discountPercentage,
+        startDate,
+        endDate,
+        ctaActionType,
+      }}
+      imagePreviews={imagePreviews}
+      isDragging={isDragging}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      onImageUpload={handleImageUpload}
+      onRemoveImage={removeImage}
+      fileInputId="create-promo-images"
+    >
+      <div className="flex gap-3 pt-4 border-t">
         <Button
           type="button"
-          onClick={handleStorePublish}
-          className="w-full gradient-primary text-white shadow-glow"
-          disabled={uploading || !limits.canCreatePromotion}
+          onClick={handleStoreCreate}
+          className="flex-1 gradient-primary text-white shadow-glow"
+          disabled={uploading}
         >
-          {uploading ? "Publication en cours..." : "Publier la promotion"}
+          {uploading ? "Création en cours..." : "Créer la promotion"}
         </Button>
         <Button
           type="button"
           variant="outline"
-          onClick={handleStoreDraft}
-          className="w-full"
+          onClick={handleCancel}
           disabled={uploading}
         >
-          Enregistrer en brouillon
+          Annuler
         </Button>
       </div>
-    </div>
+    </StorePromotionFormFields>
   );
 
   // Full form for central/super_admin
@@ -671,42 +423,26 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {renderMediaUpload()}
 
-      {/* Informations générales */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Informations générales</h3>
         
         <div className="space-y-2">
           <Label htmlFor="title">Titre de la promotion *</Label>
-          <Input
-            id="title"
-            placeholder="Ex: Réduction 30% sur les chaussures"
-            {...register("title")}
-          />
-          {errors.title && (
-            <p className="text-sm text-destructive">{errors.title.message}</p>
-          )}
+          <Input id="title" placeholder="Ex: Réduction 30% sur les chaussures" {...register("title")} />
+          {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="description">Description *</Label>
-          <Textarea
-            id="description"
-            placeholder="Décrivez votre promotion..."
-            rows={3}
-            {...register("description")}
-          />
-          {errors.description && (
-            <p className="text-sm text-destructive">{errors.description.message}</p>
-          )}
+          <Textarea id="description" placeholder="Décrivez votre promotion..." rows={3} {...register("description")} />
+          {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="category">Catégorie *</Label>
             <Select value={category} onValueChange={(value) => setValue("category", value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner une catégorie" />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Sélectionner une catégorie" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="mode">Mode</SelectItem>
                 <SelectItem value="alimentation">Alimentation</SelectItem>
@@ -717,17 +453,12 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
                 <SelectItem value="generale">Générale</SelectItem>
               </SelectContent>
             </Select>
-            {errors.category && (
-              <p className="text-sm text-destructive">{errors.category.message}</p>
-            )}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="status">Statut *</Label>
             <Select value={status} onValueChange={(value: any) => setValue("status", value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="draft">Brouillon</SelectItem>
                 <SelectItem value="scheduled">Programmé</SelectItem>
@@ -739,68 +470,35 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
         </div>
       </div>
 
-      {/* Informations produit */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Informations produit</h3>
-        
         <div className="space-y-2">
           <Label htmlFor="productName">Nom du produit *</Label>
-          <Input
-            id="productName"
-            placeholder="Ex: Chaussures Nike Air Max"
-            {...register("productName")}
-          />
-          {errors.productName && (
-            <p className="text-sm text-destructive">{errors.productName.message}</p>
-          )}
+          <Input id="productName" placeholder="Ex: Chaussures Nike Air Max" {...register("productName")} />
         </div>
-
         <div className="space-y-2">
           <Label htmlFor="ean">Code EAN (optionnel)</Label>
-          <Input
-            id="ean"
-            placeholder="Ex: 1234567890123"
-            {...register("ean")}
-          />
+          <Input id="ean" placeholder="Ex: 1234567890123" {...register("ean")} />
         </div>
       </div>
 
-      {/* Mécanique promotionnelle */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Mécanique promotionnelle</h3>
-        
         <div className="space-y-2">
           <Label>Type de mécanique *</Label>
-          <StoreMechanicSelector
-            value={mechanicType}
-            onChange={(value) => setValue("mechanicType", value)}
-          />
-          {errors.mechanicType && (
-            <p className="text-sm text-destructive">{errors.mechanicType.message}</p>
-          )}
+          <StoreMechanicSelector value={mechanicType} onChange={(value) => setValue("mechanicType", value)} />
+          {errors.mechanicType && <p className="text-sm text-destructive">{errors.mechanicType.message}</p>}
         </div>
 
         {mechanicType === "price_discount" && (
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="originalPrice">Prix original (€) *</Label>
-              <Input
-                id="originalPrice"
-                type="number"
-                step="0.01"
-                placeholder="99.99"
-                {...register("originalPrice")}
-              />
+              <Input id="originalPrice" type="number" step="0.01" placeholder="99.99" {...register("originalPrice")} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="discountedPrice">Prix remisé (€) *</Label>
-              <Input
-                id="discountedPrice"
-                type="number"
-                step="0.01"
-                placeholder="69.99"
-                {...register("discountedPrice")}
-              />
+              <Input id="discountedPrice" type="number" step="0.01" placeholder="69.99" {...register("discountedPrice")} />
             </div>
           </div>
         )}
@@ -810,28 +508,15 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="originalPrice">Prix original (€) *</Label>
-                <Input
-                  id="originalPrice"
-                  type="number"
-                  step="0.01"
-                  placeholder="99.99"
-                  {...register("originalPrice")}
-                />
+                <Input id="originalPrice" type="number" step="0.01" placeholder="99.99" {...register("originalPrice")} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="discountPercentage">Pourcentage de réduction (%) *</Label>
-                <Input
-                  id="discountPercentage"
-                  type="number"
-                  placeholder="30"
-                  {...register("discountPercentage")}
-                />
+                <Input id="discountPercentage" type="number" placeholder="30" {...register("discountPercentage")} />
               </div>
             </div>
             {originalPrice && discountPercentage && discountedPrice && (
-              <p className="text-sm text-muted-foreground">
-                Prix remisé calculé : <strong>{discountedPrice} €</strong>
-              </p>
+              <p className="text-sm text-muted-foreground">Prix remisé calculé : <strong>{discountedPrice} €</strong></p>
             )}
           </>
         )}
@@ -839,45 +524,27 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
         {mechanicType === "bundle_offer" && (
           <div className="space-y-2">
             <Label htmlFor="bundleDescription">Description de l'offre</Label>
-            <Input
-              id="bundleDescription"
-              placeholder="Ex: 2 achetés = 1 offert"
-              {...register("bundleDescription")}
-            />
+            <Input id="bundleDescription" placeholder="Ex: 2 achetés = 1 offert" {...register("bundleDescription")} />
           </div>
         )}
       </div>
 
-      {/* Période de validité */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Période de validité</h3>
         {renderDatePickers()}
       </div>
 
-      {/* Bouton */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Bouton</h3>
-        
         <div className="space-y-2">
           <Label htmlFor="ctaText">Intitulé du bouton</Label>
-          <Input
-            id="ctaText"
-            placeholder="J'en Profite"
-            defaultValue="J'en Profite"
-            {...register("ctaText")}
-          />
+          <Input id="ctaText" placeholder="J'en Profite" defaultValue="J'en Profite" {...register("ctaText")} />
           <p className="text-xs text-muted-foreground">Texte affiché sur le bouton d'action en frontend</p>
         </div>
-
         <div className="space-y-2">
           <Label htmlFor="ctaActionType">Type d'action</Label>
-          <Select 
-            value={ctaActionType} 
-            onValueChange={(value: "url" | "ean") => setValue("ctaActionType", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionner le type d'action" />
-            </SelectTrigger>
+          <Select value={ctaActionType} onValueChange={(value: "url" | "ean") => setValue("ctaActionType", value)}>
+            <SelectTrigger><SelectValue placeholder="Sélectionner le type d'action" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="url">Lien URL</SelectItem>
               <SelectItem value="ean">Code EAN (code-barre)</SelectItem>
@@ -885,56 +552,25 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
           </Select>
           <p className="text-xs text-muted-foreground">Action déclenchée lors du clic sur le bouton</p>
         </div>
-
         {ctaActionType === "url" && (
           <div className="space-y-2">
             <Label htmlFor="ctaUrl">URL de destination</Label>
-            <Input
-              id="ctaUrl"
-              type="url"
-              placeholder="https://example.com"
-              {...register("ctaUrl")}
-            />
-            {errors.ctaUrl && (
-              <p className="text-sm text-destructive">{errors.ctaUrl.message}</p>
-            )}
+            <Input id="ctaUrl" type="url" placeholder="https://example.com" {...register("ctaUrl")} />
+            {errors.ctaUrl && <p className="text-sm text-destructive">{errors.ctaUrl.message}</p>}
           </div>
         )}
-
         {ctaActionType === "ean" && (
           <div className="space-y-2">
             <Label htmlFor="eanCode">Code EAN du bon de réduction</Label>
-            <Input
-              id="eanCode"
-              placeholder="1234567890123"
-              maxLength={13}
-              {...register("eanCode")}
-            />
+            <Input id="eanCode" placeholder="1234567890123" maxLength={13} {...register("eanCode")} />
             <p className="text-xs text-muted-foreground">Code EAN à 13 chiffres pour générer le code-barre</p>
           </div>
         )}
       </div>
 
-      {/* Actions */}
       <div className="flex justify-end gap-3 pt-4 border-t">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => {
-            reset();
-            setImages([]);
-            setImagePreviews([]);
-            onOpenChange(false);
-          }}
-          disabled={uploading}
-        >
-          Annuler
-        </Button>
-        <Button 
-          type="submit" 
-          className="gradient-primary text-white shadow-glow" 
-          disabled={uploading || !limits.canCreatePromotion}
-        >
+        <Button type="button" variant="outline" onClick={handleCancel} disabled={uploading}>Annuler</Button>
+        <Button type="submit" className="gradient-primary text-white shadow-glow" disabled={uploading || !limits.canCreatePromotion}>
           {uploading ? "Création en cours..." : "Créer la promotion"}
         </Button>
       </div>
@@ -947,32 +583,14 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Nouvelle promotion</DialogTitle>
           <DialogDescription>
-            {isStore 
+            {isSimplifiedForm
               ? "Créez et publiez une promotion pour votre magasin"
               : "Créez une nouvelle promotion pour votre magasin"
             }
           </DialogDescription>
         </DialogHeader>
 
-        {/* Limites Free */}
-        {limits.remainingPromotions !== null && (
-          <Alert className={limits.canCreatePromotion ? "border-primary/30 bg-primary/5" : "border-destructive/30 bg-destructive/5"}>
-            <AlertDescription>
-              {limits.canCreatePromotion ? (
-                <>
-                  <strong>Profil Free :</strong> Il vous reste {limits.remainingPromotions} promotion(s) cette semaine.
-                  {limits.maxPlanningDays && (
-                    <> Planification max : {limits.maxPlanningDays} jours. Validité max : {limits.maxValidityDays} jours.</>
-                  )}
-                </>
-              ) : (
-                <strong className="text-destructive">{limits.reason}</strong>
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {isStore ? renderStoreForm() : renderFullForm()}
+        {isSimplifiedForm ? renderStoreForm() : renderFullForm()}
       </DialogContent>
     </Dialog>
   );
