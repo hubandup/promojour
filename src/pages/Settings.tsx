@@ -39,7 +39,8 @@ const Settings = () => {
   const { mechanics, createMechanic, updateMechanic, deleteMechanic } = usePromotionalMechanics();
   const { stores } = useStores();
   const firstStoreId = stores && stores.length > 0 ? stores[0].id : null;
-  const { isStore, profile, loading: userLoading } = useUserData();
+  const { isStore, isFree, profile, loading: userLoading } = useUserData();
+  const isSimplifiedView = isStore || isFree;
 
   // Store-specific state
   const [storeName, setStoreName] = useState("");
