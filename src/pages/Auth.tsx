@@ -164,6 +164,15 @@ const Auth = () => {
             </TabsList>
 
             <TabsContent value="signin">
+              {emailVerified && (
+                <div className="mb-4 p-4 rounded-lg border border-green-500/30 bg-green-500/5 flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium text-foreground">Votre email a été vérifié avec succès !</p>
+                    <p className="text-sm text-muted-foreground">Connectez-vous pour continuer la configuration de votre magasin.</p>
+                  </div>
+                </div>
+              )}
               {forgotPassword ? (
                 <form onSubmit={handleResetPassword} className="space-y-4">
                   <div className="space-y-2">

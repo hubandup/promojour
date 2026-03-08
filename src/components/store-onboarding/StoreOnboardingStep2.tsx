@@ -96,6 +96,16 @@ export function StoreOnboardingStep2({ storeId, onComplete }: Props) {
     }
   };
 
+  if (redirecting) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 space-y-4">
+        <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full" />
+        <p className="text-lg font-medium text-foreground">Redirection vers Facebook en cours…</p>
+        <p className="text-sm text-muted-foreground">Vous allez être redirigé automatiquement</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <div className="space-y-2">
