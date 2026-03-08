@@ -69,13 +69,13 @@ const Settings = () => {
 
   // Load store record for store users
   useEffect(() => {
-    if (isStore && stores && stores.length > 0) {
+    if (isSimplifiedView && stores && stores.length > 0) {
       const s = stores[0];
       setStoreRecord(s);
       setStoreName(s.name || "");
       setStoreDescription(s.description || "");
     }
-  }, [isStore, stores]);
+  }, [isSimplifiedView, stores]);
 
   useEffect(() => {
     if (profile) {
