@@ -933,6 +933,19 @@ const Promotions = () => {
                   <Button 
                     variant="outline" 
                     size="icon" 
+                    className="rounded-xl hover:shadow-md transition-smooth text-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePublishPromotion(promo);
+                    }}
+                    disabled={publishing || (!promo.image_url && !promo.video_url)}
+                    title="Publier sur Facebook"
+                  >
+                    {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
                     className="rounded-xl hover:shadow-md transition-smooth"
                     onClick={(e) => {
                       e.stopPropagation();
