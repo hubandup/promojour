@@ -34,7 +34,7 @@ const Stats = () => {
           <h1 className="text-3xl font-bold">{isSimplifiedView ? "Mes Stats" : "Statistiques"}</h1>
           <p className="text-muted-foreground">Suivez les performances de vos promotions</p>
         </div>
-        {!isStore && (
+         {!isSimplifiedView && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" disabled={topPromos.length === 0 && platformStats.length === 0}>
