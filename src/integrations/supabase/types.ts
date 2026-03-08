@@ -1152,6 +1152,29 @@ export type Database = {
           name: string
         }[]
       }
+      get_public_promotions_by_org: {
+        Args: { org_id: string }
+        Returns: {
+          attributes: Json
+          campaign_id: string
+          can_be_modified_by_stores: boolean
+          category: string
+          clicks_count: number
+          created_at: string
+          description: string
+          end_date: string
+          id: string
+          image_url: string
+          is_mandatory: boolean
+          organization_id: string
+          start_date: string
+          status: string
+          store_id: string
+          title: string
+          video_url: string
+          views_count: number
+        }[]
+      }
       get_public_store_data: {
         Args: { store_id: string }
         Returns: {
@@ -1167,6 +1190,7 @@ export type Database = {
           logo_url: string
           name: string
           opening_hours: Json
+          organization_id: string
           postal_code: string
           website_url: string
         }[]

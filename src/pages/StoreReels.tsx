@@ -20,36 +20,32 @@ export default function StoreReels() {
       try {
         console.log('Fetching store with ID:', storeId);
         
-        // Fetch store info
-        const { data: storeData, error: storeError } = await supabase
-          .from("stores_public")
-          .select("*")
-          .eq("id", storeId)
-          .single();
+        // Use SECURITY DEFINER function to bypass RLS for anonymous users
+        const { data: storeRows, error: storeError } = await supabase
+          .rpc("get_public_store_data", { store_id: storeId });
 
-        console.log('Store query result:', { storeData, storeError });
+        console.log('Store query result:', { storeRows, storeError });
 
         if (storeError) throw storeError;
-        // stores_public view doesn't include phone/email for privacy
-        setStore({ ...storeData, phone: null, email: null });
+        if (!storeRows || storeRows.length === 0) throw new Error('Store not found');
+        
+        const storeData = storeRows[0];
+        const orgId = storeData.organization_id;
+        
+        setStore({ ...storeData, phone: null, email: null, qr_code_url: null, created_at: '' } as Store);
 
-        // Fetch active promotions for this store
-        // Include ALL active promotions from the organization
-        console.log('Fetching promotions for organization:', storeData.organization_id);
+        // Use SECURITY DEFINER function to fetch active promotions
+        console.log('Fetching promotions for organization:', orgId);
         
         const { data: promoData, error: promoError } = await supabase
-          .from("promotions")
-          .select("*")
-          .eq("status", "active")
-          .eq("organization_id", storeData.organization_id)
-          .order("created_at", { ascending: false });
+          .rpc("get_public_promotions_by_org", { org_id: orgId });
 
         console.log('Promotions query result:', { promoData, promoError, count: promoData?.length });
 
         if (promoError) throw promoError;
         
         // If a specific promotionId is provided, reorder to show it first
-        let orderedPromos = promoData || [];
+        let orderedPromos = (promoData || []) as unknown as Promotion[];
         if (promotionId && orderedPromos.length > 0) {
           const targetIndex = orderedPromos.findIndex(p => p.id === promotionId);
           if (targetIndex > 0) {
