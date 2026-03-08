@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Upload, Sparkles, PartyPopper } from "lucide-react";
+import { Sparkles, PartyPopper } from "lucide-react";
+import { CreatePromotionDialog } from "@/components/CreatePromotionDialog";
 
 interface Props {
   organizationId: string;
@@ -30,26 +28,15 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-
-  // Quick create form
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [priceBefore, setPriceBefore] = useState("");
-  const [priceAfter, setPriceAfter] = useState("");
-  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
-  const [endDate, setEndDate] = useState(
-    new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0]
-  );
-  const [promoImage, setPromoImage] = useState<File | null>(null);
-  const [promoImagePreview, setPromoImagePreview] = useState<string | null>(null);
   const [savedAsDraft, setSavedAsDraft] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+
   useEffect(() => {
     loadCentralPromos();
   }, []);
 
   const loadCentralPromos = async () => {
     try {
-      // Look for promotions created by the central (no store_id, same org)
       const { data } = await supabase
         .from("promotions")
         .select("id, title, description, image_url, start_date, end_date")
@@ -84,7 +71,6 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
 
     setSubmitting(true);
     try {
-      // Duplicate central promos for this store
       const inserts = enabledPromos.map((p) => ({
         title: p.title,
         description: p.description,
@@ -107,89 +93,9 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPromoImage(file);
-      setPromoImagePreview(URL.createObjectURL(file));
-    }
-  };
-
-  const handleCreatePromo = async (publishNow: boolean) => {
-    if (!title.trim()) {
-      toast.error("Le titre de la promotion est requis");
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      let imageUrl: string | null = null;
-      if (promoImage) {
-        const fileExt = promoImage.name.split(".").pop();
-        const fileName = `${crypto.randomUUID()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from("promotion-images")
-          .upload(`promotions/${fileName}`, promoImage);
-        if (!uploadError) {
-          const {
-            data: { publicUrl },
-          } = supabase.storage
-            .from("promotion-images")
-            .getPublicUrl(`promotions/${fileName}`);
-          imageUrl = publicUrl;
-        }
-      }
-
-      const { data: newPromo, error } = await supabase.from("promotions").insert({
-        title: title.trim(),
-        description: description.trim() || null,
-        image_url: imageUrl,
-        organization_id: organizationId,
-        store_id: storeId,
-        start_date: new Date(startDate).toISOString(),
-        end_date: new Date(endDate).toISOString(),
-        status: publishNow ? "active" : "draft",
-        attributes: {
-          price_before: priceBefore || null,
-          price_after: priceAfter || null,
-        },
-      }).select("id").single();
-
-      if (error) throw error;
-
-      if (publishNow && newPromo) {
-        // Trigger auto-publish to Facebook
-        try {
-          const { data: connections } = await supabase
-            .from("social_connections")
-            .select("platform, is_connected")
-            .eq("store_id", storeId)
-            .eq("is_connected", true)
-            .eq("platform", "facebook");
-
-          if (connections && connections.length > 0) {
-            // Choose edge function based on media type: video → reel, image → post
-            const hasVideo = promoImage && promoImage.type.startsWith("video/");
-            const edgeFunction = hasVideo ? "publish-social-reel" : "publish-social-post";
-            await supabase.functions.invoke(edgeFunction, {
-              body: { promotionId: newPromo.id, storeId, platforms: ["facebook"] },
-            });
-          }
-        } catch (pubError) {
-          console.error("Auto-publish error during onboarding:", pubError);
-          // Don't block onboarding if publish fails
-        }
-      }
-
-      if (!publishNow) {
-        setSavedAsDraft(true);
-      }
-      setSuccess(true);
-    } catch (error: any) {
-      toast.error(error.message || "Erreur lors de la création");
-    } finally {
-      setSubmitting(false);
-    }
+  const handlePromotionCreated = () => {
+    setShowCreateDialog(false);
+    setSuccess(true);
   };
 
   if (loading) {
@@ -284,118 +190,33 @@ export function StoreOnboardingStep3({ organizationId, storeId, onComplete }: Pr
           </Button>
         </div>
       ) : (
-        /* Quick create form */
+        /* Use the standard CreatePromotionDialog */
         <div className="space-y-5">
-          <div className="space-y-2">
-            <Label>Photo de la promotion</Label>
-            <div className="flex items-center gap-4">
-              {promoImagePreview ? (
-                <div className="w-24 h-24 rounded-xl overflow-hidden border border-border">
-                  <img src={promoImagePreview} alt="Preview" className="w-full h-full object-cover" />
-                </div>
-              ) : (
-                <div className="w-24 h-24 rounded-xl border-2 border-dashed border-border flex items-center justify-center">
-                  <Upload className="w-5 h-5 text-muted-foreground" />
-                </div>
-              )}
-              <label className="cursor-pointer">
-                <Input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                <span className="text-sm text-primary hover:underline">
-                  {promoImagePreview ? "Changer" : "Ajouter une photo"}
-                </span>
-              </label>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="promoTitle">Titre de la promotion *</Label>
-            <Input
-              id="promoTitle"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="ex: -30% sur les croissants"
-              className="h-12"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="priceBefore">Prix avant</Label>
-              <Input
-                id="priceBefore"
-                value={priceBefore}
-                onChange={(e) => setPriceBefore(e.target.value)}
-                placeholder="1,20 €"
-                className="h-12"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="priceAfter">Prix après</Label>
-              <Input
-                id="priceAfter"
-                value={priceAfter}
-                onChange={(e) => setPriceAfter(e.target.value)}
-                placeholder="0,90 €"
-                className="h-12"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="startDate">Date de début</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="h-12"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="endDate">Date de fin</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="h-12"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description courte</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Décrivez brièvement votre promotion..."
-              rows={3}
-            />
-          </div>
-
-          <p className="text-xs text-muted-foreground text-center leading-relaxed">
-            La publication enverra automatiquement votre promotion sur votre page Facebook. Vous pourrez modifier ou supprimer la publication à tout moment.
+          <p className="text-sm text-muted-foreground">
+            Créez votre première promotion avec le même formulaire que vous utiliserez au quotidien.
           </p>
-
           <Button
-            onClick={() => handleCreatePromo(true)}
-            disabled={submitting}
-            className="w-full h-12"
+            onClick={() => setShowCreateDialog(true)}
+            className="w-full h-12 gradient-primary text-white shadow-glow"
             size="lg"
           >
-            {submitting ? "Publication..." : "Publier maintenant sur Facebook"}
+            <Sparkles className="w-5 h-5 mr-2" />
+            Créer ma première promotion
           </Button>
 
+          <CreatePromotionDialog
+            open={showCreateDialog}
+            onOpenChange={setShowCreateDialog}
+            onSuccess={handlePromotionCreated}
+            defaultStoreId={storeId}
+          />
+
           <Button
-            onClick={() => handleCreatePromo(false)}
-            disabled={submitting}
-            variant="outline"
-            className="w-full h-12"
-            size="lg"
+            variant="ghost"
+            onClick={onComplete}
+            className="w-full text-muted-foreground"
           >
-            Enregistrer et publier plus tard
+            Passer cette étape
           </Button>
         </div>
       )}
