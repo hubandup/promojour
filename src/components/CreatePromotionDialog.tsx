@@ -541,7 +541,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
         </>
       )}
 
-      {mechanicType === "bundle" && (
+      {mechanicType === "bundle_offer" && (
         <div className="space-y-2">
           <Label htmlFor="bundleDescription">Description de l'offre</Label>
           <Input

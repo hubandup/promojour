@@ -575,7 +575,7 @@ export const EditPromotionDialog = ({ open, onOpenChange, promotionId, onSuccess
         </>
       )}
 
-      {mechanicType === "bundle" && (
+      {mechanicType === "bundle_offer" && (
         <div className="space-y-2">
           <Label htmlFor="bundleDescription">Description de l'offre</Label>
           <Input id="bundleDescription" placeholder="Ex: 2 achetés = 1 offert" {...register("bundleDescription")} />
