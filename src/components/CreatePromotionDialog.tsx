@@ -19,6 +19,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePromotionalMechanics } from "@/hooks/use-promotional-mechanics";
 import { usePromotionLimits } from "@/hooks/use-promotion-limits";
 import { useUserData } from "@/hooks/use-user-data";
+import { useStores } from "@/hooks/use-stores";
+import { usePublishPromotion } from "@/hooks/use-publish-promotion";
 import { StoreMechanicSelector } from "@/components/promotion-form/StoreMechanicSelector";
 import { StorePromotionFormFields } from "@/components/promotion-form/StorePromotionFormFields";
 
@@ -60,6 +62,8 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
   const { mechanics } = usePromotionalMechanics();
   const { limits, validatePromotionDates, checkLimits } = usePromotionLimits();
   const { isSuperAdmin, isStore, isFree, isCentral } = useUserData();
+  const { stores } = useStores();
+  const { publishPromotion, publishing: publishingInProgress } = usePublishPromotion();
   const isSimplifiedForm = isStore || isFree;
 
   const {
@@ -242,11 +246,14 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
         }
       }
 
-      const { error } = await supabase
+      // Determine the store ID: use defaultStoreId or first store for store/free users
+      const resolvedStoreId = defaultStoreId || (isSimplifiedForm && stores.length > 0 ? stores[0].id : null);
+
+      const { data: insertedPromo, error } = await supabase
         .from('promotions')
         .insert({
           organization_id: profile.organization_id,
-          store_id: defaultStoreId || null,
+          store_id: resolvedStoreId,
           title: data.title,
           description: data.description || null,
           category: data.category || null,
@@ -256,9 +263,31 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
           image_url: imageUrl,
           attributes,
           created_by: user.id,
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
+
+      // For store/free users with active status, auto-publish to Facebook if connected
+      if (isSimplifiedForm && resolvedStoreId && insertedPromo?.id && finalStatus === 'active') {
+        try {
+          // Check if store has Facebook connected
+          const { data: connections } = await supabase
+            .from('social_connections')
+            .select('platform, is_connected')
+            .eq('store_id', resolvedStoreId)
+            .eq('is_connected', true)
+            .eq('platform', 'facebook');
+
+          if (connections && connections.length > 0) {
+            await publishPromotion(insertedPromo.id, resolvedStoreId, ['facebook']);
+          }
+        } catch (publishErr) {
+          console.error('Auto-publish after creation failed:', publishErr);
+          // Don't block — promotion was already created successfully
+        }
+      }
       
       toast.success("Promotion créée avec succès !");
       reset();

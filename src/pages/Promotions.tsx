@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, AlertCircle, Eye, Pencil, Trash2, BarChart3, LayoutGrid, List, X, Copy, Upload, Calendar as CalendarIcon, Download } from "lucide-react";
+import { Plus, Search, AlertCircle, Eye, Pencil, Trash2, BarChart3, LayoutGrid, List, X, Copy, Upload, Calendar as CalendarIcon, Download, Send, Loader2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -42,6 +42,8 @@ import { useStores } from "@/hooks/use-stores";
 import { useCampaigns } from "@/hooks/use-campaigns";
 import { usePromotionalMechanics } from "@/hooks/use-promotional-mechanics";
 import { useToast } from "@/hooks/use-toast";
+import { usePublishPromotion } from "@/hooks/use-publish-promotion";
+import { useSocialConnections } from "@/hooks/use-social-connections";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -73,6 +75,10 @@ const Promotions = () => {
   const { stores, loading: storesLoading } = useStores();
   const { campaigns, loading: campaignsLoading } = useCampaigns();
   const { mechanics, isLoading: mechanicsLoading } = usePromotionalMechanics();
+  const { publishPromotion, publishing } = usePublishPromotion();
+
+  // For store/free users, get the first store's ID for publishing
+  const defaultStoreId = isSimplifiedView && stores.length > 0 ? stores[0].id : null;
 
   // Précharger uniquement les 5 premiers codes-barres visibles
   const eanCodes = promotions
@@ -204,6 +210,38 @@ const Promotions = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handlePublishPromotion = async (promo: any) => {
+    const storeId = promo.store_id || defaultStoreId;
+    if (!storeId) {
+      toast({
+        title: "Erreur",
+        description: "Aucun magasin associé à cette promotion",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if store has Facebook connected
+    const { data: connections } = await supabase
+      .from('social_connections')
+      .select('platform, is_connected')
+      .eq('store_id', storeId)
+      .eq('is_connected', true)
+      .eq('platform', 'facebook');
+
+    if (!connections || connections.length === 0) {
+      toast({
+        title: "Facebook non connecté",
+        description: "Connectez votre page Facebook depuis les paramètres de votre magasin pour publier.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    await publishPromotion(promo.id, storeId, ['facebook']);
+    await refetch();
   };
 
   // Filtrer les promotions
@@ -666,6 +704,16 @@ const Promotions = () => {
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8 text-primary"
+                        onClick={() => handlePublishPromotion(promo)}
+                        disabled={publishing || (!promo.image_url && !promo.video_url)}
+                        title="Publier sur Facebook"
+                      >
+                        {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="h-8 w-8"
                         onClick={() => {
                           setPreviewPromotion(promo);
@@ -885,6 +933,19 @@ const Promotions = () => {
                   <Button 
                     variant="outline" 
                     size="icon" 
+                    className="rounded-xl hover:shadow-md transition-smooth text-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePublishPromotion(promo);
+                    }}
+                    disabled={publishing || (!promo.image_url && !promo.video_url)}
+                    title="Publier sur Facebook"
+                  >
+                    {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
                     className="rounded-xl hover:shadow-md transition-smooth"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -956,6 +1017,7 @@ const Promotions = () => {
         open={createDialogOpen} 
         onOpenChange={setCreateDialogOpen}
         onSuccess={refetch}
+        defaultStoreId={defaultStoreId || undefined}
       />
       
       {selectedPromotionId && (
