@@ -73,11 +73,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       const effectiveAccountType: "free" | "store" | "central" | null =
         org?.account_type === "free" && pendingAccountType ? pendingAccountType : org?.account_type ?? null;
 
-      // If org type is still 'free', user needs to choose account type
+      // TEMP: disabled for Meta — skip account type choice, treat free as store
+      // If org type is still 'free', auto-treat as 'store' and go to onboarding
       if (effectiveAccountType === "free") {
-        setNeedsAccountTypeChoice(true);
-        setNeedsOnboarding(false);
-        setIsStore(false);
+        setNeedsAccountTypeChoice(false);
+        setIsStore(true);
+        setNeedsOnboarding(!org?.onboarding_completed);
         return;
       }
 
