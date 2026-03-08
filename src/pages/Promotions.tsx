@@ -282,7 +282,7 @@ const Promotions = () => {
               </Button>
             </div>
           )}
-          {!isStore && (
+          {!isSimplifiedView && (
             <>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

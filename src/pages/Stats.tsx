@@ -153,7 +153,7 @@ const Stats = () => {
         {/* Top Promotions */}
         <Card className="glass-card border-border/50">
           <CardHeader>
-            <CardTitle>{isStore ? "Top 3 Promotions" : "Top 5 Promotions"}</CardTitle>
+            <CardTitle>{isSimplifiedView ? "Top 3 Promotions" : "Top 5 Promotions"}</CardTitle>
             <CardDescription>Meilleures performances ce mois-ci</CardDescription>
           </CardHeader>
           <CardContent>
