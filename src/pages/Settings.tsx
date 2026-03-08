@@ -436,9 +436,9 @@ const Settings = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Description</Label>
-                    <Input
-                      value={isStore ? storeDescription : orgDescription}
-                      onChange={(e) => isStore ? setStoreDescription(e.target.value) : setOrgDescription(e.target.value)}
+                     <Input
+                       value={isSimplifiedView ? storeDescription : orgDescription}
+                       onChange={(e) => isSimplifiedView ? setStoreDescription(e.target.value) : setOrgDescription(e.target.value)}
                       className="rounded-xl"
                       placeholder="Description de votre magasin"
                     />
