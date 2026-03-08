@@ -74,6 +74,13 @@ const Auth = () => {
   };
 
   useEffect(() => {
+    // Listen for auth state changes — handles PKCE code exchange and token detection automatically
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
+        await redirectAfterLogin();
+      }
+    });
+
     const handleVerificationReturn = async () => {
       const tab = searchParams.get("tab");
       if (tab === "signup") setActiveTab("signup");
@@ -89,6 +96,7 @@ const Auth = () => {
       const hasVerificationContext =
         typeParam === "signup" ||
         typeParam === "email_change" ||
+        typeParam === "recovery" ||
         Boolean(queryAccessToken || hashAccessToken || rawHash.includes("type=signup"));
 
       const resolvedEmail =
@@ -99,6 +107,12 @@ const Auth = () => {
       if (resolvedEmail) setEmail(resolvedEmail);
 
       if (!hasVerificationContext) {
+        // No verification context — check if already logged in
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await redirectAfterLogin();
+          return;
+        }
         setProcessingVerificationReturn(false);
         return;
       }
@@ -110,24 +124,30 @@ const Auth = () => {
       const refresh_token = queryRefreshToken || hashRefreshToken;
 
       if (access_token && refresh_token) {
-        // TEMP: disabled for Meta — prioritize silent auto-login after email verification
         const { error } = await supabase.auth.setSession({ access_token, refresh_token });
         if (!error) {
+          // Clean up URL hash
+          window.history.replaceState(null, "", window.location.pathname);
           await redirectAfterLogin();
           return;
         }
       }
 
+      // Fallback: check if Supabase client already picked up the session (PKCE flow)
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        window.history.replaceState(null, "", window.location.pathname);
         await redirectAfterLogin();
         return;
       }
 
+      // Auto-login failed — show login form with verification success banner
       setProcessingVerificationReturn(false);
     };
 
     handleVerificationReturn();
+
+    return () => subscription.unsubscribe();
   }, [searchParams]);
 
   const handleSignUp = async (e: React.FormEvent) => {
