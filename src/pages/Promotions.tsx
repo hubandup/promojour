@@ -43,7 +43,7 @@ import { useCampaigns } from "@/hooks/use-campaigns";
 import { usePromotionalMechanics } from "@/hooks/use-promotional-mechanics";
 import { useToast } from "@/hooks/use-toast";
 import { usePublishPromotion } from "@/hooks/use-publish-promotion";
-import { useSocialConnections } from "@/hooks/use-social-connections";
+
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
