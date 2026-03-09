@@ -223,24 +223,12 @@ const Promotions = () => {
       return;
     }
 
-    // Check if store has Facebook connected
-    const { data: connections } = await supabase
-      .from('social_connections')
-      .select('platform, is_connected')
-      .eq('store_id', storeId)
-      .eq('is_connected', true)
-      .eq('platform', 'facebook');
-
-    if (!connections || connections.length === 0) {
-      toast({
-        title: "Facebook non connecté",
-        description: "Connectez votre page Facebook depuis les paramètres de votre magasin pour publier.",
-        variant: "destructive",
-      });
-      return;
+    // Call the edge function directly (same approach as the onboarding wizard)
+    // The edge function handles social connection lookup internally
+    const result = await publishPromotion(promo.id, storeId, ['facebook']);
+    if (!result.success && result.error) {
+      console.error('Publish failed from Promotions page:', result.error);
     }
-
-    await publishPromotion(promo.id, storeId, ['facebook']);
     await refetch();
   };
 
