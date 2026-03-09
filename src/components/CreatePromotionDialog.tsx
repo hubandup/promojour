@@ -267,6 +267,7 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
           start_date: data.startDate.toISOString(),
           end_date: data.endDate.toISOString(),
           image_url: imageUrl,
+          video_url: videoUrl,
           attributes,
           created_by: user.id,
         })
@@ -275,20 +276,11 @@ export const CreatePromotionDialog = ({ open, onOpenChange, onSuccess, defaultSt
 
       if (error) throw error;
 
-      // For store/free users with active status, auto-publish to Facebook if connected
+      // For store/free users with active status, auto-publish to Facebook
+      // Call the edge function directly (same approach as the onboarding wizard)
       if (isSimplifiedForm && resolvedStoreId && insertedPromo?.id && finalStatus === 'active') {
         try {
-          // Check if store has Facebook connected
-          const { data: connections } = await supabase
-            .from('social_connections')
-            .select('platform, is_connected')
-            .eq('store_id', resolvedStoreId)
-            .eq('is_connected', true)
-            .eq('platform', 'facebook');
-
-          if (connections && connections.length > 0) {
-            await publishPromotion(insertedPromo.id, resolvedStoreId, ['facebook']);
-          }
+          await publishPromotion(insertedPromo.id, resolvedStoreId, ['facebook']);
         } catch (publishErr) {
           console.error('Auto-publish after creation failed:', publishErr);
           // Don't block — promotion was already created successfully
